@@ -13,6 +13,7 @@ use Exception;
 use Hybridauth\Hybridauth;
 use Hybridauth\Logger\Logger;
 use LoginWebPage;
+use MetaModel;
 use UserRights;
 use utils;
 
@@ -43,10 +44,15 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 	{
 		if (!isset($_SESSION['login_mode']))
 		{
-			$aLoginModes = self::ListSupportedLoginModes();
-			if (!empty($aLoginModes))
+			$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+			$aSupportedLoginModes = self::ListSupportedLoginModes();
+			foreach ($aAllowedModes as $sLoginMode)
 			{
-				$_SESSION['login_mode'] = $aLoginModes[0];
+				if (in_array($sLoginMode, $aSupportedLoginModes))
+				{
+					$_SESSION['login_mode'] = $sLoginMode;
+					break;
+				}
 			}
 		}
 		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
