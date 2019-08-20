@@ -38,6 +38,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	protected function OnStart(&$iErrorCode)
 	{
 		unset($_SESSION['HYBRIDAUTH::STORAGE']);
+		$_SESSION['OriginalPage'] = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
 	}
 
@@ -136,6 +137,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
 		{
 			unset($_SESSION['HYBRIDAUTH::STORAGE']);
+			unset($_SESSION['hybridauth_count']);
 			if ($iErrorCode != LoginWebPage::EXIT_CODE_MISSINGLOGIN)
 			{
 				$oLoginWebPage = new LoginWebPage();
