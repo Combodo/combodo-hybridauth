@@ -72,6 +72,25 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 					{
 						$oLogger = null;
 					}
+
+					if (!isset($_SESSION['auth_user']))
+					{
+						if (!isset($_SESSION['hybridauth_count']))
+						{
+							$_SESSION['hybridauth_count'] = 1;
+						}
+						else
+						{
+							$_SESSION['hybridauth_count'] += 1;
+						}
+						if ($_SESSION['hybridauth_count'] > 2)
+						{
+							unset($_SESSION['hybridauth_count']);
+							$iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
+							return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
+						}
+					}
+
 					$oHybridauth = new Hybridauth($aConfig, null, null, $oLogger);
 
 					//Then we can proceed and sign in
@@ -80,6 +99,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 
 					$oUserProfile = $oAdapter->getUserProfile();
 					$_SESSION['auth_user'] = $oUserProfile->email;
+					unset($_SESSION['hybridauth_count']);
 				}
 				catch (Exception $e)
 				{
@@ -124,8 +144,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 	{
 		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
 		{
-			echo "<p>".Dict::S('HybridAuth:Error:UserNotAllowed')."</p>";
-			exit();
+			unset($_SESSION['HYBRIDAUTH::STORAGE']);
+			if ($iErrorCode != LoginWebPage::EXIT_CODE_MISSINGLOGIN)
+			{
+				$oLoginWebPage = new LoginWebPage();
+				$oLoginWebPage->DisplayLogoutPage(false, Dict::S('HybridAuth:Error:UserNotAllowed'));
+				exit();
+			}
 		}
 		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
 	}
