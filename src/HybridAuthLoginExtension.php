@@ -38,7 +38,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	protected function OnStart(&$iErrorCode)
 	{
 		unset($_SESSION['HYBRIDAUTH::STORAGE']);
-		$_SESSION['OriginalPage'] = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+		$sOriginURL = $_SESSION['OriginalPage'] = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot()))
+		{
+			// If the found URL does not start with the configured AppRoot URL
+			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
+		}
+		$_SESSION['OriginalPage'] = $sOriginURL;
 		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
 	}
 
