@@ -12,12 +12,13 @@ use Dict;
 use Exception;
 use Hybridauth\Hybridauth;
 use Hybridauth\Logger\Logger;
+use iLogoutExtension;
 use LoginWebPage;
 use MetaModel;
 use UserRights;
 use utils;
 
-class HybridAuthLoginExtension extends AbstractLoginFSMExtension
+class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension
 {
 	/**
 	 * Return the list of supported login modes for this plugin
@@ -59,20 +60,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 		{
 			if (!isset($_SESSION['auth_user']))
 			{
-				$aConfig = array();
-				$aConfig['callback'] = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
-				$aConfig['providers'] = Config::Get('providers');
 				try
 				{
-					if (Config::Get('debug'))
-					{
-						$oLogger = new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log');
-					}
-					else
-					{
-						$oLogger = null;
-					}
-
 					if (!isset($_SESSION['auth_user']))
 					{
 						if (!isset($_SESSION['hybridauth_count']))
@@ -91,6 +80,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 						}
 					}
 
+					$oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
+					$aConfig = Config::GetHybridConfig();
 					$oHybridauth = new Hybridauth($aConfig, null, null, $oLogger);
 
 					//Then we can proceed and sign in
@@ -159,7 +150,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 	{
 		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
 		{
-			$_SESSION['can_logoff'] = false;
+			$_SESSION['can_logoff'] = true;
 			return LoginWebPage::CheckLoggedUser($iErrorCode);
 		}
 		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
@@ -173,88 +164,20 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see iLoginExtension::BeforeLogin()
+	 * Execute all actions to log out properly
 	 */
-	public function BeforeLogin()
+	public function LogoutAction()
 	{
-		if ((utils::ReadParam('login_mode', '') === '') && utils::ReadParam('code', false) && utils::ReadParam('state', false))
+		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
 		{
-			try
-			{
-				$oLogger = new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log');
-				$oGitHub = new \Hybridauth\Provider\GitHub($this->GetConfig(), null, null, $oLogger);
-				
-				$oGitHub->authenticate(); // May redirect, or pass through if the user is already authenticated (SSO)
-				$oUserProfile = $oGitHub->getUserProfile();
-				$sAuthUser = $oUserProfile->email;
-				return new LoginSuccess($sAuthUser, $this->GetLoginClass(), 'hybrid');
-			}
-			catch (\Exception $e)
-			{
-				return null;
-			}
+			$oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
+			$aConfig = Config::GetHybridConfig();
+			$oHybridauth = new Hybridauth($aConfig, null, null, $oLogger);
+			$oAdapter = $oHybridauth->authenticate(self::GetProviderName());
+			$oAdapter->disconnect(); // Does not redirect... and actually just clears the session variable, almost useless we can log again without any further user interaction
 		}
-		return null;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see iLoginExtension::DisplayLoginForm()
-	 */
-	public function DisplayLoginForm(LoginWebPage $param, $sLoginType, $bFailedLogin)
-	{
-		return false;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see iLoginExtension::OnCredentialNotValid()
-	 */
-	public function OnCredentialNotValid($login, $sAuthPwd, $sLoginMode, $sAuthentication)
-	{
-		return null;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see iLoginExtension::OnCredentialValid()
-	 */
-	public function OnCredentialValid($sAuthUser, $sAuthentication, $sLoginMode)
-	{
-		return null;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see iLoginExtension::ResetSession()
-	 */
-	public function ResetSession()
-	{
 	}
 
-	public function OnLogin($sLoginMode)
-	{
-		if ($sLoginMode == 'hybrid')
-		{
-			try
-			{
-				$oLogger = new Logger(Logger::DEBUG, APPROOT.'data/hybridauth.log');
-				$oGitHub = new \Hybridauth\Provider\GitHub($this->GetConfig(), null, null, $oLogger);
-				
-				$oGitHub->authenticate(); // May redirect, or pass through if the user is already authenticated (SSO)
-				$oUserProfile = $oGitHub->getUserProfile();
-				$sAuthUser = $oUserProfile->email;
-				return new LoginSuccess($sAuthUser, $this->GetLoginClass(), $sLoginMode);
-			}
-			catch (\Exception $e)
-			{
-				IssueLog::Info('HybridAuthLoginExtension::OnLogin, exception: ' . $e->getMessage());
-			}
-		}
-		return false;
-	}
-	
 	public function GetSocialButtons()
 	{
 		return array(
@@ -265,25 +188,5 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension
 				'tooltip' => 'Here is a HybridAuth specific tooltip',
 			),
 		);
-	}
-	
-	public function CanLogOff($sLoginMode)
-	{
-		if ($sLoginMode == 'hybrid')
-		{
-			return false;
-		}
-		return null;
-	}
-	
-	public function OnLogOff($sLoginMode)
-	{
-		if ($sLoginMode == 'hybrid')
-		{
-			$oLogger = new Logger(Logger::DEBUG, APPROOT.'data/hybridauth.log');
-			$oGitHub = new \Hybridauth\Provider\GitHub($this->GetConfig(), null, null, $oLogger);
-			
-			$oGitHub->disconnect(); // Does not redirect... and actually just clears the session variable, almost useless we can log again without any further user interaction
-		}
 	}
 }
