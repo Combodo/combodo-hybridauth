@@ -16,7 +16,6 @@ use iLogoutExtension;
 use IssueLog;
 use LoginWebPage;
 use MetaModel;
-use UserRights;
 use utils;
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension
