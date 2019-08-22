@@ -131,7 +131,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
 		{
 			$sAuthUser = $_SESSION['auth_user'];
-			if (!LoginWebPage::CheckUser($sAuthUser, ''))
+			if (!LoginWebPage::CheckUser($sAuthUser))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
 				return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
