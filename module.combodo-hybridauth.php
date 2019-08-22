@@ -15,7 +15,7 @@ SetupWebPage::AddModule(
 		// Setup
 		//
 		'dependencies' => array(
-			
+
 		),
 		'mandatory' => false,
 		'visible' => true,
@@ -29,7 +29,7 @@ SetupWebPage::AddModule(
 			'src/Config.php',
 		),
 		'webservice' => array(
-			
+
 		),
 		'data.struct' => array(
 			// add your 'structure' definition XML files here,
@@ -37,15 +37,20 @@ SetupWebPage::AddModule(
 		'data.sample' => array(
 			// add your sample data XML files here,
 		),
-		
+
 		// Documentation
 		//
 		'doc.manual_setup' => '', // hyperlink to manual setup documentation, if any
-		'doc.more_information' => '', // hyperlink to more information, if any 
+		'doc.more_information' => '', // hyperlink to more information, if any
 
 		// Default settings
 		//
 		'settings' => array(
+            'debug' => false,
+            'synchronize_user' => false,
+            'synchronize_contact' => false,
+            'default_organization' => '',
+            'default_profile' => 'Portal User',
 			'providers' => array(
 				'Google' => array(
 					'enabled' => true,

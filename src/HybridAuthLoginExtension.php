@@ -13,6 +13,7 @@ use Exception;
 use Hybridauth\Hybridauth;
 use Hybridauth\Logger\Logger;
 use iLogoutExtension;
+use IssueLog;
 use LoginWebPage;
 use MetaModel;
 use UserRights;
@@ -20,6 +21,8 @@ use utils;
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension
 {
+    private $oUserProfile;
+
 	/**
 	 * Return the list of supported login modes for this plugin
 	 *
@@ -95,8 +98,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 					//Attempt to authenticate users with a provider by name
 					$oAdapter = $oHybridauth->authenticate(self::GetProviderName());
 
-					$oUserProfile = $oAdapter->getUserProfile();
-					$_SESSION['auth_user'] = $oUserProfile->email;
+                    $this->oUserProfile = $oAdapter->getUserProfile();
+					$_SESSION['auth_user'] = $this->oUserProfile->email;
 					unset($_SESSION['hybridauth_count']);
 				}
 				catch (Exception $e)
@@ -119,6 +122,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
 				return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
 			}
+			self::DoUserProvisioning();
 		}
 		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
 	}
@@ -128,7 +132,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
 		{
 			$sAuthUser = $_SESSION['auth_user'];
-			if (!UserRights::CheckCredentials($sAuthUser, '', $_SESSION['login_mode'], 'external'))
+			if (!LoginWebPage::CheckUser($sAuthUser, ''))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
 				return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
@@ -197,4 +201,44 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			),
 		);
 	}
+
+	private function DoUserProvisioning()
+    {
+        if (Config::Get('synchronize_user'))
+        {
+            try
+            {
+                $sEmail = $_SESSION['auth_user'];
+                if (LoginWebPage::FindUser($sEmail, false))
+                {
+                    return;
+                }
+                if ($this->oUserProfile == null)
+                {
+                    return;
+                }
+                $oPerson = LoginWebPage::FindPerson($sEmail);
+                if ($oPerson == null)
+                {
+                    if (!Config::Get('synchronize_contact'))
+                    {
+                        return;
+                    }
+                    // Create the person
+                    $sFirstName = $this->oUserProfile->firstName;
+                    $sLastName = $this->oUserProfile->lastName;
+                    $sOrganization = Config::Get('default_organization');
+                    $aAdditionalParams = array('phone' => $this->oUserProfile->phone);
+                    $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
+                }
+                $sProfile = Config::Get('default_profile');
+                $aProfiles = array($sProfile);
+                LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
+            }
+            catch (Exception $e)
+            {
+                IssueLog::Error($e->getMessage());
+            }
+        }
+    }
 }
