@@ -203,41 +203,42 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	private function DoUserProvisioning()
     {
-        if (Config::Get('synchronize_user'))
+        try
         {
-            try
+            if (!Config::Get('synchronize_user'))
             {
-                $sEmail = $_SESSION['auth_user'];
-                if (LoginWebPage::FindUser($sEmail, false))
+                return;
+            }
+            $sEmail = $_SESSION['auth_user'];
+            if (LoginWebPage::FindUser($sEmail, false))
+            {
+                return;
+            }
+            if ($this->oUserProfile == null)
+            {
+                return;
+            }
+            $oPerson = LoginWebPage::FindPerson($sEmail);
+            if ($oPerson == null)
+            {
+                if (!Config::Get('synchronize_contact'))
                 {
                     return;
                 }
-                if ($this->oUserProfile == null)
-                {
-                    return;
-                }
-                $oPerson = LoginWebPage::FindPerson($sEmail);
-                if ($oPerson == null)
-                {
-                    if (!Config::Get('synchronize_contact'))
-                    {
-                        return;
-                    }
-                    // Create the person
-                    $sFirstName = $this->oUserProfile->firstName;
-                    $sLastName = $this->oUserProfile->lastName;
-                    $sOrganization = Config::Get('default_organization');
-                    $aAdditionalParams = array('phone' => $this->oUserProfile->phone);
-                    $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
-                }
-                $sProfile = Config::Get('default_profile');
-                $aProfiles = array($sProfile);
-                LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
+                // Create the person
+                $sFirstName = $this->oUserProfile->firstName;
+                $sLastName = $this->oUserProfile->lastName;
+                $sOrganization = Config::Get('default_organization');
+                $aAdditionalParams = array('phone' => $this->oUserProfile->phone);
+                $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
             }
-            catch (Exception $e)
-            {
-                IssueLog::Error($e->getMessage());
-            }
+            $sProfile = Config::Get('default_profile');
+            $aProfiles = array($sProfile);
+            LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
+        }
+        catch (Exception $e)
+        {
+            IssueLog::Error($e->getMessage());
         }
     }
 }
