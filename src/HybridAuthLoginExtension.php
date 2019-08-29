@@ -12,17 +12,18 @@ use Dict;
 use Exception;
 use Hybridauth\Hybridauth;
 use Hybridauth\Logger\Logger;
+use iLoginDataExtension;
 use iLogoutExtension;
 use IssueLog;
+use LoginBlockData;
+use LoginTwigData;
 use LoginWebPage;
 use MetaModel;
 use utils;
 
-class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension
+class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginDataExtension
 {
-    private $oUserProfile;
-
-	/**
+    /**
 	 * Return the list of supported login modes for this plugin
 	 *
 	 * @return array of supported login modes
@@ -32,7 +33,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		$aLoginModes = array();
 		foreach (Config::GetProviders() as $sProvider)
 		{
-			$aLoginModes[] = "hybridauth/$sProvider";
+			$aLoginModes[] = "hybridauth-$sProvider";
 		}
 		return $aLoginModes;
 	}
@@ -40,13 +41,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	protected function OnStart(&$iErrorCode)
 	{
 		unset($_SESSION['HYBRIDAUTH::STORAGE']);
-		$sOriginURL = $_SESSION['OriginalPage'] = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+		$sOriginURL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot()))
 		{
 			// If the found URL does not start with the configured AppRoot URL
 			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
 		}
-		$_SESSION['OriginalPage'] = $sOriginURL;
+		$_SESSION['login_original_page'] = $sOriginURL;
 		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
 	}
 
@@ -65,41 +66,28 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				}
 			}
 		}
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
+		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
 		{
 			if (!isset($_SESSION['auth_user']))
 			{
 				try
 				{
-					if (!isset($_SESSION['auth_user']))
-					{
-						if (!isset($_SESSION['hybridauth_count']))
-						{
-							$_SESSION['hybridauth_count'] = 1;
-						}
-						else
-						{
-							$_SESSION['hybridauth_count'] += 1;
-						}
-						if ($_SESSION['hybridauth_count'] > 2)
-						{
-							unset($_SESSION['hybridauth_count']);
-							$iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
-							return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
-						}
-					}
-
-					$oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
-					$aConfig = Config::GetHybridConfig();
-					$oHybridauth = new Hybridauth($aConfig, null, null, $oLogger);
-
-					//Then we can proceed and sign in
-					//Attempt to authenticate users with a provider by name
-					$oAdapter = $oHybridauth->authenticate(self::GetProviderName());
-
-                    $this->oUserProfile = $oAdapter->getUserProfile();
-					$_SESSION['auth_user'] = $this->oUserProfile->email;
-					unset($_SESSION['hybridauth_count']);
+                    if (!isset($_SESSION['login_will_redirect']))
+                    {
+                        // we are about to be redirected to the SSO provider
+                        $_SESSION['login_will_redirect'] = true;
+                    }
+                    else
+                    {
+                        if (empty(utils::ReadParam('login_hybridauth')))
+                        {
+                            unset($_SESSION['login_will_redirect']);
+                            $iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
+                            return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
+                        }
+                    }
+                    // Proceed and sign in (redirect to provider and exit)
+                    self::ConnectHybridAuth();
 				}
 				catch (Exception $e)
 				{
@@ -114,7 +102,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnCheckCredentials(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
+		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
 		{
 			if (!isset($_SESSION['auth_user']))
 			{
@@ -128,7 +116,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnCredentialsOK(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
+		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
 		{
 			$sAuthUser = $_SESSION['auth_user'];
 			if (!LoginWebPage::CheckUser($sAuthUser))
@@ -143,7 +131,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnError(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
+		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
 		{
 			unset($_SESSION['HYBRIDAUTH::STORAGE']);
 			unset($_SESSION['hybridauth_count']);
@@ -159,7 +147,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnConnected(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
+		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
 		{
 			$_SESSION['can_logoff'] = true;
 			return LoginWebPage::CheckLoggedUser($iErrorCode);
@@ -170,7 +158,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	private static function GetProviderName()
 	{
 		$sLoginMode = $_SESSION['login_mode'];
-		$sProviderName = substr($sLoginMode, strlen('hybridauth/'));
+		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		return $sProviderName;
 	}
 
@@ -179,26 +167,15 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	 */
 	public function LogoutAction()
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth/'))
+		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
 		{
-			$oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
-			$aConfig = Config::GetHybridConfig();
-			$oHybridauth = new Hybridauth($aConfig, null, null, $oLogger);
-			$oAdapter = $oHybridauth->authenticate(self::GetProviderName());
-			$oAdapter->disconnect(); // Does not redirect... and actually just clears the session variable, almost useless we can log again without any further user interaction
+            $oAuthAdapter = self::ConnectHybridAuth();
+            // Does not redirect...
+            // and actually just clears the session variable,
+            // almost useless we can log again without any further user interaction
+            // At least it disconnects from iTop
+			$oAuthAdapter->disconnect();
 		}
-	}
-
-	public function GetSocialButtons()
-	{
-		return array(
-			array(
-				'login_mode' => 'hybrid',
-				'label' => 'Sign-in with GitHub',
-				'twig' => 'github_button.twig',
-				'tooltip' => 'Here is a HybridAuth specific tooltip',
-			),
-		);
 	}
 
 	private function DoUserProvisioning()
@@ -207,29 +184,31 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
         {
             if (!Config::Get('synchronize_user'))
             {
-                return;
+                return; // No automatic User provisioning
             }
             $sEmail = $_SESSION['auth_user'];
             if (LoginWebPage::FindUser($sEmail, false))
             {
-                return;
+                return; // User already present
             }
-            if ($this->oUserProfile == null)
+            $oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
+            $oUserProfile = $oAuthAdapter->getUserProfile();
+            if ($oUserProfile == null)
             {
-                return;
+                return; // No data available for this user
             }
             $oPerson = LoginWebPage::FindPerson($sEmail);
             if ($oPerson == null)
             {
                 if (!Config::Get('synchronize_contact'))
                 {
-                    return;
+                    return; // No automatic Contact provisioning
                 }
                 // Create the person
-                $sFirstName = $this->oUserProfile->firstName;
-                $sLastName = $this->oUserProfile->lastName;
+                $sFirstName = $oUserProfile->firstName;
+                $sLastName = $oUserProfile->lastName;
                 $sOrganization = Config::Get('default_organization');
-                $aAdditionalParams = array('phone' => $this->oUserProfile->phone);
+                $aAdditionalParams = array('phone' => $oUserProfile->phone);
                 $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
             }
             $sProfile = Config::Get('default_profile');
@@ -240,5 +219,54 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
         {
             IssueLog::Error($e->getMessage());
         }
+    }
+
+    /**
+     * @return LoginTwigData
+     */
+    public function GetLoginData()
+    {
+        $sPath = APPROOT.'env-'.utils::GetCurrentEnvironment().'/combodo-hybridauth/view';
+        $oLoginData = new LoginTwigData(array(), $sPath);
+
+        $aData = array();
+        $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+        foreach (Config::GetProviders() as $sProvider)
+        {
+            if (in_array("hybridauth-$sProvider", $aAllowedModes))
+            {
+                $aData[] = array(
+                    'sLoginMode' => "hybridauth-$sProvider",
+                    'sLabel' => "Sign in with $sProvider",
+                    'sTooltip' => "Click here to authenticate yourself with $sProvider",
+                    'sFaImage' => "fa-$sProvider-square",
+                );
+            }
+        }
+
+        $oBlockData = new LoginBlockData('hybridauth_sso_button.html.twig', $aData);
+
+        $oLoginData->AddBlockData('login_sso_buttons', $oBlockData);
+
+        return $oLoginData;
+    }
+
+    /**
+     * If not connected to the SSO provider, redirect and exit.
+     * If already connected, just get the info from the SSO provider and return.
+     *
+     * @return \Hybridauth\Adapter\AdapterInterface
+     *
+     * @throws \Hybridauth\Exception\InvalidArgumentException
+     * @throws \Hybridauth\Exception\RuntimeException
+     * @throws \Hybridauth\Exception\UnexpectedValueException
+     */
+    public static function ConnectHybridAuth()
+    {
+        $oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
+        $aConfig = Config::GetHybridConfig();
+        $oHybridAuth = new Hybridauth($aConfig, null, null, $oLogger);
+        $oAuthAdapter = $oHybridAuth->authenticate(self::GetProviderName());
+        return $oAuthAdapter;
     }
 }

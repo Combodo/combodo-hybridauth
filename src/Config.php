@@ -12,14 +12,7 @@ class Config
 	public static function GetHybridConfig()
 	{
 		$aConfig = array();
-		if (isset($_SESSION['OriginalPage']))
-		{
-			$aConfig['callback'] = $_SESSION['OriginalPage'];
-		}
-		else
-		{
-			$aConfig['callback'] = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
-		}
+        $aConfig['callback'] = utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php';
 		$aConfig['providers'] = self::Get('providers');
 		return $aConfig;
 	}
