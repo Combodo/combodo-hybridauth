@@ -239,7 +239,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
                     'sLoginMode' => "hybridauth-$sProvider",
                     'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sProvider),
                     'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider),
-                    'sFaImage' => "fa-$sProvider-square",
+                    'sFaImage' => "fa-$sProvider",
                 );
             }
         }
@@ -247,6 +247,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
         $oBlockData = new LoginBlockData('hybridauth_sso_button.html.twig', $aData);
 
         $oLoginData->AddBlockData('login_sso_buttons', $oBlockData);
+        $oLoginData->AddBlockData('css', new LoginBlockData('hybridauth_css.css.twig'));
 
         return $oLoginData;
     }
