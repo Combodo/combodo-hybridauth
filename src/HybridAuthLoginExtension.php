@@ -48,7 +48,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
 		}
 		$_SESSION['login_original_page'] = $sOriginURL;
-		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
+		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnReadCredentials(&$iErrorCode)
@@ -83,7 +83,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
                         {
                             unset($_SESSION['login_will_redirect']);
                             $iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
-                            return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
+                            return LoginWebPage::LOGIN_FSM_ERROR;
                         }
                     }
                     // Proceed and sign in (redirect to provider and exit)
@@ -92,12 +92,12 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				catch (Exception $e)
 				{
 					$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
-					return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
+					return LoginWebPage::LOGIN_FSM_ERROR;
 				}
 			}
 		}
 
-		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
+		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnCheckCredentials(&$iErrorCode)
@@ -107,11 +107,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			if (!isset($_SESSION['auth_user']))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
-				return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
+				return LoginWebPage::LOGIN_FSM_ERROR;
 			}
 			self::DoUserProvisioning();
 		}
-		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
+		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnCredentialsOK(&$iErrorCode)
@@ -122,11 +122,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			if (!LoginWebPage::CheckUser($sAuthUser))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
-				return LoginWebPage::LOGIN_FSM_RETURN_ERROR;
+				return LoginWebPage::LOGIN_FSM_ERROR;
 			}
 			LoginWebPage::OnLoginSuccess($sAuthUser, 'external', $_SESSION['login_mode']);
 		}
-		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
+		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnError(&$iErrorCode)
@@ -142,7 +142,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				exit();
 			}
 		}
-		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
+		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnConnected(&$iErrorCode)
@@ -152,7 +152,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$_SESSION['can_logoff'] = true;
 			return LoginWebPage::CheckLoggedUser($iErrorCode);
 		}
-		return LoginWebPage::LOGIN_FSM_RETURN_CONTINUE;
+		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	private static function GetProviderName()
