@@ -12,7 +12,7 @@ use Dict;
 use Exception;
 use Hybridauth\Hybridauth;
 use Hybridauth\Logger\Logger;
-use iLoginDataExtension;
+use iLoginUIExtension;
 use iLogoutExtension;
 use IssueLog;
 use LoginBlockData;
@@ -21,7 +21,7 @@ use LoginWebPage;
 use MetaModel;
 use utils;
 
-class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginDataExtension
+class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginUIExtension
 {
     /**
 	 * Return the list of supported login modes for this plugin
@@ -224,7 +224,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
     /**
      * @return LoginTwigData
      */
-    public function GetLoginData()
+    public function GetTwigBlockData()
     {
         $sPath = APPROOT.'env-'.utils::GetCurrentEnvironment().'/combodo-hybridauth/view';
         $oLoginData = new LoginTwigData(array(), $sPath);
