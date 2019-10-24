@@ -15,8 +15,8 @@ use Hybridauth\Logger\Logger;
 use iLoginUIExtension;
 use iLogoutExtension;
 use IssueLog;
-use LoginBlockData;
-use LoginTwigData;
+use LoginBlockExtension;
+use LoginTwigContext;
 use LoginWebPage;
 use MetaModel;
 use utils;
@@ -221,13 +221,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
         }
     }
 
-    /**
-     * @return LoginTwigData
-     */
-    public function GetTwigBlockData()
+    public function GetTwigContext()
     {
-        $sPath = APPROOT.'env-'.utils::GetCurrentEnvironment().'/combodo-hybridauth/view';
-        $oLoginData = new LoginTwigData(array(), $sPath);
+        $oLoginContext = new LoginTwigContext();
+	    $oLoginContext->SetLoaderPath(utils::GetAbsoluteModulePath('combodo-hybridauth').'view');
+	    $oLoginContext->AddCSSFile(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/css/hybridauth.css');
 
         $aData = array();
         $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
@@ -244,12 +242,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
             }
         }
 
-        $oBlockData = new LoginBlockData('hybridauth_sso_button.html.twig', $aData);
+        $oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
 
-        $oLoginData->AddBlockData('login_sso_buttons', $oBlockData);
-        $oLoginData->AddBlockData('css', new LoginBlockData('hybridauth_css.css.twig'));
+        $oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
 
-        return $oLoginData;
+        return $oLoginContext;
     }
 
     /**
