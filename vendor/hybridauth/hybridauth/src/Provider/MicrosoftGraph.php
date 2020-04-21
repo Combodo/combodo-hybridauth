@@ -62,7 +62,11 @@ class MicrosoftGraph extends OAuth2
         $userProfile->firstName     = $data->get('givenName');
         $userProfile->lastName      = $data->get('surname');
         $userProfile->email         = $data->get('mail');
-        $userProfile->language      = $data->get('preferredLanguage');
+        if (empty($userProfile->email))
+        {
+	        $userProfile->email = $data->get('userPrincipalName');
+        }
+	    $userProfile->language      = $data->get('preferredLanguage');
 
         return $userProfile;
     }
