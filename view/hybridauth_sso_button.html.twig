@@ -1,0 +1,10 @@
+{# @copyright   Copyright (C) 2010-2019 Combodo SARL #}
+{# @license     http://opensource.org/licenses/AGPL-3.0 #}
+
+
+{% for aProvider in aData %}
+    <div class="sso-button" title="{{ aProvider.sTooltip }}" onclick="$('#login_mode').val('{{ aProvider.sLoginMode }}'); $('#login_form').submit(); return false;">
+        <i class="fa {{ aProvider.sFaImage|lower }} sso-image hybridauth-logo" aria-hidden="true"></i>
+        {{ aProvider.sLabel }}
+    </div>
+{% endfor %}
