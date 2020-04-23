@@ -233,11 +233,19 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
         {
             if (in_array("hybridauth-$sProvider", $aAllowedModes))
             {
+            	if (utils::StartsWith($sProvider, "Microsoft"))
+	            {
+		            $sFaImage = "fa-microsoft";
+	            }
+            	else
+	            {
+		            $sFaImage = "fa-$sProvider";
+	            }
                 $aData[] = array(
                     'sLoginMode' => "hybridauth-$sProvider",
                     'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sProvider),
                     'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider),
-                    'sFaImage' => "fa-$sProvider",
+                    'sFaImage' => $sFaImage,
                 );
             }
         }

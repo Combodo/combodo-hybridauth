@@ -4,7 +4,7 @@
 
 {% for aProvider in aData %}
     <div class="sso-button" title="{{ aProvider.sTooltip }}" onclick="$('#login_mode').val('{{ aProvider.sLoginMode }}'); $('#login_form').submit(); return false;">
-        <i class="fa {{ aProvider.sFaImage|lower }} sso-image hybridauth-logo" aria-hidden="true"></i>
+        <i class="fab {{ aProvider.sFaImage|lower }} sso-image hybridauth-logo" aria-hidden="true"></i>
         {{ aProvider.sLabel }}
     </div>
 {% endfor %}
