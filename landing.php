@@ -26,10 +26,15 @@ $_SESSION['auth_user'] = $oUserProfile->email;
 unset($_SESSION['login_will_redirect']);
 
 $sURL = $_SESSION['login_original_page'];
-if (empty($sURL))
-{
-    $sURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
+if (empty($sURL)) {
+	$sURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php?login_hybridauth=connected';
+} else {
+	if (strpos($sURL, '&') !== false) {
+		$sURL = "$sURL?login_hybridauth=connected";
+	} else {
+		$sURL = "$sURL&login_hybridauth=connected";
+	}
 }
 
 // Continue Login FSM
-LoginWebPage::HTTPRedirect("$sURL?login_hybridauth=connected");
+LoginWebPage::HTTPRedirect("$sURL");
