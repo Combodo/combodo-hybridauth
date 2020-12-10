@@ -29,10 +29,10 @@ $sURL = $_SESSION['login_original_page'];
 if (empty($sURL)) {
 	$sURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php?login_hybridauth=connected';
 } else {
-	if (strpos($sURL, '&') !== false) {
-		$sURL = "$sURL?login_hybridauth=connected";
-	} else {
+	if (strpos($sURL, '?') !== false) {
 		$sURL = "$sURL&login_hybridauth=connected";
+	} else {
+		$sURL = "$sURL?login_hybridauth=connected";
 	}
 }
 
