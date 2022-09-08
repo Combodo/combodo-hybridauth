@@ -1,11 +1,16 @@
 <?php
+/**
+ * @copyright   Copyright (C) 2010-2021 Combodo SARL
+ * @license     https://www.combodo.com/documentation/combodo-software-license.html
+ *
+ */
+
 //
 // iTop module definition file
 //
-
 SetupWebPage::AddModule(
 	__FILE__, // Path to the current file, all other file names are relative to the directory containing this file
-	'combodo-hybridauth/1.0.2',
+	'combodo-hybridauth/1.1.0',
 	array(
 		// Identification
 		//
@@ -75,6 +80,3 @@ SetupWebPage::AddModule(
 		),
 	)
 );
-
-
-?>

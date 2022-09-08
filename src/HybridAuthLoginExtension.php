@@ -8,6 +8,7 @@
 namespace Combodo\iTop\Extension\HybridAuth;
 
 use AbstractLoginFSMExtension;
+use Combodo\iTop\Application\Helper\Session;
 use Dict;
 use Exception;
 use Hybridauth\Hybridauth;
@@ -20,6 +21,11 @@ use LoginTwigContext;
 use LoginWebPage;
 use MetaModel;
 use utils;
+
+// iTop 2.7 compatibility
+if (!class_exists('Combodo\iTop\Application\Helper\Session')) {
+	require_once 'Legacy/Session.php';
+}
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginUIExtension
 {
@@ -40,20 +46,20 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnStart(&$iErrorCode)
 	{
-		unset($_SESSION['HYBRIDAUTH::STORAGE']);
+		Session::Unset('HYBRIDAUTH::STORAGE');
 		$sOriginURL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot()))
 		{
 			// If the found URL does not start with the configured AppRoot URL
 			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
 		}
-		$_SESSION['login_original_page'] = $sOriginURL;
+		Session::Set('login_original_page', $sOriginURL);
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnReadCredentials(&$iErrorCode)
 	{
-		if (!isset($_SESSION['login_mode']))
+		if (!Session::IsSet('login_mode'))
 		{
 			$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 			$aSupportedLoginModes = self::ListSupportedLoginModes();
@@ -61,27 +67,27 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			{
 				if (in_array($sLoginMode, $aSupportedLoginModes))
 				{
-					$_SESSION['login_mode'] = $sLoginMode;
+					Session::Set('login_mode', $sLoginMode);
 					break;
 				}
 			}
 		}
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
+		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
-			if (!isset($_SESSION['auth_user']))
+			if (!Session::IsSet('auth_user'))
 			{
 				try
 				{
-                    if (!isset($_SESSION['login_will_redirect']))
+                    if (!Session::IsSet('login_will_redirect'))
                     {
                         // we are about to be redirected to the SSO provider
-                        $_SESSION['login_will_redirect'] = true;
+	                    Session::Set('login_will_redirect', true);
                     }
                     else
                     {
                         if (empty(utils::ReadParam('login_hybridauth')))
                         {
-                            unset($_SESSION['login_will_redirect']);
+	                        Session::Unset('login_will_redirect');
                             $iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
                             return LoginWebPage::LOGIN_FSM_ERROR;
                         }
@@ -102,9 +108,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnCheckCredentials(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
+		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
-			if (!isset($_SESSION['auth_user']))
+			if (!Session::IsSet('auth_user'))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
 				return LoginWebPage::LOGIN_FSM_ERROR;
@@ -116,25 +122,25 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnCredentialsOK(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
+		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
-			$sAuthUser = $_SESSION['auth_user'];
+			$sAuthUser = Session::Get('auth_user');
 			if (!LoginWebPage::CheckUser($sAuthUser))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
 				return LoginWebPage::LOGIN_FSM_ERROR;
 			}
-			LoginWebPage::OnLoginSuccess($sAuthUser, 'external', $_SESSION['login_mode']);
+			LoginWebPage::OnLoginSuccess($sAuthUser, 'external', Session::Get('login_mode'));
 		}
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnError(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
+		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
-			unset($_SESSION['HYBRIDAUTH::STORAGE']);
-			unset($_SESSION['hybridauth_count']);
+			Session::Unset('HYBRIDAUTH::STORAGE');
+			Session::Unset('hybridauth_count');
 			if ($iErrorCode != LoginWebPage::EXIT_CODE_MISSINGLOGIN)
 			{
 				$oLoginWebPage = new LoginWebPage();
@@ -147,9 +153,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnConnected(&$iErrorCode)
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
+		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
-			$_SESSION['can_logoff'] = true;
+			Session::Set('can_logoff', true);
 			return LoginWebPage::CheckLoggedUser($iErrorCode);
 		}
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
@@ -157,7 +163,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	private static function GetProviderName()
 	{
-		$sLoginMode = $_SESSION['login_mode'];
+		$sLoginMode = Session::Get('login_mode');
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		return $sProviderName;
 	}
@@ -167,7 +173,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	 */
 	public function LogoutAction()
 	{
-		if (utils::StartsWith($_SESSION['login_mode'], 'hybridauth-'))
+		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
             $oAuthAdapter = self::ConnectHybridAuth();
             // Does not redirect...
@@ -186,7 +192,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
             {
                 return; // No automatic User provisioning
             }
-            $sEmail = $_SESSION['auth_user'];
+            $sEmail = Session::Get('auth_user');
             if (LoginWebPage::FindUser($sEmail, false))
             {
                 return; // User already present
