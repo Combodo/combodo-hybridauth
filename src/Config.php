@@ -19,7 +19,7 @@ class Config
 
 	public static function Get($sName)
 	{
-		$sValue = MetaModel::GetModuleSetting('combodo-hybridauth', $sName, '');
+		$sValue = MetaModel::GetModuleSetting('combodo-hybridauth', $sName, []);
 		return $sValue;
 	}
 
