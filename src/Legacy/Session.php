@@ -1,11 +1,13 @@
 <?php
 /**
- * @copyright   Copyright (C) 2010-2021 Combodo SARL
+ * @copyright   Copyright (C) 2010-2023 Combodo SARL
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 
 
 namespace Combodo\iTop\Application\Helper;
+
+use utils;
 
 /**
  * Session management
@@ -16,29 +18,61 @@ namespace Combodo\iTop\Application\Helper;
  */
 class Session
 {
+	/** @var int|null */
 	public static $iSessionId = null;
+	/** @var bool */
 	protected static $bIsInitialized = false;
+	/** @var bool */
 	protected static $bSessionStarted = false;
+	/** @var bool */
+	public static $bAllowCLI = false;
 
 	public static function Start()
 	{
-		if (!self::$bIsInitialized) {
-			session_name('itop-'.md5(APPROOT));
+		if (self::IsModeCLI()) {
+			return;
 		}
+
+		if (!self::$bIsInitialized) {
+			@session_name('itop-'.md5(APPROOT));
+		}
+
 		self::$bIsInitialized = true;
 		if (!self::$bSessionStarted) {
 			if (!is_null(self::$iSessionId)) {
 				if (session_id(self::$iSessionId) === false) {
-					session_regenerate_id();
+					session_regenerate_id(true);
 				}
 			}
-			self::$bSessionStarted = session_start();
+			self::$bSessionStarted = @session_start();
 			self::$iSessionId = session_id();
 		}
 	}
 
+	public static function RegenerateId($bDeleteOldSession = false)
+	{
+		if (self::IsModeCLI()) {
+			return;
+		}
+
+		session_regenerate_id($bDeleteOldSession);
+		if (self::$bSessionStarted) {
+			self::WriteClose();
+		}
+		self::$bSessionStarted = session_start();
+		self::$iSessionId = session_id();
+	}
+
 	public static function WriteClose()
 	{
+		if (self::IsModeCLI()) {
+			return;
+		}
+
+		if (self::$bSessionStarted) {
+			session_write_close();
+			self::$bSessionStarted = false;
+		}
 	}
 
 	/**
@@ -47,7 +81,11 @@ class Session
 	 */
 	public static function Set($key, $value)
 	{
-		$sSessionVar = &$_SESSION;
+		if (!isset($_SESSION) || self::Get($key) == $value) {
+			return;
+		}
+		$aSession = $_SESSION;
+		$sSessionVar = &$aSession;
 		if (is_array($key)) {
 			foreach ($key as $sKey) {
 				$sSessionVar = &$sSessionVar[$sKey];
@@ -55,12 +93,13 @@ class Session
 		} else {
 			$sSessionVar = &$sSessionVar[$key];
 		}
+		$sSessionVar = $value;
 		if (!self::$bSessionStarted) {
 			self::Start();
-			$sSessionVar = $value;
+			$_SESSION = $aSession;
 			self::WriteClose();
 		} else {
-			$sSessionVar = $value;
+			$_SESSION = $aSession;
 		}
 	}
 
@@ -103,19 +142,21 @@ class Session
 	 */
 	public static function Get($key, $default = null)
 	{
-		$sSessionVar = &$_SESSION;
-		if (is_array($key)) {
-			foreach ($key as $SKey) {
-				$sSessionVar = &$sSessionVar[$SKey];
+		if (isset($_SESSION)) {
+			$aSession = $_SESSION;
+			$sSessionVar = &$aSession;
+			if (is_array($key)) {
+				foreach ($key as $SKey) {
+					$sSessionVar = &$sSessionVar[$SKey];
+				}
+			} else {
+				$sSessionVar = &$sSessionVar[$key];
 			}
-		} else {
-			$sSessionVar = &$sSessionVar[$key];
-		}
 
-		if (isset($sSessionVar)) {
-			return $sSessionVar;
+			if (isset($sSessionVar)) {
+				return $sSessionVar;
+			}
 		}
-
 		return $default;
 	}
 
@@ -126,7 +167,12 @@ class Session
 	 */
 	public static function IsSet($key): bool
 	{
-		$sSessionVar = &$_SESSION;
+		if (!isset($_SESSION)) {
+			return false;
+		}
+
+		$aSession = $_SESSION;
+		$sSessionVar = &$aSession;
 		if (is_array($key)) {
 			foreach ($key as $SKey) {
 				$sSessionVar = &$sSessionVar[$SKey];
@@ -157,5 +203,15 @@ class Session
 	public static function GetLog()
 	{
 		return print_r($_SESSION, true);
+	}
+
+	private static function IsModeCLI(): bool
+	{
+		if (self::$bAllowCLI) {
+
+			return false;
+		}
+
+		return utils::IsModeCLI();
 	}
 }

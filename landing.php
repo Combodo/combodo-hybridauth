@@ -5,10 +5,13 @@
  *
  */
 
-namespace Combodo\iTop\Extension\HybridAuth;
+namespace Combodo\iTop\HybridAuth;
 
 use Combodo\iTop\Application\Helper\Session;
+use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
+use IssueLog;
 use LoginWebPage;
+use MetaModel;
 use utils;
 
 /**
@@ -24,6 +27,15 @@ if (!class_exists('Combodo\iTop\Application\Helper\Session')) {
 }
 
 Session::Start();
+
+$bLoginDebug = MetaModel::GetConfig()->Get('login_debug');
+if ($bLoginDebug) {
+	IssueLog::Info('---------------------------------');
+	IssueLog::Info($_SERVER['REQUEST_URI']);
+	IssueLog::Info("--> Entering Hybrid Auth landing page");
+	$sSessionLog = session_id().' '.utils::GetSessionLog();
+	IssueLog::Info("SESSION: $sSessionLog");
+}
 
 // Get the info from provider
 $oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
@@ -42,6 +54,11 @@ if (empty($sURL)) {
 	} else {
 		$sURL = "$sURL?login_hybridauth=connected";
 	}
+}
+
+if ($bLoginDebug) {
+	$sSessionLog = session_id().' '.utils::GetSessionLog();
+	IssueLog::Info("SESSION: $sSessionLog");
 }
 
 Session::WriteClose();

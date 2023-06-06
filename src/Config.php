@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Combodo\iTop\Extension\HybridAuth;
+namespace Combodo\iTop\HybridAuth;
 
 
 use MetaModel;

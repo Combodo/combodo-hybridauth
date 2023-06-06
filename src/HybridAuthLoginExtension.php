@@ -5,7 +5,7 @@
  *
  */
 
-namespace Combodo\iTop\Extension\HybridAuth;
+namespace Combodo\iTop\HybridAuth;
 
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
@@ -46,6 +46,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnStart(&$iErrorCode)
 	{
+		if (!Session::IsInitialized()) {
+			Session::Start();
+		}
 		Session::Unset('HYBRIDAUTH::STORAGE');
 		$sOriginURL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot()))
@@ -59,6 +62,15 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnReadCredentials(&$iErrorCode)
 	{
+		if (LoginWebPage::getIOnExit() === LoginWebPage::EXIT_RETURN) {
+			// Not allowed if not already connected
+			return LoginWebPage::LOGIN_FSM_CONTINUE;
+		}
+
+		if (!Session::IsInitialized()) {
+			Session::Start();
+		}
+
 		if (!Session::IsSet('login_mode'))
 		{
 			$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
