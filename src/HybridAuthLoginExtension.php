@@ -153,6 +153,10 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		{
 			Session::Unset('HYBRIDAUTH::STORAGE');
 			Session::Unset('hybridauth_count');
+			if (LoginWebPage::getIOnExit() === LoginWebPage::EXIT_RETURN) {
+				// Not allowed if not already connected
+				return LoginWebPage::LOGIN_FSM_CONTINUE;
+			}
 			if ($iErrorCode != LoginWebPage::EXIT_CODE_MISSINGLOGIN)
 			{
 				$oLoginWebPage = new LoginWebPage();
