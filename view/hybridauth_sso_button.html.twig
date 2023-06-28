@@ -4,7 +4,11 @@
 
 {% for aProvider in aData %}
     <div class="sso-button" title="{{ aProvider.sTooltip }}" onclick="$('#login_mode').val('{{ aProvider.sLoginMode }}'); $('#login_form').submit(); return false;">
-        <i class="fab {{ aProvider.sFaImage|lower }} sso-image hybridauth-logo" aria-hidden="true"></i>
+        {%  if aProvider.sFaImage != '' %}
+            <i class="fab {{ aProvider.sFaImage|lower }} sso-image hybridauth-logo" aria-hidden="true"></i>
+        {% else %}
+            <img class="sso-image hybridauth-logo" aria-hidden="true" src="{{ aProvider.sIconUrl|lower }}"></img>
+        {% endif %}
         {{ aProvider.sLabel }}
     </div>
 {% endfor %}

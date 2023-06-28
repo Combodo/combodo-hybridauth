@@ -251,25 +251,37 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
         $aData = array();
         $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
-        foreach (Config::GetProviders() as $sProvider)
-        {
-            if (in_array("hybridauth-$sProvider", $aAllowedModes))
-            {
-            	if (utils::StartsWith($sProvider, "Microsoft"))
-	            {
-		            $sFaImage = "fa-microsoft";
-	            }
-            	else
-	            {
-		            $sFaImage = "fa-$sProvider";
-	            }
-                $aData[] = array(
-                    'sLoginMode' => "hybridauth-$sProvider",
-                    'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sProvider),
-                    'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider),
-                    'sFaImage' => $sFaImage,
-                );
-            }
+        foreach (Config::Get('providers') as $sProvider => $aProviderData) {
+	        if (in_array("hybridauth-$sProvider", $aAllowedModes)) {
+		        $sFaImage = '';
+		        $sIconUrl = '';
+		        if (isset($aProviderData['icon_url'])) {
+			        $sIconUrl = $aProviderData['icon_url'];
+		        } else {
+			        if (utils::StartsWith($sProvider, "Microsoft")) {
+				        $sFaImage = "fa-microsoft";
+			        } else {
+				        $sFaImage = "fa-$sProvider";
+			        }
+		        }
+		        if (isset($aProviderData['label'])) {
+			        $sLabel = Dict::S($aProviderData['label']);
+		        } else {
+			        $sLabel = Dict::Format('HybridAuth:Login:SignIn', $sProvider);
+		        }
+		        if (isset($aProviderData['tooltip'])) {
+			        $sTooltip = Dict::S($aProviderData['tooltip']);
+		        } else {
+			        $sTooltip = Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
+		        }
+		        $aData[] = array(
+			        'sLoginMode' => "hybridauth-$sProvider",
+			        'sLabel'     => $sLabel,
+			        'sTooltip'   => $sTooltip,
+			        'sFaImage'   => $sFaImage,
+			        'sIconUrl'   => $sIconUrl,
+		        );
+	        }
         }
 
         $oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
