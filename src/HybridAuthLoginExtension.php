@@ -252,8 +252,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	    $aData = array();
 	    $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 	    foreach (Config::Get('providers') as $sProvider => $aProviderData) {
-		    //pourquoi false === in_array ????
-		    //if this provider is not allowed -> next
+		    // If provider not allowed -> next
 		    if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
 			    continue;
 		    }
