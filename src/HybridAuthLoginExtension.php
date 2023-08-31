@@ -245,38 +245,40 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
     public function GetTwigContext()
     {
-        $oLoginContext = new LoginTwigContext();
+	    $oLoginContext = new LoginTwigContext();
 	    $oLoginContext->SetLoaderPath(utils::GetAbsoluteModulePath('combodo-hybridauth').'view');
 	    $oLoginContext->AddCSSFile(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/css/hybridauth.css');
 
-        $aData = array();
-        $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
-        foreach (Config::GetProviders() as $sProvider)
-        {
-            if (in_array("hybridauth-$sProvider", $aAllowedModes))
-            {
-            	if (utils::StartsWith($sProvider, "Microsoft"))
-	            {
-		            $sFaImage = "fa-microsoft";
-	            }
-            	else
-	            {
-		            $sFaImage = "fa-$sProvider";
-	            }
-                $aData[] = array(
-                    'sLoginMode' => "hybridauth-$sProvider",
-                    'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sProvider),
-                    'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider),
-                    'sFaImage' => $sFaImage,
-                );
-            }
-        }
+	    $aData = array();
+	    $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+	    foreach (Config::Get('providers') as $sProvider => $aProviderData) {
+		    // If provider not allowed -> next
+		    if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
+			    continue;
+		    }
+		    $sFaImage = null;
+		    $sIconUrl = null;
+		    if (isset($aProviderData['icon_url'])) {
+			    $sIconUrl = utils::StartsWith($aProviderData['icon_url'], "http") ? $aProviderData['icon_url'] : utils::GetAbsoluteUrlAppRoot().$aProviderData['icon_url'];
+		    } else {
+			    $sFaImage = utils::StartsWith($sProvider, "Microsoft") ? "fa-microsoft" : "fa-$sProvider";
+		    }
+		    $sLabel = isset($aProviderData['label']) ? Dict::Format($aProviderData['label'], $sProvider) : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
+		    $sTooltip = isset($aProviderData['tooltip']) ? Dict::Format($aProviderData['tooltip'], $sProvider) : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
+		    $aData[] = array(
+			    'sLoginMode' => "hybridauth-$sProvider",
+			    'sLabel'     => $sLabel,
+			    'sTooltip'   => $sTooltip,
+			    'sFaImage'   => $sFaImage,
+			    'sIconUrl'   => $sIconUrl,
+		    );
+	    }
 
-        $oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
+	    $oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
 
-        $oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
+	    $oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
 
-        return $oLoginContext;
+	    return $oLoginContext;
     }
 
     /**
