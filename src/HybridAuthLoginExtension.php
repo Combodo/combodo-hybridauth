@@ -180,6 +180,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	private static function GetProviderName()
 	{
 		$sLoginMode = Session::Get('login_mode');
+		/*if (is_null($sLoginMode) && isset($_REQUEST['login_mode'])){
+			$sLoginMode = $_REQUEST['login_mode'];
+		}*/
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		return $sProviderName;
 	}
@@ -296,7 +299,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
         $oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
         $aConfig = Config::GetHybridConfig();
         $oHybridAuth = new Hybridauth($aConfig, null, null, $oLogger);
-        $oAuthAdapter = $oHybridAuth->authenticate(self::GetProviderName());
+		try{
+			$sName = self::GetProviderName();
+			$oAuthAdapter = $oHybridAuth->authenticate($sName);
+		} catch(\Exception $e){
+			\IssueLog::Error("Fail to authenticate with provider name '$sName'", null, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
+			throw $e;
+		}
         return $oAuthAdapter;
     }
 }

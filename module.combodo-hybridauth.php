@@ -19,7 +19,8 @@ SetupWebPage::AddModule(
 
 		// Setup
 		//
-		'dependencies' => array(),
+		'dependencies' => array(
+		),
 		'mandatory' => false,
 		'visible' => true,
 
