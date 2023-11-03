@@ -1,4 +1,4 @@
-<phpunit bootstrap="../../unittestautoload.php">
+<phpunit bootstrap="../unittestautoload.php">
   <testsuites>
     <testsuite name="testsU">
       <directory suffix="Test.php">.</directory>
