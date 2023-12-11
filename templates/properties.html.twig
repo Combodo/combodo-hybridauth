@@ -1,0 +1,19 @@
+{# @copyright   Copyright (C) 2010-2019 Combodo SARL #}
+{# @license     http://opensource.org/licenses/AGPL-3.0 #}
+{% UIForm Standard {sId: 'propertiesForm'} %}
+{% UIMultiColumn Standard {} %}
+	{% UIColumn Standard {} %}
+		{% set index = 'left' %}
+		{% set DataBlock = DataBlocks.left %}
+		{% set subSection = sOperation ~ section ~ index %}
+		{% include 'ssoconnectioninfo.html.twig' %}
+
+	{% EndUIColumn %}
+	{% UIColumn Standard {} %}
+		{% set index = 'right' %}
+		{% set DataBlock = DataBlocks.right %}
+		{% set subSection = sOperation ~ section ~ index %}
+		{% include 'userSyncEnabling.html.twig' %}
+	{% EndUIColumn %}
+{% EndUIMultiColumn %}
+{% EndUIForm %}

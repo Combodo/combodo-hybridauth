@@ -1,0 +1,45 @@
+CombodoLDAPSynchro.toggleUserTab(document.getElementById('userSyncEnablingButton').firstChild) // desactive usertab si besoin
+
+document.getElementById("combodo-ldap-synchro-apply").addEventListener('click', function () {
+    CombodoLDAPSynchro.applyAction(false)
+}, false);
+
+document.getElementById("synchronizeButton").addEventListener('click', function () {
+    document.getElementById('synchronizeButton').setAttribute("disabled", "true");
+    CombodoLDAPSynchro.applyAction(true)
+}, false);
+
+document.getElementById("testConnectionButton").addEventListener('click', function () {
+    CombodoLDAPSynchro.testConnection(true)
+}, false);
+
+document.getElementById("personQueryExecuteButton").addEventListener('click', function () {
+    CombodoLDAPSynchro.generateObjectQueryResultTables('Person', true)
+}, false);
+
+document.getElementById("userQueryExecuteButton").addEventListener('click', function () {
+    CombodoLDAPSynchro.generateObjectQueryResultTables('User', true)
+}, false);
+
+document.getElementById("combodo-ldap-synchro-cancel").addEventListener('click', function () {
+    location.reload()
+}, false);
+
+document.addEventListener('click', e => {
+    const switchEl = e.target.closest('.switch')
+    if (switchEl) {
+        switchEl.querySelector('input').toggleAttribute('checked');
+        if (switchEl.id === 'userSyncEnablingButton') {
+            CombodoLDAPSynchro.toggleUserTab(switchEl.firstChild)
+        }
+    }
+});
+
+CombodoLDAPSynchro.generateObjectQueryResultTables('Person', false)
+if (document.getElementById('userSyncEnablingButton').firstChild.checked) {
+    CombodoLDAPSynchro.generateObjectQueryResultTables('User', false)
+}
+
+{% if 'RUNNING' == collector_status %}
+    CombodoLDAPSynchro.startCollectorStatusPolling();
+{% endif %}

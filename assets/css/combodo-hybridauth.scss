@@ -1,0 +1,68 @@
+@charset "UTF-8";
+
+.previewParent {
+	width: 100%;
+	overflow: scroll
+}
+
+#connectionAlert{
+	margin-bottom: 10px;
+}
+
+.fullWidth{
+	width: 100% !important;
+}
+
+.LDAPButton{
+	margin-top: 15px;
+	margin-left: -2px;
+}
+
+.ibo-datatable--toolbar {
+	display: none;
+}
+
+.flexLeftRight {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	margin-bottom: 4px;
+}
+
+#data_preview_table_user_wrapper th.sorting::after, #data_preview_table_person_wrapper th.sorting::after {
+	display: none;
+}
+
+#personMappingTable, #userMappingTable
+{
+	tr:nth-child(2n) {
+		background-color: #f2f2f2;
+	}
+
+	tbody:before {
+		content: "-";
+		display: block;
+		line-height: 1em;
+		color: transparent;
+	}
+
+	td {
+		vertical-align: middle;
+		padding-top: 5px;
+		padding-bottom:5px
+	}
+
+	.inputField {
+		width: 30%;
+	}
+
+	.ibo-field--value{
+		width: 100%;
+	}
+
+	.dataFromLDAP{
+		 width: 85%;
+	 }
+}

@@ -1,0 +1,17 @@
+{% apply spaceless %}
+    <div style="margin-top: 20px">
+        {% UIFieldSet Standard {sLegend: 'combodo-hybridauth:UserSyncEnabling'|dict_s} %}
+            {% UIField Small {sLabel: 'combodo-hybridauth:SSOUserSync'|dict_s} %}
+            {% UIInput Standard {sType:'checkbox', sName:'value', sValue: 'false', sId:'ssoUserSync'} %}
+            {% EndUIField %}
+
+            {% UIField Standard {sLabel: 'combodo-hybridauth:SSOUserOrganization'|dict_s, sDescription:'combodo-hybridauth:SSOUserOrganizationToolTip'|dict_s} %}
+            {% UISelect ForSelect {sName:'ssoOrg', SubmitOnChange:true} %}
+            {% for orgId,orgInfo in org %}
+                {% UISelectOption ForSelectOption {sValue: orgId, sLabel: orgInfo.name, bSelected:orgInfo.selected} %}
+            {% endfor %}
+            {% EndUISelect %}
+            {% EndUIField %}
+        {% EndUIFieldSet %}
+    </div>
+{% endapply %}

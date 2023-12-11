@@ -1,0 +1,310 @@
+const CombodoLDAPSynchro = {
+
+    toggleUserTab: function (input) {
+        if (input.checked) {
+            $('#tabs1-ldap_config').tab_container('enableTab', 'tab_UserSynchro')
+
+        } else {
+            $('#tabs1-ldap_config').tab_container('disableTab', 'tab_UserSynchro')
+        }
+    },
+
+    generateAlert: function (type, message, id = null) {
+
+        let idString = id ? "id=" + id : ""
+
+        return `<div ` + idString + ` class="ibo-alert ibo-content-block ibo-block ibo-is-` + type + ` ibo-is-opened" data-role="ibo-alert">
+                    <div class="ibo-alert--body">
+                                <div>` + message + `
+                        </div>
+        </div></div>`
+    },
+
+    generateWaitingAlert: function (message = '') {
+        if (message === '') {
+            message = "{{ 'combodo-ldap-synchro-configuration:RequestRunning'|dict_s }}"
+        }
+        return `<div class="ibo-alert ibo-content-block ibo-block ibo-is-information ibo-is-opened" data-role="ibo-alert"><div class="ibo-alert--body"><div class="ibo-content-block ibo-block ibo-update-core-header-requirements ">` + message + `<i style="margin-left: 15px" class="fas fa-sync-alt fa-spin  ibo-spinner ibo-block " aria-hidden="true"></i></div></div></div>`;
+    },
+
+    insertAlert: function (parentId, alertType, alertMessage, id = null) {
+        const mainContent = document.getElementById(parentId)
+        const div = document.createElement('div');
+        div.innerHTML = CombodoLDAPSynchro.generateAlert(alertType, alertMessage, id)
+        mainContent.prepend(div)
+    },
+
+    // enable/disable line of person mapping depending on synchro checkbox
+    refreshLineElements: function (el) {
+        const trElement = el.parentNode.closest('tr')
+        const checkbox = trElement.getElementsByClassName('synchroCheckbox')[0];
+        const disabled = !checkbox.checked;
+
+        let dataFromLDAPElement = trElement.getElementsByClassName('dataFromLDAP')
+        dataFromLDAPElement[0].getElementsByTagName('select')[0].disabled = disabled;
+        let dataFixedValueElement = trElement.getElementsByClassName('fixValue')
+        if (dataFixedValueElement[0].getElementsByTagName('input')[0]) {
+            dataFixedValueElement[0].getElementsByTagName('input')[0].disabled = disabled;
+        }
+        if (dataFixedValueElement[0].getElementsByTagName('select')[0]) {
+            dataFixedValueElement[0].getElementsByTagName('select')[0].disabled = disabled;
+        }
+    },
+
+    collectDataProperties: function () {
+        const returnObj = {
+            "ldapuri": document.getElementById("ldapuri").value,
+            "ldapdn": document.getElementById("ldapdn").value,
+            "ldaplogin": document.getElementById("ldaplogin").value,
+            "scheduled": document.getElementById("ldapScheduling").checked,
+            "collect_person_only": !document.getElementById('userSyncEnablingButton').firstChild.checked ? 'yes' : 'no',
+            "person_size_limit": 5,
+            "user_size_limit": 5
+        }
+        if (document.getElementById("ldappassword").value !== "") {
+            returnObj.ldappassword = document.getElementById("ldappassword").value;
+        }
+
+        return returnObj
+
+    },
+
+    applyAction: function (syncNow) {
+        if (document.getElementById('applyResultModal')) {
+            document.getElementById('applyResultModal').outerHTML = ""
+        }
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        const closeApplyResultAlert = async () => {
+            await delay(5000);
+            if (document.getElementById('applyResultModal')) {
+                document.getElementById('applyResultModal').outerHTML = ""
+            }
+        };
+
+        let data = this.collectDataProperties()
+        const dataPerson = this.collectDataObject('Person');
+        const dataUser = this.collectDataObject('User');
+        let jsonPlaceholders = {}
+        jsonPlaceholders['json_placeholders'] = {...dataPerson['objectSync'], ...dataUser['objectSync']};
+
+        Object.assign(data, dataPerson.returnTab);
+        Object.assign(data, dataUser.returnTab);
+        Object.assign(data, jsonPlaceholders);
+        Object.assign(data, {'synchronizeNow': syncNow});
+        data['synchronizeNow']=syncNow;
+        data = {
+            "LDAPConfigUtils": data
+        }
+
+        const currentUrl = "{{ modulePath | raw }}&operation=ApplyConfig"
+
+        $.post(currentUrl, data).done(
+            /**
+             * @param {string} myJson.msg returned message
+             * @param {number} myJson.code of the operation
+             **/
+            function (myJson) {
+                if (myJson.code === 0) {
+                    if (syncNow){
+                        CombodoLDAPSynchro.setCollectorStatus(myJson)
+                    } else {
+                        CombodoLDAPSynchro.insertAlert('ibo-main-content', 'success', myJson.msg, 'applyResultModal')
+                        closeApplyResultAlert().then()
+                    }
+                } else {
+                    document.getElementById('synchronizeButton').disabled=false;
+                    CombodoLDAPSynchro.insertAlert('ibo-main-content', 'failure', 'Code : ' + myJson.code + ' : ' + myJson.msg, 'applyResultModal')
+                }
+            }, 'json').fail(function (xhr, text, code) {
+            if (syncNow){
+                document.getElementById('synchronizeButton').disabled=false;
+            }
+            CombodoLDAPSynchro.insertAlert('ibo-main-content', 'failure', 'Code : ' + code + ' : ' + text, 'applyResultModal')
+        })
+    },
+
+    testConnection: function (showLoading) {
+        if (showLoading) {
+            document.getElementById('connectionAlert').innerHTML = this.generateWaitingAlert()
+        }
+        document.getElementById('testConnectionButton').setAttribute("disabled", "true")
+
+        const currentUrl = "{{ modulePath | raw }}&operation=GetTestResult"
+
+        const data = {
+            ldapuri: document.getElementById("ldapuri").value,
+            ldaplogin: document.getElementById("ldaplogin").value,
+            ldapdn: document.getElementById("ldapdn").value
+        }
+
+        if (document.getElementById("ldappassword").value !== "") {
+            data.ldappassword = document.getElementById("ldappassword").value;
+        }
+
+        $.post(currentUrl, data).done(
+            /**
+             * @param {string} myJson.msg returned message
+             * @param {number} myJson.code returned code
+             **/
+            function (myJson) {
+                let type;
+                let code;
+                switch (myJson.code) {
+                    case 0:
+                    case 4:
+                        type = 'success'
+                        code = "";
+                        break;
+                    default:
+                        type = 'failure';
+                        code = "Code " + myJson.code + " : ";
+                        break;
+                }
+                document.getElementById('connectionAlert').innerHTML = CombodoLDAPSynchro.generateAlert(type, code + myJson.msg)
+                document.getElementById('testConnectionButton').removeAttribute("disabled")
+
+            }, 'json')
+            .fail(function (xhr, text, code) {
+                document.getElementById('connectionAlert').innerHTML = CombodoLDAPSynchro.generateAlert("failure", code + " : " + text)
+                document.getElementById('testConnectionButton').removeAttribute("disabled")
+            });
+    },
+
+    generateObjectQueryResultTables: function (sObjectClassName, showAlert) {
+        const sHtmlObjectType = sObjectClassName.toLowerCase()
+        if (showAlert) {
+            document.getElementById('connectionAlert').innerHTML = this.generateWaitingAlert()
+        }
+        document.getElementById(sHtmlObjectType + 'QueryExecuteButton').setAttribute("disabled", "true")
+
+        const data = this.collectDataProperties();
+        const sdataName = 'ldap' + sHtmlObjectType + 'filter'
+        data[sdataName] = document.getElementById('LDAP' + sObjectClassName + 'Request').value;
+        data["objectType"] = sObjectClassName;
+        const currentUrl = "{{ modulePath | raw }}&operation=GetLDAP" + "Object" + "QueryResultToDisplay"
+
+        $.post(currentUrl, data).done(
+            /**
+             * @param {number} myJson.code returned message code
+             * @param {string} myJson.msg message about the query execution
+             * @param {string} myJson.HTML HTML code result
+             **/
+            function (myJson) {
+                if ((myJson.code === 0 || myJson.code === 4)) {
+                    document.getElementById(sHtmlObjectType + 'QueryResultElements').innerHTML = myJson.HTML
+                }
+                document.getElementById(sHtmlObjectType + 'QueryExecuteButton').removeAttribute("disabled")
+                if (showAlert) {
+                    if ((myJson.code !== 0 && myJson.code !== 4)) {
+                        document.getElementById("connectionAlert").innerHTML = CombodoLDAPSynchro.generateAlert('failure', 'Code ' + myJson.code + ' : ' + myJson.msg)
+                    } else {
+                        document.getElementById("connectionAlert").innerHTML = CombodoLDAPSynchro.generateAlert('success', myJson.msg)
+                    }
+                }
+            }, 'json')
+            .fail(function (xhr, text, code) {
+                if (showAlert) {
+                    document.getElementById("connectionAlert").innerHTML = CombodoLDAPSynchro.generateAlert('failure', 'Code ' + code + ' : ' + text)
+                }
+                document.getElementById(sHtmlObjectType + 'QueryExecuteButton').removeAttribute("disabled")
+            })
+    },
+
+    collectDataObject: function (sObjectName) {
+        const sLowerObjectName = sObjectName.toLowerCase()
+
+        let returnTab = {}
+        if (document.getElementById('LDAP' + sObjectName + 'Request').value !== "") {
+            returnTab['ldap' + sLowerObjectName + 'filter'] = document.getElementById('LDAP' + sObjectName + 'Request').value
+        }
+        const mappingObject = this.getMappingObjectData(sObjectName);
+        let objectSync = {}
+        if (mappingObject !== null) {
+            objectSync = mappingObject['tabReturn' + sObjectName + 'Synchro']
+            returnTab[sLowerObjectName + '_fields'] = mappingObject['tabReturn' + sObjectName]
+            returnTab[sLowerObjectName + '_defaults'] = mappingObject['tabReturn' + sObjectName + 'Defaults']
+        }
+        return {
+            returnTab,
+            objectSync
+        };
+    },
+
+    getMappingObjectData: function (sObjectClassName) {
+        const sHtmlObjectType = sObjectClassName.toLowerCase()
+        let tbodyMappingObject = document.getElementById(sHtmlObjectType + 'MappingTable')
+        if (tbodyMappingObject === null) {
+            return null
+        }
+        tbodyMappingObject = tbodyMappingObject.getElementsByTagName('tbody')[0];
+
+        let tabValuesToSave = {}
+        let tabReturnObjectDefaults = {}
+        let syncTab = {}
+        tabValuesToSave.primary_key = document.getElementById(sHtmlObjectType + '_primary_key_corresponding_LDAP_field').value
+
+        // slice 1 to avoid primary key
+        Array.from(tbodyMappingObject.getElementsByTagName("tr")).slice(1).forEach(
+            node => {
+                const lineName = node.getElementsByTagName('td')[0].textContent
+                tabValuesToSave[lineName] = document.getElementById(sHtmlObjectType + '_' + lineName + '_corresponding_LDAP_field').value
+                //if (document.getElementById(sHtmlObjectType + '_' + lineName + '_default_value').getAttribute('disabled') === null) {
+                tabReturnObjectDefaults[lineName] = document.getElementById(sHtmlObjectType + '_' + lineName + '_default_value').value
+                //}
+                syncTab[sHtmlObjectType+'_'+lineName+'_update'] = document.getElementById(sHtmlObjectType + '_' + lineName + '_synchro').checked ? 1 : 0
+            }
+        )
+        const aReturn = {}
+        aReturn['tabReturn' + sObjectClassName] = tabValuesToSave;
+        aReturn['tabReturn' + sObjectClassName + 'Defaults'] = tabReturnObjectDefaults;
+        aReturn['tabReturn' + sObjectClassName + 'Synchro'] = syncTab;
+        return aReturn;
+    },
+
+    pollCollectorStatus : function () {
+        const currentUrl = "{{ modulePath | raw }}&operation=CheckCollectorStatus"
+        var synchronizeButton = document.getElementById('synchronizeButton');
+        $.post(currentUrl, []).done(
+            function (myJson) {
+                CombodoLDAPSynchro.setCollectorStatus(myJson);
+            }, 'json')
+            .fail(function (xhr, text, code) {
+                const alertDiv = document.getElementById('ldap_collector_status');
+                alertDiv.innerHTML = CombodoLDAPSynchro.generateAlert('failure', text)
+                synchronizeButton.disabled = false;
+            })
+    },
+
+    startCollectorStatusPolling: function () {
+        setTimeout(CombodoLDAPSynchro.pollCollectorStatus, 1000);
+    },
+    /**
+     * @param {string} myJson.collector_status
+     * @param {string} myJson.collector_status_message
+     **/
+    setCollectorStatus: function (myJson) {
+        const alertDiv = document.getElementById('ldap_collector_status');
+        var synchronizeButton = document.getElementById('synchronizeButton');
+        if (myJson.collector_status === "RUNNING") {
+            alertDiv.innerHTML = CombodoLDAPSynchro.generateWaitingAlert(myJson.collector_status_message)
+            setTimeout(CombodoLDAPSynchro.pollCollectorStatus, 5000);
+            synchronizeButton.disabled = true;
+        } else {
+            let alertType = ""
+            switch (myJson.collector_status) {
+                case 'OK' :
+                    alertType = "success"
+                    break;
+                case "ERROR" :
+                    alertType = "failure"
+                    break;
+                case "NEVER_RUN" :
+                    alertType = "warning"
+                    break;
+            }
+            alertDiv.innerHTML = CombodoLDAPSynchro.generateAlert(alertType, myJson.collector_status_message)
+            synchronizeButton.disabled = false;
+        }
+    }
+}

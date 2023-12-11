@@ -1,0 +1,29 @@
+{% apply spaceless %}
+{% UIFieldSet Standard {sLegend: 'combodo-hybridauth:SSOConnection'|dict_s} %}
+
+{% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProvider'|dict_s, sDescription:'combodo-hybridauth:ServiceProviderToolTip'|dict_s} %}
+{% UISelect ForSelect {sName:'ssoSP', SubmitOnChange:true} %}
+    {% for otherSsoSelectedId,selected in ssoSP %}
+        {% UISelectOption ForSelectOption {sValue: otherSsoSelectedId, sLabel: otherSsoSelectedId, bSelected:selected} %}
+    {% endfor %}
+{% EndUISelect %}
+{% EndUIField %}
+
+{% UIField Small {sLabel: 'combodo-hybridauth:SSOEnabled'|dict_s} %}
+{% UIInput Standard {sType:'checkbox', sName:'value', sValue: 'false', sId:'ssoEnabled'} %}
+{% EndUIField %}
+
+{% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProviderId'|dict_s, sDescription : 'combodo-hybridauth:ServiceProviderIdToolTip'|dict_s } %}
+{% UIInput Standard {sType:'text', sName:'value', sValue: ssoSpId, sId:'ssoSpId'} %}
+{% EndUIField %}
+
+{% UIField Small {sLabel: 'combodo-hybridauth:ServiceProviderSecret'|dict_s} %}
+{% UIInput Standard {sType:'password', sName:'value', sValue: '', Placeholder:'●●●●●●●●●', sId:'ssoSpSecret'} %}
+{% EndUIField %}
+{% EndUIFieldSet %}
+
+    <div class="SSOButton">
+        {% UIButton Neutral {sLabel: 'combodo-hybridauth:TestConnection'|dict_s, sName:'', sId:'testConnectionButton'} %}
+    </div>
+
+{% endapply %}
