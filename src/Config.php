@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Combodo\iTop\HybridAuth;
-
 
 use MetaModel;
 use utils;

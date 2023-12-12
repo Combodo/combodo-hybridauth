@@ -13,6 +13,7 @@ class ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751
         ),
         'C' => 
         array (
+            'Combodo\\iTop\\HybridAuth\\Test\\' => 29,
             'Combodo\\iTop\\HybridAuth\\' => 24,
         ),
     );
@@ -21,6 +22,10 @@ class ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751
         'Hybridauth\\' => 
         array (
             0 => __DIR__ . '/..' . '/hybridauth/hybridauth/src',
+        ),
+        'Combodo\\iTop\\HybridAuth\\Test\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/test',
         ),
         'Combodo\\iTop\\HybridAuth\\' => 
         array (
