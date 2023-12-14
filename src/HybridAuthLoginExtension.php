@@ -9,10 +9,9 @@ namespace Combodo\iTop\HybridAuth;
 
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
+use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Dict;
 use Exception;
-use Hybridauth\Hybridauth;
-use Hybridauth\Logger\Logger;
 use iLoginUIExtension;
 use iLogoutExtension;
 use IssueLog;
@@ -29,7 +28,21 @@ if (!class_exists('Combodo\iTop\Application\Helper\Session')) {
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginUIExtension
 {
-    /**
+	/** @var HybridauthService $oHybridauthService */
+	static $oHybridauthService;
+
+	public static function SetHybridauthService(HybridauthService $oHybridauthService): void {
+		self::$oHybridauthService = $oHybridauthService;
+	}
+
+	public static function GetHybridauthService(): HybridauthService {
+		if (is_null(self::$oHybridauthService)){
+			self::$oHybridauthService = new HybridauthService();
+		}
+		return self::$oHybridauthService;
+	}
+
+	/**
 	 * Return the list of supported login modes for this plugin
 	 *
 	 * @return array of supported login modes
@@ -296,12 +309,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
      */
     public static function ConnectHybridAuth()
     {
-        $oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
-        $aConfig = Config::GetHybridConfig();
-        $oHybridAuth = new Hybridauth($aConfig, null, null, $oLogger);
-		try{
+	    try{
 			$sName = self::GetProviderName();
-			$oAuthAdapter = $oHybridAuth->authenticate($sName);
+			return self::GetHybridauthService()->authenticate($sName);
 		} catch(\Exception $e){
 			\IssueLog::Error("Fail to authenticate with provider name '$sName'", null, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
 			throw $e;

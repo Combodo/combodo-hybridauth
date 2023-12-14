@@ -1,17 +1,20 @@
 <?php
 
+namespace Combodo\iTop\HybridAuth;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
+use MetaModel;
+use utils;
 
 class ConfigTest extends ItopDataTestCase{
 
 	public function testGetHybridConfig(){
-		\MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['ga' => 'bu']);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['ga' => 'bu']);
 
 		$aExpected = [
-			'callback' => \utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
+			'callback' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
 			'providers' => ['ga' => 'bu'],
 		];
-		$this->assertEquals($aExpected, \Combodo\iTop\HybridAuth\Config::GetHybridConfig());
+		$this->assertEquals($aExpected, Config::GetHybridConfig());
 	}
 
 	public function GetProvidersProvider(){
@@ -56,8 +59,8 @@ class ConfigTest extends ItopDataTestCase{
 	 * @dataProvider GetProvidersProvider
 	 */
 	public function testGetProviders(array $aExpected, array $aProviderConf){
-		\MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
-		$this->assertEquals($aExpected, \Combodo\iTop\HybridAuth\Config::GetProviders());
+		$this->assertEquals($aExpected, Config::GetProviders());
 	}
 }

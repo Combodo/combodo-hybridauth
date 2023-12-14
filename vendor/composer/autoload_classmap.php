@@ -11,6 +11,7 @@ return array(
     'Combodo\\iTop\\HybridAuth\\Controller\\SSOConfigUtils' => $baseDir . '/src/Controller/SSOConfigUtils.php',
     'Combodo\\iTop\\HybridAuth\\HybridAuthLoginExtension' => $baseDir . '/src/HybridAuthLoginExtension.php',
     'Combodo\\iTop\\HybridAuth\\Repository\\SssConfigRepository' => $baseDir . '/src/Repository/SssConfigRepository.php',
+    'Combodo\\iTop\\HybridAuth\\Service\\HybridauthService' => $baseDir . '/src/Service/HybridauthService.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'Hybridauth\\Adapter\\AbstractAdapter' => $vendorDir . '/hybridauth/hybridauth/src/Adapter/AbstractAdapter.php',
     'Hybridauth\\Adapter\\AdapterInterface' => $vendorDir . '/hybridauth/hybridauth/src/Adapter/AdapterInterface.php',
