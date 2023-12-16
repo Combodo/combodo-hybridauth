@@ -28,10 +28,10 @@ if (!class_exists('Combodo\iTop\Application\Helper\Session')) {
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginUIExtension
 {
-	/** @var HybridauthService $oHybridauthService */
+	/** @var ?HybridauthService $oHybridauthService */
 	static $oHybridauthService;
 
-	public static function SetHybridauthService(HybridauthService $oHybridauthService): void {
+	public static function SetHybridauthService(?HybridauthService $oHybridauthService): void {
 		self::$oHybridauthService = $oHybridauthService;
 	}
 
@@ -129,6 +129,52 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		}
 
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
+	}
+
+	/**
+	 * @return string : iTop URL to redirect to from Service Provider callback page landing.php
+	 * @throws \Hybridauth\Exception\InvalidArgumentException
+	 * @throws \Hybridauth\Exception\RuntimeException
+	 * @throws \Hybridauth\Exception\UnexpectedValueException
+	 */
+	public static function HandleServiceProviderCallback() : string {
+		Session::Start();
+
+		$bLoginDebug = MetaModel::GetConfig()->Get('login_debug');
+		if ($bLoginDebug) {
+			IssueLog::Info('---------------------------------');
+			IssueLog::Info($_SERVER['REQUEST_URI']);
+			IssueLog::Info("--> Entering Hybrid Auth landing page");
+			$sSessionLog = session_id().' '.utils::GetSessionLog();
+			IssueLog::Info("SESSION: $sSessionLog");
+		}
+
+		// Get the info from provider
+		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
+		$oUserProfile = $oAuthAdapter->getUserProfile();
+		Session::Set('auth_user', $oUserProfile->email);
+
+		// Already redirected to SSO provider
+		Session::Unset('login_will_redirect');
+
+		$sURL = Session::Get('login_original_page');
+		if (empty($sURL)) {
+			$sURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php?login_hybridauth=connected';
+		} else {
+			if (strpos($sURL, '?') !== false) {
+				$sURL = "$sURL&login_hybridauth=connected";
+			} else {
+				$sURL = "$sURL?login_hybridauth=connected";
+			}
+		}
+
+		if ($bLoginDebug) {
+			$sSessionLog = session_id().' '.utils::GetSessionLog();
+			IssueLog::Info("SESSION: $sSessionLog");
+		}
+
+		Session::WriteClose();
+		return $sURL;
 	}
 
 	protected function OnCheckCredentials(&$iErrorCode)
@@ -247,11 +293,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
                 $sLastName = $oUserProfile->lastName;
                 $sOrganization = Config::Get('default_organization');
                 $aAdditionalParams = array('phone' => $oUserProfile->phone);
-                $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
+				IssueLog::Info("SSO Person provisioning", null, ['email' => $sEmail, 'org' => $sOrganization]);
+	            $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
             }
             $sProfile = Config::Get('default_profile');
             $aProfiles = array($sProfile);
-            LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
+			IssueLog::Info("SSO User provisioning", null, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
+	        LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
         }
         catch (Exception $e)
         {
@@ -316,6 +364,5 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			\IssueLog::Error("Fail to authenticate with provider name '$sName'", null, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
 			throw $e;
 		}
-        return $oAuthAdapter;
     }
 }

@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '2693e2e65ee6cf1279f4a9894be79d9b8938e40f',
+        'reference' => '74b5291c828b91d236767cfe582d70bc981b007a',
         'name' => '__root__',
         'dev' => true,
     ),
@@ -16,7 +16,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '2693e2e65ee6cf1279f4a9894be79d9b8938e40f',
+            'reference' => '74b5291c828b91d236767cfe582d70bc981b007a',
             'dev_requirement' => false,
         ),
         'hybridauth/hybridauth' => array(

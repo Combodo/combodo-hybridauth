@@ -14,9 +14,13 @@ use Person;
 
 class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	protected $sConfigTmpBackupFile;
-	protected $sLogin;
 	protected $sEmail;
+	protected $sProvisionedUserPersonEmail;
 	protected $oUser;
+	protected $oOrg;
+	protected $sSsoMode;
+	protected $oAdapterInterface;
+	protected $oHybridauthService;
 
 	protected function setUp(): void
 	{
@@ -35,19 +39,19 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$this->sConfigTmpBackupFile = tempnam(sys_get_temp_dir(), "config_");
 		MetaModel::GetConfig()->WriteToFile($this->sConfigTmpBackupFile);
 
-		$this->CreateTestOrganization();
+		$_SESSION = [];
+		$this->oOrg = $this->CreateTestOrganization();
 
 		$oProfile = MetaModel::GetObjectFromOQL("SELECT URP_Profiles WHERE name = :name",
 			array('name' => 'Configuration Manager'), true);
-		$this->sLogin = "SSOTest" . uniqid() . "@youpi.fr";
-		$this->sEmail = $this->sLogin;
+		$this->sEmail = "SSOTest" . uniqid() . "@youpi.fr";
 
 		/** @var Person $oPerson */
 		$oPerson = $this->createObject('Person', array(
-			'name' => $this->sLogin,
-			'first_name' => $this->sLogin,
+			'name' => $this->sEmail,
+			'first_name' => $this->sEmail,
 			'email' => $this->sEmail,
-			'org_id' => $this->getTestOrgId(),
+			'org_id' => $this->oOrg->GetKey(),
 		));
 
 		$oUserProfile = new \URP_UserProfile();
@@ -56,7 +60,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$oSet = \DBObjectSet::FromObject($oUserProfile);
 		/** @var \UserExternal $oUser */
 		$this->oUser = $this->createObject(UserExternal::class, array(
-			'login' => $this->sLogin,
+			'login' => $this->sEmail,
 			'contactid' => $oPerson->GetKey(),
 			'language' => 'EN US',
 			'profile_list' => $oSet,
@@ -71,12 +75,36 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 			$_SERVER['HTTP_HOST'] = $sAppRoot;
 		}
 		$_SERVER['REQUEST_URI'] = '/fake';
-		$_SESSION = [];
+
+		$this->sSsoMode = 'Google';
+
+		$aServiceProviderConf = ['id' => 'ID', 'secret' => 'SECRET', 'enabled' => true ];
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[ $this->sSsoMode => $aServiceProviderConf ]);
+		$sLoginMode = "hybridauth-".$this->sSsoMode;
+		$this->InitLoginMode($sLoginMode);
+		$_REQUEST['login_mode'] = $sLoginMode;
+
+		//no provisioning
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+
+		$this->oAdapterInterface = $this->createMock(AdapterInterface::class);
+		$this->oHybridauthService = $this->createMock(HybridauthService::class);
+
+		HybridAuthLoginExtension::SetHybridauthService($this->oHybridauthService);
 	}
 
 	protected function tearDown(): void {
+		if (! is_null($this->sProvisionedUserPersonEmail)) {
+			$aCreatedObjects = $this->GetNonPublicProperty($this, 'aCreatedObjects');
+			$aCreatedObjects[] = LoginWebPage::FindPerson($this->sProvisionedUserPersonEmail);
+			$aCreatedObjects[] = LoginWebPage::FindUser($this->sProvisionedUserPersonEmail, false);
+		}
+
 		parent::tearDown();
 
+		HybridAuthLoginExtension::SetHybridauthService(null);
 		if (! is_null($this->sConfigTmpBackupFile) && is_file($this->sConfigTmpBackupFile)){
 			//put config back
 			$sConfigPath = MetaModel::GetConfig()->GetLoadedFile();
@@ -85,6 +113,8 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 			$oConfig->WriteToFile($sConfigPath);
 			@chmod($sConfigPath, 0440);
 		}
+
+		$_SESSION = [];
 	}
 
 	protected function InitLoginMode($sLoginMode){
@@ -104,69 +134,122 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		];
 	}
 
-	/**
-	 * @dataProvider LoginProvider
-	 */
-	public function testLogin_RedirectToServiceProvider(?string $sUri){
-		if (is_null($sUri)){
-			$_SERVER['REQUEST_SCHEME'] = uniqid();
+	public function testLogin_RedirectToServiceProvider_NoUserProvisioning_OK() {
+		$this->oAdapterInterface->expects($this->never())
+			->method('getUserProfile');
 
-		} else {
-			$_SERVER['REQUEST_URI'] = $sUri;
+		$this->oAdapterInterface->expects($this->exactly(1))
+			->method('disconnect');
+
+		//twice: 1 for login + 1 for logout
+		$count=0;
+		$oAdapterInterface = $this->oAdapterInterface;
+		$this->oHybridauthService->expects($this->exactly(2))
+			->method('authenticate')
+			->with($this->sSsoMode)
+			->willReturnCallback(function () use ($oAdapterInterface, &$count) {
+				if ($count === 0) {
+					$count++;
+					//OnReadCredentials: redirection to SP
+					//simulate callback to landing.php
+					Session::Set('auth_user', $this->sEmail);
+					Session::Set('login_hybridauth', 'connected');
+					Session::Unset('login_will_redirect');
+				}
+				$count++;
+				return $oAdapterInterface;
+			});
+
+		LoginWebPage::DoLogin(false, false, LoginWebPage::EXIT_PROMPT);
+		$this->assertEquals($this->sEmail, \UserRights::GetUser());
+
+		$aPluginList = LoginWebPage::GetLoginPluginList('iLogoutExtension');
+
+		/** @var iLogoutExtension $oLogoutExtension */
+		foreach ($aPluginList as $oLogoutExtension)
+		{
+			var_dump(get_class($oLogoutExtension));
+			$oLogoutExtension->LogoutAction();
 		}
+	}
 
-		$sSsoMode = 'Google';
-		error_reporting(E_ERROR);
-
-		$aServiceProviderConf = ['id' => 'ID', 'secret' => 'SECRET', 'enabled' => true ];
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
-			[ $sSsoMode => $aServiceProviderConf ]);
-		$sLoginMode = "hybridauth-".$sSsoMode;
-		$this->InitLoginMode($sLoginMode);
-
-		$oAdapterInterface = $this->createMock(AdapterInterface::class);
+	public function testLogin_RedirectToServiceProvider_WithUserProvisioning_UnknownUser() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal User');
 
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $this->sEmail;
-
-		$oAdapterInterface->expects($this->exactly(0))
+		$oUserProfile->firstName = "firstName";
+		$oUserProfile->lastName = "lastName";
+		$oUserProfile->phone = "965478";
+		$this->oAdapterInterface->expects($this->exactly(1))
 			->method('getUserProfile')
-			->willReturnCallback($oUserProfile);
+			->willReturn($oUserProfile);
 
-		$oHybridauthService = $this->createMock(HybridauthService::class);
-		HybridAuthLoginExtension::SetHybridauthService($oHybridauthService);
+		$this->oAdapterInterface->expects($this->never())
+			->method('disconnect');
 
-		//$sExceptionMsg = "Redirection to ServiceProvider trigger $sSsoMode";
-		$oHybridauthService->expects($this->exactly(1))
+		$this->sProvisionedUserPersonEmail = 'unknown_' . uniqid() . '@titi.fr';
+		//twice: 1 for login + 1 for landing.php call back + 1 for provisioning
+		$count=0;
+		$oAdapterInterface = $this->oAdapterInterface;
+		$this->oHybridauthService->expects($this->exactly(2))
 			->method('authenticate')
-			->with($sSsoMode)
-			->willReturnCallback(function () {
-				Session::Set('auth_user', $this->sEmail);
-				Session::Unset('login_will_redirect');
-				return null;
+			->with($this->sSsoMode)
+			->willReturnCallback(function () use ($oAdapterInterface, &$count) {
+				if ($count === 0) {
+					$count++;
+					//OnReadCredentials: redirection to SP
+					//simulate callback to landing.php
+					Session::Set('auth_user', $this->sProvisionedUserPersonEmail);
+					Session::Set('login_hybridauth', 'connected');
+					Session::Unset('login_will_redirect');
+				}
+				$count++;
+				return $oAdapterInterface;
 			});
 
-		$_REQUEST['login_mode'] = $sLoginMode;
-
-		var_dump(
-			[
-				'REQUEST_SCHEME' => $_SERVER['REQUEST_SCHEME'],
-				'HTTP_HOST' => $_SERVER['HTTP_HOST'],
-				'REQUEST_URI' => $_SERVER['REQUEST_URI'],
-				'login_mode' => $_REQUEST['login_mode']
-			]
-		);
-
-		$iRet = LoginWebPage::DoLogin(false, false, LoginWebPage::EXIT_PROMPT);
-		/*$this->assertEquals(LoginWebPage::EXIT_CODE_OK, $iRet);
-
-		if (is_null($sUri)){
-			$this->assertEquals(utils::GetAbsoluteUrlAppRoot() .'pages/UI.php' , Session::Get('login_original_page'));
-		} else {
-			$this->assertEquals(utils::GetAbsoluteUrlAppRoot() . $sUri, Session::Get('login_original_page'));
-		}*/
-
-		$this->assertEquals($this->sEmail, \UserRights::GetUser());
+		LoginWebPage::DoLogin(false, false, LoginWebPage::EXIT_PROMPT);
 	}
 
+	public function testLogin_RedirectToServiceProvider_NoUserProvisioning_UnknownUser() {
+		$this->oAdapterInterface->expects($this->never())
+			->method('getUserProfile');
+
+		$this->oAdapterInterface->expects($this->exactly(1))
+			->method('disconnect');
+
+		//twice: 1 for login
+		$count=0;
+		$oAdapterInterface = $this->oAdapterInterface;
+		$this->oHybridauthService->expects($this->exactly(2))
+			->method('authenticate')
+			->with($this->sSsoMode)
+			->willReturnCallback(function () use ($oAdapterInterface, &$count) {
+				if ($count === 0) {
+					$count++;
+					//OnReadCredentials: redirection to SP
+					//simulate callback to landing.php
+					Session::Set('auth_user', 'unknown_' . uniqid() . '@titi.fr');
+					Session::Set('login_hybridauth', 'connected');
+					Session::Unset('login_will_redirect');
+				}
+				$count++;
+				return $oAdapterInterface;
+			});
+
+		LoginWebPage::DoLogin(false, false, LoginWebPage::EXIT_PROMPT);
+	}
+
+	public function testExit() {
+		$this->oAdapterInterface->expects($this->never())
+			->method('getUserProfile');
+
+		$this->oAdapterInterface->expects($this->exactly(1))
+			->method('disconnect');
+
+		exit();
+	}
 }
