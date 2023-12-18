@@ -22,7 +22,11 @@ class HybridauthService {
 	public function authenticate(string $sName)
 	{
 		$aConfig = Config::GetHybridConfig();
-		$oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
+		$bDebug = Config::Get('debug');
+		$oLogger = ($bDebug) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
+		if ($bDebug){
+			\IssueLog::Info("Conf passed to HybdridAuth", null, [ 'conf' => $aConfig ]);
+		}
 		$oHybridAuth = new Hybridauth($aConfig, null, null, $oLogger);
 		$oAuthAdapter = $oHybridAuth->authenticate($sName);
 		return $oAuthAdapter;
