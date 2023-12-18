@@ -183,12 +183,20 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		$this->assertFalse(strpos($sOutput, $this->sEmail), "user not logged in => name should not appear . " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
 
-	public function testLogin_RedirectToServiceProvider_WithUserProvisioning_OK() {
+	public function ProfileProvider(){
+		return [
+			'portal user' => [ 'sProfile' => "Portal user", 'bPortalPage' => true ],
+			'config manager' => [ 'sProfile' => "Configuration Manager"],
+		];
+	}
+
+	/**
+	 * @dataProvider ProfileProvider
+	 */
+	public function testLogin_RedirectToServiceProvider_WithUserProvisioning_OK($sProfile, $bPortalPage = false) {
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
-		//$sProfile = 'Portal User';
-		$sProfile = 'Configuration Manager';
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sProfile);
 		$this->SaveItopConfFile();
 
@@ -204,10 +212,14 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl([], "/pages/UI.php", true);
-		var_dump($sOutput);
-		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:" . $sOutput);
-		$this->assertTrue(false !== strpos($sOutput, $sFirstName), "user logged in => his firstname . " . $sFirstName . " . should appear in the welcome page :" . $sOutput);
-		$this->assertTrue(false !== strpos($sOutput, $sLatName), "user logged in => his lastname . " . $sLatName . " . should appear in the welcome page :" . $sOutput);
+
+		if (! $bPortalPage) {
+			$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
+			$this->assertTrue(false !== strpos($sOutput, $sFirstName),
+				"user logged in => his firstname . ".$sFirstName." . should appear in the welcome page :".$sOutput);
+			$this->assertTrue(false !== strpos($sOutput, $sLatName),
+				"user logged in => his lastname . ".$sLatName." . should appear in the welcome page :".$sOutput);
+		}
 
 		$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedPerson);
