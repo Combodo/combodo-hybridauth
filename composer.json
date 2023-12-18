@@ -7,11 +7,6 @@
 			"Combodo\\iTop\\HybridAuth\\": "src"
 		}
 	},
-	"autoload-dev": {
-		"psr-4": {
-			"Combodo\\iTop\\HybridAuth\\Test\\": "test/"
-		}
-	},
 	"minimum-stability" : "RC",
 	"require" : {
 		"hybridauth/hybridauth" : ">=3.0.0"

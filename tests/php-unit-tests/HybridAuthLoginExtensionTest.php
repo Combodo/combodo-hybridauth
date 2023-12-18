@@ -1,6 +1,7 @@
 <?php
 
-namespace Combodo\iTop\HybridAuth;
+namespace Combodo\iTop\HybridAuth\Test;
+
 use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Hybridauth\User\Profile;

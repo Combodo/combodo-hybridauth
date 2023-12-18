@@ -1,6 +1,7 @@
 <?php
 
-namespace Combodo\iTop\HybridAuth;
+namespace Combodo\iTop\HybridAuth\Test;
+
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
 use MetaModel;
 use utils;

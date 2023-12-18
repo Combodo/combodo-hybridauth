@@ -7,6 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Hybridauth\\' => array($vendorDir . '/hybridauth/hybridauth/src'),
-    'Combodo\\iTop\\HybridAuth\\Test\\' => array($baseDir . '/test'),
     'Combodo\\iTop\\HybridAuth\\' => array($baseDir . '/src'),
 );
