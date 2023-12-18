@@ -2,6 +2,7 @@
 
 namespace Combodo\iTop\HybridAuth\Test;
 
+use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
 use MetaModel;
 use utils;
