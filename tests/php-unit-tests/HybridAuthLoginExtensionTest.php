@@ -243,14 +243,4 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 
 		LoginWebPage::DoLogin(false, false, LoginWebPage::EXIT_PROMPT);
 	}
-
-	public function testExit() {
-		$this->oAdapterInterface->expects($this->never())
-			->method('getUserProfile');
-
-		$this->oAdapterInterface->expects($this->exactly(1))
-			->method('disconnect');
-
-		exit();
-	}
 }

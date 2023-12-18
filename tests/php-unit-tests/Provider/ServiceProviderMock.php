@@ -33,7 +33,9 @@ class ServiceProviderMock extends OAuth2 {
 		}*/
 
 		if (! Session::IsSet('auth_user')){
-			$sEmail = $this->GetValue('profile_email');
+			$aData = $this->GetData();
+			\IssueLog::Info("ServiceProvider->getUserProfile data to pass to SSO:", null, $aData);
+			$sEmail = $aData['profile_email'] ?? null;
 			if (! is_null($sEmail)) {
 				Session::Set('auth_user', $sEmail);
 				Session::Unset('login_will_redirect');
@@ -43,35 +45,38 @@ class ServiceProviderMock extends OAuth2 {
 	}
 
 	public function getUserProfile() : Profile {
+		$aData = $this->GetData();
+		\IssueLog::Info("ServiceProvider->getUserProfile data to pass to SSO:", null, $aData);
 		$class = new \ReflectionClass(Profile::class);
 
 		$oProfile = new Profile();
-
 		$sProfileFields = ['firstName', 'lastName', 'email', 'phone'];
 		foreach ($sProfileFields as $sField) {
 			$sSessionFieldKey = 'profile_'.$sField;
-			if (Session::IsSet($sSessionFieldKey)) {
+			$sValue = $aData[$sSessionFieldKey] ?? null;
+			if (!is_null($sValue)) {
 				$property = $class->getProperty($sField);
 				$property->setAccessible(true);
-				$property->setValue(Session::Get($sSessionFieldKey));
+				$property->setValue($oProfile, $sValue);
 			}
 		}
 
 		return $oProfile;
 	}
 
-	private function GetValue($sKey) : ?string {
+	private function GetData() : array {
 		if (!is_file(ServiceProviderMock::GetFileConfPath())){
-			return null;
+			return [];
 		}
 
 		$aData = json_decode(file_get_contents(ServiceProviderMock::GetFileConfPath()), true);
 		if (! is_array($aData)){
-			return null;
+			return [];
 		}
 
-		return $aData[$sKey] ?? null;
+		return $aData;
 	}
+
 
 	public function disconnect() {}
 

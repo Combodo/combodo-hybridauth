@@ -103,22 +103,22 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			{
 				try
 				{
-                    if (!Session::IsSet('login_will_redirect'))
-                    {
-                        // we are about to be redirected to the SSO provider
-	                    Session::Set('login_will_redirect', true);
-                    }
-                    else
-                    {
-                        if (empty(utils::ReadParam('login_hybridauth')))
-                        {
-	                        Session::Unset('login_will_redirect');
-                            $iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
-                            return LoginWebPage::LOGIN_FSM_ERROR;
-                        }
-                    }
-                    // Proceed and sign in (redirect to provider and exit)
-                    self::ConnectHybridAuth();
+					if (!Session::IsSet('login_will_redirect'))
+					{
+						// we are about to be redirected to the SSO provider
+						Session::Set('login_will_redirect', true);
+					}
+					else
+					{
+						if (empty(utils::ReadParam('login_hybridauth')))
+						{
+							Session::Unset('login_will_redirect');
+							$iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
+							return LoginWebPage::LOGIN_FSM_ERROR;
+						}
+					}
+					// Proceed and sign in (redirect to provider and exit)
+					self::ConnectHybridAuth();
 				}
 				catch (Exception $e)
 				{
@@ -152,6 +152,10 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		// Get the info from provider
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 		$oUserProfile = $oAuthAdapter->getUserProfile();
+		IssueLog::Info("SSO UserProfile returned by service provider", null,
+			[
+				'oUserProfile' => $oUserProfile,
+			]);
 		Session::Set('auth_user', $oUserProfile->email);
 
 		// Already redirected to SSO provider
@@ -253,117 +257,130 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	{
 		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
-            $oAuthAdapter = self::ConnectHybridAuth();
-            // Does not redirect...
-            // and actually just clears the session variable,
-            // almost useless we can log again without any further user interaction
-            // At least it disconnects from iTop
+			$oAuthAdapter = self::ConnectHybridAuth();
+			// Does not redirect...
+			// and actually just clears the session variable,
+			// almost useless we can log again without any further user interaction
+			// At least it disconnects from iTop
 			$oAuthAdapter->disconnect();
 		}
 	}
 
 	private function DoUserProvisioning()
-    {
-        try
-        {
-            if (!Config::Get('synchronize_user'))
-            {
-                return; // No automatic User provisioning
-            }
-            $sEmail = Session::Get('auth_user');
-            if (LoginWebPage::FindUser($sEmail, false))
-            {
-                return; // User already present
-            }
-            $oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
-            $oUserProfile = $oAuthAdapter->getUserProfile();
-            if ($oUserProfile == null)
-            {
-                return; // No data available for this user
-            }
-            $oPerson = LoginWebPage::FindPerson($sEmail);
-            if ($oPerson == null)
-            {
-                if (!Config::Get('synchronize_contact'))
-                {
-                    return; // No automatic Contact provisioning
-                }
-                // Create the person
-                $sFirstName = $oUserProfile->firstName;
-                $sLastName = $oUserProfile->lastName;
-                $sOrganization = Config::Get('default_organization');
-                $aAdditionalParams = array('phone' => $oUserProfile->phone);
-				IssueLog::Info("SSO Person provisioning", null, ['email' => $sEmail, 'org' => $sOrganization]);
-	            $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
-            }
-            $sProfile = Config::Get('default_profile');
-            $aProfiles = array($sProfile);
+	{
+		try
+		{
+			if (!Config::Get('synchronize_user'))
+			{
+				return; // No automatic User provisioning
+			}
+			$sEmail = Session::Get('auth_user');
+			if (LoginWebPage::FindUser($sEmail, false))
+			{
+				return; // User already present
+			}
+			$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
+			$oUserProfile = $oAuthAdapter->getUserProfile();
+			IssueLog::Info("SSO UserProfile returned by service provider", null,
+			[
+				'oUserProfile' => $oUserProfile,
+			]
+		);
+			if ($oUserProfile == null)
+			{
+				return; // No data available for this user
+			}
+			$oPerson = LoginWebPage::FindPerson($sEmail);
+			if ($oPerson == null)
+			{
+				if (!Config::Get('synchronize_contact'))
+				{
+					return; // No automatic Contact provisioning
+				}
+				// Create the person
+				$sFirstName = $oUserProfile->firstName;
+				$sLastName = $oUserProfile->lastName;
+				$sOrganization = Config::Get('default_organization');
+				$aAdditionalParams = array('phone' => $oUserProfile->phone);
+				IssueLog::Info("SSO Person provisioning", null,
+					[
+						'first_name' => $sFirstName,
+						'last_name' => $sLastName,
+						'email' => $sEmail,
+						'org' => $sOrganization,
+						'addition_params' => $aAdditionalParams,
+					]
+				);
+				$oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
+			}
+			$sProfile = Config::Get('default_profile');
+			$aProfiles = array($sProfile);
 			IssueLog::Info("SSO User provisioning", null, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
-	        LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
-        }
-        catch (Exception $e)
-        {
-            IssueLog::Error($e->getMessage());
-        }
-    }
+			LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
+		}
+		catch (Exception $e)
+		{
+			IssueLog::Error($e->getMessage());
+		}
+	}
 
-    public function GetTwigContext()
-    {
-	    $oLoginContext = new LoginTwigContext();
-	    $oLoginContext->SetLoaderPath(utils::GetAbsoluteModulePath('combodo-hybridauth').'view');
-	    $oLoginContext->AddCSSFile(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/css/hybridauth.css');
+	public function GetTwigContext()
+	{
+		$oLoginContext = new LoginTwigContext();
+		$oLoginContext->SetLoaderPath(utils::GetAbsoluteModulePath('combodo-hybridauth').'view');
+		$oLoginContext->AddCSSFile(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/css/hybridauth.css');
 
-	    $aData = array();
-	    $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
-	    foreach (Config::Get('providers') as $sProvider => $aProviderData) {
-		    // If provider not allowed -> next
-		    if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
-			    continue;
-		    }
-		    $sFaImage = null;
-		    $sIconUrl = null;
-		    if (isset($aProviderData['icon_url'])) {
-			    $sIconUrl = utils::StartsWith($aProviderData['icon_url'], "http") ? $aProviderData['icon_url'] : utils::GetAbsoluteUrlAppRoot().$aProviderData['icon_url'];
-		    } else {
-			    $sFaImage = utils::StartsWith($sProvider, "Microsoft") ? "fa-microsoft" : "fa-$sProvider";
-		    }
-		    $sLabel = isset($aProviderData['label']) ? Dict::Format($aProviderData['label'], $sProvider) : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
-		    $sTooltip = isset($aProviderData['tooltip']) ? Dict::Format($aProviderData['tooltip'], $sProvider) : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
-		    $aData[] = array(
-			    'sLoginMode' => "hybridauth-$sProvider",
-			    'sLabel'     => $sLabel,
-			    'sTooltip'   => $sTooltip,
-			    'sFaImage'   => $sFaImage,
-			    'sIconUrl'   => $sIconUrl,
-		    );
-	    }
+		$aData = array();
+		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		foreach (Config::Get('providers') as $sProvider => $aProviderData) {
+			// If provider not allowed -> next
+			if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
+				continue;
+			}
+			$sFaImage = null;
+			$sIconUrl = null;
+			if (isset($aProviderData['icon_url'])) {
+				$sIconUrl = utils::StartsWith($aProviderData['icon_url'], "http") ? $aProviderData['icon_url'] : utils::GetAbsoluteUrlAppRoot().$aProviderData['icon_url'];
+			} else {
+				$sFaImage = utils::StartsWith($sProvider, "Microsoft") ? "fa-microsoft" : "fa-$sProvider";
+			}
+			$sLabel = isset($aProviderData['label']) ? Dict::Format($aProviderData['label'], $sProvider) : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
+			$sTooltip = isset($aProviderData['tooltip']) ? Dict::Format($aProviderData['tooltip'], $sProvider) : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
+			$aData[] = array(
+				'sLoginMode' => "hybridauth-$sProvider",
+				'sLabel'     => $sLabel,
+				'sTooltip'   => $sTooltip,
+				'sFaImage'   => $sFaImage,
+				'sIconUrl'   => $sIconUrl,
+			);
+		}
 
-	    $oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
+		$oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
 
-	    $oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
+		$oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
 
-	    return $oLoginContext;
-    }
+		return $oLoginContext;
+	}
 
-    /**
-     * If not connected to the SSO provider, redirect and exit.
-     * If already connected, just get the info from the SSO provider and return.
-     *
-     * @return \Hybridauth\Adapter\AdapterInterface
-     *
-     * @throws \Hybridauth\Exception\InvalidArgumentException
-     * @throws \Hybridauth\Exception\RuntimeException
-     * @throws \Hybridauth\Exception\UnexpectedValueException
-     */
-    public static function ConnectHybridAuth()
-    {
+	/**
+	 * If not connected to the SSO provider, redirect and exit.
+	 * If already connected, just get the info from the SSO provider and return.
+	 *
+	 * @return \Hybridauth\Adapter\AdapterInterface
+	 *
+	 * @throws \Hybridauth\Exception\InvalidArgumentException
+	 * @throws \Hybridauth\Exception\RuntimeException
+	 * @throws \Hybridauth\Exception\UnexpectedValueException
+	 */
+	public static function ConnectHybridAuth()
+	{
 		require_once '/home/combodo/workspaceSAAS/combodo-hybridauth/tests/php-unit-tests/Provider/ServiceProviderMock.php';
-	    try{
+		try{
 			$sName = self::GetProviderName();
 			return self::GetHybridauthService()->authenticate($sName);
 		} catch(\Exception $e){
 			\IssueLog::Error("Fail to authenticate with provider name '$sName'", null, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
 			throw $e;
 		}
-    }
+	}
 }
