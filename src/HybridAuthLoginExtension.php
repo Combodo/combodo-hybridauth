@@ -357,6 +357,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
      */
     public static function ConnectHybridAuth()
     {
+		require_once '/home/combodo/workspaceSAAS/combodo-hybridauth/tests/php-unit-tests/Provider/ServiceProviderMock.php';
 	    try{
 			$sName = self::GetProviderName();
 			return self::GetHybridauthService()->authenticate($sName);
