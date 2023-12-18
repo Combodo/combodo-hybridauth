@@ -140,16 +140,7 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		}
 	}
 
-	/*public function LoginProvider(){
-		return [
-			'wrong AppRoot URL requested' => [ 'sUri' => null ],
-			'correct URL with ?' => [ 'sUri' => '/pages/UI.php?c[menu]=WelcomeMenuPage' ],
-			'iTop main page' => [ 'sUri' => '/pages/UI.php' ],
-			'correct URL without ?' => [ 'sUri' => '/pages/audit.php' ],
-		];
-	}*/
-
-	protected function CallItopUrl(array $aAdditionalFields, $sUri, $bXDebugEnabled=false){
+	protected function CallItopUrl($sUri, $bXDebugEnabled=false, ?array $aPostFields=null){
 		$ch = curl_init();
 		if ($bXDebugEnabled){
 			curl_setopt($ch, CURLOPT_COOKIE, "XDEBUG_SESSION=phpstorm");
@@ -158,10 +149,14 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		$sUrl = $this->oiTopConfig->Get('app_root_url') . "/$sUri";
 		curl_setopt($ch, CURLOPT_URL, $sUrl);
 		curl_setopt($ch, CURLOPT_POST, 1);// set post data to true
-		$aPostFields = array_merge($aAdditionalFields, ['login_mode' => $this->sLoginMode]);
+		if (! is_array($aPostFields)){
+			$aPostFields = ['login_mode' => $this->sLoginMode];
+			var_dump($aPostFields);
+		}
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $aPostFields);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		$sOutput = curl_exec($ch);
+		//\IssueLog::Info("$sUrl error code:", null, ['error' => curl_error($ch)]);
 		curl_close ($ch);
 
 		return $sOutput;
@@ -170,7 +165,7 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 	public function testLogin_RedirectToServiceProvider_NoUserProvisioning_OK() {
 		$aData = ['profile_email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl([], "/pages/UI.php");
+		$sOutput = $this->CallItopUrl("/pages/UI.php");
 		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:" . $sOutput);
 		$this->assertTrue(false !== strpos($sOutput, $this->sEmail), "user logged (and email) in => his login . " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
@@ -178,7 +173,7 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 	public function testLogin_RedirectToServiceProvider_NoUserProvisioning_UnknownUser() {
 		$aData = ['profile_email' => 'unknown_' . $this->sUniqId . '@titi.fr'];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl([], "/pages/UI.php");
+		$sOutput = $this->CallItopUrl("/pages/UI.php");
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
 		$this->assertFalse(strpos($sOutput, $this->sEmail), "user not logged in => name should not appear . " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
@@ -211,7 +206,7 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 			'profile_phone' => $sPhone,
 		];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl([], "/pages/UI.php", true);
+		$sOutput = $this->CallItopUrl("/pages/UI.php");
 
 		if (! $bPortalPage) {
 			$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
@@ -236,5 +231,29 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		while ($oProfile = $oProfilesSet->Fetch()) {
 			$this->assertEquals($sProfile, $oProfile->Get('profile'));
 		}
+	}
+
+
+	/*public function LoginProvider(){
+		return [
+			'wrong AppRoot URL requested' => [ 'sUri' => null ],
+			'correct URL with ?' => [ 'sUri' => '/pages/UI.php?c[menu]=WelcomeMenuPage' ],
+			'iTop main page' => [ 'sUri' => '/pages/UI.php' ],
+			'correct URL without ?' => [ 'sUri' => '/pages/audit.php' ],
+		];
+	}*/
+	public function testLandingPage(){
+		$aData = ['profile_email' => $this->sEmail];
+		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
+		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php?login_mode=" . $this->sLoginMode, false, []);
+		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:" . $sOutput);
+		$this->assertFalse(strpos($sOutput, "An error occurred"), "An error occurred should NOT appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+	}
+
+	public function testLandingPageFailure(){
+		$aData = ['profile_email' => $this->sEmail];
+		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
+		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php", false, []);
+		$this->assertTrue(false !== strpos($sOutput, "An error occurred"), "An error occurred should appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
 }

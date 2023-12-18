@@ -243,9 +243,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	private static function GetProviderName()
 	{
 		$sLoginMode = Session::Get('login_mode');
-		/*if (is_null($sLoginMode) && isset($_REQUEST['login_mode'])){
+		if (is_null($sLoginMode) && isset($_REQUEST['login_mode'])){
 			$sLoginMode = $_REQUEST['login_mode'];
-		}*/
+		}
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		return $sProviderName;
 	}
