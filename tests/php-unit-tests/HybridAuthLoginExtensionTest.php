@@ -14,9 +14,7 @@ use UserExternal;
 use Person;
 
 class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
-	protected $sConfigTmpBackupFile;
 	protected $sEmail;
-	protected $sProvisionedUserPersonEmail;
 	protected $oUser;
 	protected $oOrg;
 	protected $sSsoMode;
@@ -29,16 +27,6 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 
 		$this->RequireOnceItopFile('sources/Application/Helper/Session.php');
 		$this->RequireOnceItopFile('env-production/combodo-hybridauth/vendor/autoload.php');
-
-		$sConfigPath = MetaModel::GetConfig()->GetLoadedFile();
-
-		clearstatcache();
-		echo sprintf("rights via ls on %s:\n %s \n", $sConfigPath, exec("ls -al $sConfigPath"));
-		$sFilePermOutput = substr(sprintf('%o', fileperms('/etc/passwd')), -4);
-		echo sprintf("rights via fileperms on %s:\n %s \n", $sConfigPath, $sFilePermOutput);
-
-		$this->sConfigTmpBackupFile = tempnam(sys_get_temp_dir(), "config_");
-		MetaModel::GetConfig()->WriteToFile($this->sConfigTmpBackupFile);
 
 		$_SESSION = [];
 		$this->oOrg = $this->CreateTestOrganization();
@@ -97,23 +85,8 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	}
 
 	protected function tearDown(): void {
-		if (! is_null($this->sProvisionedUserPersonEmail)) {
-			$aCreatedObjects = $this->GetNonPublicProperty($this, 'aCreatedObjects');
-			$aCreatedObjects[] = LoginWebPage::FindPerson($this->sProvisionedUserPersonEmail);
-			$aCreatedObjects[] = LoginWebPage::FindUser($this->sProvisionedUserPersonEmail, false);
-		}
-
 		parent::tearDown();
-
 		HybridAuthLoginExtension::SetHybridauthService(null);
-		if (! is_null($this->sConfigTmpBackupFile) && is_file($this->sConfigTmpBackupFile)){
-			//put config back
-			$sConfigPath = MetaModel::GetConfig()->GetLoadedFile();
-			@chmod($sConfigPath, 0770);
-			$oConfig = new \Config($this->sConfigTmpBackupFile);
-			$oConfig->WriteToFile($sConfigPath);
-			@chmod($sConfigPath, 0440);
-		}
 
 		$_SESSION = [];
 	}
@@ -123,7 +96,6 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		if (! in_array($sLoginMode, $aAllowedLoginTypes)){
 			$aAllowedLoginTypes[] = $sLoginMode;
 			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
-			MetaModel::GetConfig()->WriteToFile();
 		}
 	}
 
