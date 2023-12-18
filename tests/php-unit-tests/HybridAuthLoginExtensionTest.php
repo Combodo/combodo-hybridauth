@@ -3,6 +3,7 @@
 namespace Combodo\iTop\HybridAuth\Test;
 
 use Combodo\iTop\Application\Helper\Session;
+use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Hybridauth\User\Profile;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
