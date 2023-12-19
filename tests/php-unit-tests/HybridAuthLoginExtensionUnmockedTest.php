@@ -11,6 +11,14 @@ use \LoginWebPage;
 use UserExternal;
 use Person;
 
+
+/**
+ *
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ * @backupGlobals disabled
+ *
+ */
 class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 	//iTop called from outside
 	//users need to be persisted in DB
@@ -44,6 +52,10 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		MetaModel::GetConfig()->WriteToFile($this->sConfigTmpBackupFile);
 
 		$this->oiTopConfig = new \Config($sConfigPath);
+
+		$sPath = __DIR__ . '/Provider/ServiceProviderMock.php';
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
+
 		$_SESSION = [];
 		$this->sUniqId = "SSO" . uniqid();
 		$this->oOrg = $this->CreateOrganization($this->sUniqId);
@@ -193,6 +205,7 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sProfile);
+
 		$this->SaveItopConfFile();
 
 		$this->sProvisionedUserPersonEmail = 'usercontacttoprovision_' .$this->sUniqId. '@test.fr';

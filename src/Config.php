@@ -15,10 +15,9 @@ class Config
 		return $aConfig;
 	}
 
-	public static function Get($sName)
+	public static function Get($sName, $default=[])
 	{
-		$sValue = MetaModel::GetModuleSetting('combodo-hybridauth', $sName, []);
-		return $sValue;
+		return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
 	}
 
 	public static function GetProviders()
