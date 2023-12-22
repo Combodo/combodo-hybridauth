@@ -12,7 +12,6 @@ use Combodo\iTop\Application\UI\Base\Component\Panel\PanelUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Component\Toolbar\ToolbarUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Layout\TabContainer\TabContainer;
 use Combodo\iTop\Application\UI\Base\UIException;
-use Combodo\iTop\HybridAuth\Repository\SssConfigRepository;
 use CoreTemplateException;
 use Dict;
 use ErrorPage;
@@ -44,15 +43,7 @@ class SSOConfigController extends Controller
         try { // try in construct because it can be problem with GetConfigAsArray
             parent::__construct($sViewPath, $sModuleName, $aAdditionalPaths);
 	        $this->oSSOConfigUtils = new SSOConfigUtils();
-            $this->aConfig = $this->oSSOConfigUtils->GetConfigAsArray();
-
-			$oSssConfigRepository = new SssConfigRepository();
-			$aOrg = $oSssConfigRepository->GetOrganizations();
-			if (array_key_exists('ssoUserOrg', $this->aConfig)){
-				$sSelectedOrg = $this->aConfig['ssoUserOrg'];
-				$aOrg[$sSelectedOrg]['selected'] = true;
-			}
-	        $this->aConfig['org'] = $aOrg;
+            $this->aConfig = $this->oSSOConfigUtils->GetTwigConfig();
         } catch (Exception|ExceptionWithContext $e) {
             $aContext = method_exists($e, "GetContext") ? $e->getContext() : [];
             IssueLog::Error($e->getMessage(), null, $aContext);

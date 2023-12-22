@@ -22,7 +22,7 @@ class Config
 
 	public static function GetProviders()
 	{
-		$aLoginModules = array();
+		$aLoginModules = [];
 		$aProviders = self::Get('providers');
 		foreach ($aProviders as $sName => $aProvider)
 		{

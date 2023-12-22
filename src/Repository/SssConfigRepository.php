@@ -12,7 +12,7 @@ class SssConfigRepository {
 
 		$aOrg = [];
 		while($oOrg = $oSet->Fetch()){
-			$aOrg[$oOrg->GetKey()] = ['name' => $oOrg->Get('friendlyname'), 'selected' => false];
+			$aOrg []= $oOrg->Get('friendlyname');
 		}
 		return $aOrg;
 	}
