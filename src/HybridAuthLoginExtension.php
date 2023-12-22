@@ -290,7 +290,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			{
 				$oLoginWebPage = new LoginWebPage();
 				$oLoginWebPage->DisplayLogoutPage(false, Dict::S('HybridAuth:Error:UserNotAllowed'));
-				exit();
+				exit(-1);
 			}
 		}
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
