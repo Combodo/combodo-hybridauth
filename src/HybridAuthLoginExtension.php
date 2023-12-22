@@ -50,11 +50,50 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	public function ListSupportedLoginModes()
 	{
 		$aLoginModes = array();
-		foreach (Config::GetProviders() as $sProvider)
+		foreach (Config::GetProviders() as $sProvider => $bEnabled)
 		{
-			$aLoginModes[] = "hybridauth-$sProvider";
+			if ($bEnabled){
+				$aLoginModes[] = "hybridauth-$sProvider";
+			}
 		}
 		return $aLoginModes;
+	}
+
+	/**
+	 * @param string $sLoginMode
+	 *
+	 * @return bool
+	 */
+	public function IsLoginModeSupported($sLoginMode)
+	{
+		if (! utils::StartsWith($sLoginMode, 'hybridauth-')){
+			return false;
+		}
+
+		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		if (! in_array($sLoginMode, $aAllowedModes)){
+			IssueLog::Warning("SSO mode not allowed in iTop configuration", null, ['sLoginMode' => $sLoginMode]);
+			return false;
+		}
+
+		$aConfiguredModes = Config::GetProviders();
+		foreach ($aConfiguredModes as $sProvider => $bEnabled)
+		{
+			$sConfiguredMode = "hybridauth-$sProvider";
+			if ($sConfiguredMode === $sLoginMode){
+				if ($bEnabled){
+					return true;
+				} else {
+					//login_mode forced and not enabled. exit to stop login automata
+					IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration.", null, ['sLoginMode' => $sLoginMode]);
+					throw new \Exception("SSO configuration needs to be fixed.");
+				}
+			}
+		}
+
+		//login_mode forced and not configured. exit to stop login automata
+		IssueLog::Error("Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.", null, ['sLoginMode' => $sLoginMode]);
+		throw new \Exception("SSO configuration needs to be fixed.");
 	}
 
 	protected function OnStart(&$iErrorCode)
@@ -62,14 +101,31 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (!Session::IsInitialized()) {
 			Session::Start();
 		}
-		Session::Unset('HYBRIDAUTH::STORAGE');
-		$sOriginURL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot()))
-		{
-			// If the found URL does not start with the configured AppRoot URL
-			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
+
+		$bLoginModeSupportedAndSet = false;
+		if (! Session::IsSet('login_mode')) {
+			$sLoginMode = $this->GetLoginModeFromHttp();
+
+			if (is_null($sLoginMode)) {
+				return LoginWebPage::LOGIN_FSM_CONTINUE;
+			}
+
+			$bLoginModeSupportedAndSet = $this->IsLoginModeSupported($sLoginMode);
+			if ($bLoginModeSupportedAndSet) {
+				Session::Set('login_mode', $sLoginMode);
+				Session::WriteClose();
+			}
 		}
-		Session::Set('login_original_page', $sOriginURL);
+
+		if ($bLoginModeSupportedAndSet || $this->IsLoginModeSupported(Session::Get('login_mode'))) {
+			Session::Unset('HYBRIDAUTH::STORAGE');
+			$sOriginURL = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+			if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot())) {
+				// If the found URL does not start with the configured AppRoot URL
+				$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
+			}
+			Session::Set('login_original_page', $sOriginURL);
+		}
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
@@ -84,21 +140,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			Session::Start();
 		}
 
-		if (!Session::IsSet('login_mode'))
-		{
-			$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
-			$aSupportedLoginModes = self::ListSupportedLoginModes();
-			foreach ($aAllowedModes as $sLoginMode)
-			{
-				if (in_array($sLoginMode, $aSupportedLoginModes))
-				{
-					Session::Set('login_mode', $sLoginMode);
-					break;
-				}
-			}
-		}
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if ($this->IsLoginModeSupported(Session::Get('login_mode'))) {
 			if (!Session::IsSet('auth_user'))
 			{
 				try
@@ -132,12 +174,25 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	}
 
 	/**
+	 * @return mixed|null
+	 */
+	private function GetLoginModeFromHttp(){
+		$sLoginMode = utils::ReadParam('login_mode', null, false, 'raw_data');
+		if (!is_null($sLoginMode)){
+			return $sLoginMode;
+		}
+
+
+		return $_REQUEST['login_mode'] ?? null;
+	}
+
+	/**
 	 * @return string : iTop URL to redirect to from Service Provider callback page landing.php
 	 * @throws \Hybridauth\Exception\InvalidArgumentException
 	 * @throws \Hybridauth\Exception\RuntimeException
 	 * @throws \Hybridauth\Exception\UnexpectedValueException
 	 */
-	public static function HandleServiceProviderCallback() : string {
+	public function HandleServiceProviderCallback() : string {
 		Session::Start();
 
 		$bLoginDebug = MetaModel::GetConfig()->Get('login_debug');
@@ -147,6 +202,20 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			IssueLog::Info("--> Entering Hybrid Auth landing page");
 			$sSessionLog = session_id().' '.utils::GetSessionLog();
 			IssueLog::Info("SESSION: $sSessionLog");
+		}
+
+		//set login_mode if unset in session but provided in url
+		if (! Session::IsSet('login_mode')) {
+			$sLoginMode = $this->GetLoginModeFromHttp();
+
+			if (is_null($sLoginMode)) {
+				IssueLog::Warning("No login_mode passed to service provider callback (landing.php)");
+				throw new \Exception("No SSO mode specified by service provider.");
+			}
+			if ($this->IsLoginModeSupported($sLoginMode)) {
+				Session::Set('login_mode', $sLoginMode);
+				Session::WriteClose();
+			}
 		}
 
 		// Get the info from provider
@@ -183,8 +252,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnCheckCredentials(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if ($this->IsLoginModeSupported(Session::Get('login_mode'))) {
 			if (!Session::IsSet('auth_user'))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
@@ -197,8 +265,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnCredentialsOK(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if ($this->IsLoginModeSupported(Session::Get('login_mode'))) {
 			$sAuthUser = Session::Get('auth_user');
 			if (!LoginWebPage::CheckUser($sAuthUser))
 			{
@@ -212,8 +279,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnError(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if ($this->IsLoginModeSupported(Session::Get('login_mode'))) {
 			Session::Unset('HYBRIDAUTH::STORAGE');
 			Session::Unset('hybridauth_count');
 			if (LoginWebPage::getIOnExit() === LoginWebPage::EXIT_RETURN) {
@@ -232,8 +298,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnConnected(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if ($this->IsLoginModeSupported(Session::Get('login_mode'))) {
 			Session::Set('can_logoff', true);
 			return LoginWebPage::CheckLoggedUser($iErrorCode);
 		}
@@ -242,11 +307,12 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	private static function GetProviderName()
 	{
-		$sLoginMode = Session::Get('login_mode');
-		if (is_null($sLoginMode) && isset($_REQUEST['login_mode'])){
-			$sLoginMode = $_REQUEST['login_mode'];
-		}
+		$sLoginMode = Session::Get('login_mode') ?? '';
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
+		if (false === $sProviderName){
+			\IssueLog::Error("login_mode provided not SSO compliant", null, ['$sLoginMode' => $sLoginMode]);
+			throw new \Exception();
+		}
 		return $sProviderName;
 	}
 
@@ -374,8 +440,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	 */
 	public static function ConnectHybridAuth()
 	{
+		$sName = self::GetProviderName();
 		try{
-			$sName = self::GetProviderName();
 			return self::GetHybridauthService()->authenticate($sName);
 		} catch(\Exception $e){
 			\IssueLog::Error("Fail to authenticate with provider name '$sName'", null, ['exception' => $e->getMessage(), 'provider_name' => $sName]);

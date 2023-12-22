@@ -26,18 +26,18 @@ class ConfigTest extends ItopDataTestCase{
 				'aProviderConf' => [],
 			],
 			'one provider wrongly configured' => [
-				'aExpected' => [],
+				'aExpected' => ['ga' => false],
 				'aProviderConf' => [ 'ga' => []],
 			],
 			'all provider disabled' => [
-				'aExpected' => [],
+				'aExpected' => ['ga' => false, 'bu' => false],
 				'aProviderConf' => [
 					'ga' => ['enabled' => false],
 					'bu' => ['enabled' => false],
 				],
 			],
 			'one provider enabled' => [
-				'aExpected' => ['bu'],
+				'aExpected' => ['ga' => false, 'bu' => true, 'zo' => false, 'meu' => false],
 				'aProviderConf' => [
 					'ga' => ['enabled' => false],
 					'bu' => ['enabled' => true],
@@ -46,7 +46,7 @@ class ConfigTest extends ItopDataTestCase{
 				],
 			],
 			'some provider enabled' => [
-				'aExpected' => ['bu', 'meu'],
+				'aExpected' => ['ga' => false, 'bu' => true, 'zo' => false, 'meu' => true],
 				'aProviderConf' => [
 					'ga' => ['enabled' => false],
 					'bu' => ['enabled' => true],

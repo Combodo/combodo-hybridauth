@@ -26,10 +26,7 @@ class Config
 		$aProviders = self::Get('providers');
 		foreach ($aProviders as $sName => $aProvider)
 		{
-			if (isset($aProvider['enabled']) && $aProvider['enabled'])
-			{
-				$aLoginModules[] = $sName;
-			}
+			$aLoginModules[$sName] = $aProvider['enabled'] ?? false;
 		}
 		return $aLoginModules;
 	}

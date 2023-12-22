@@ -263,10 +263,18 @@ class HybridAuthLoginExtensionUnmockedTest  extends ItopDataTestCase {
 		$this->assertFalse(strpos($sOutput, "An error occurred"), "An error occurred should NOT appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
 
-	public function testLandingPageFailure(){
+	public function testLandingPageFailureNoLoginModeProvided(){
 		$aData = ['profile_email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php", false, []);
-		$this->assertTrue(false !== strpos($sOutput, "An error occurred"), "An error occurred should appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
+		$this->assertTrue(false !== strpos($sOutput, "No SSO mode specified by service provider"), "An error occurred should appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+	}
+
+	public function testLandingPageFailureInvalidSSOLoginMode(){
+		$aData = ['profile_email' => $this->sEmail];
+		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
+		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured", false, []);
+		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
 	}
 }

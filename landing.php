@@ -20,7 +20,14 @@ require_once('../../approot.inc.php');
 require_once (APPROOT.'bootstrap.inc.php');
 require_once (APPROOT.'application/startup.inc.php');
 
-$sURL = HybridAuthLoginExtension::HandleServiceProviderCallback();
+$oHybridAuthLoginExtension= new HybridAuthLoginExtension();
+try{
+	$sURL = $oHybridAuthLoginExtension->HandleServiceProviderCallback();
 
-// Continue Login FSM
-LoginWebPage::HTTPRedirect("$sURL");
+	// Continue Login FSM
+	LoginWebPage::HTTPRedirect("$sURL");
+} catch(\Exception $e){
+	//already logged
+	$oLoginWebPage = new LoginWebPage();
+	$oLoginWebPage->DisplayLogoutPage(false, $e->getMessage());
+}
