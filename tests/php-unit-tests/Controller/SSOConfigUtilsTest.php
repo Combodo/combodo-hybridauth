@@ -37,13 +37,15 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 			],
 			'MicrosoftGraph configured sans synchro' => [
 				'aCombodoHybridAuthConf' => [
-					'MicrosoftGraph' => [
-						'keys' =>
-							array (
-								'id' => 'ID',
-								'secret' => 'SECRET',
-							),
-						'enabled' => true,
+					'providers' => [
+						'MicrosoftGraph' => [
+							'keys' =>
+								array (
+									'id' => 'ID',
+									'secret' => 'SECRET',
+								),
+							'enabled' => true,
+						]
 					]
 				],
 				'aExpectedRes' => [
@@ -63,26 +65,28 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 			],
 			'MicrosoftGraph + Google configured WITH synchro' => [
 				'aCombodoHybridAuthConf' => [
-					'Google' => [
-						'keys' =>
-							array (
-								'id' => 'ID',
-								'secret' => 'SECRET',
-							),
-						'enabled' => true,
-						'synchronize_user_contact' => true,
-						'default_organization' => "org1",
-					],
-					'MicrosoftGraph' => [
-						'keys' =>
-							array (
-								'id' => 'ID2',
-								'secret' => 'SECRET2',
-							),
-						'enabled' => false,
-						'synchronize_user_contact' => true,
-						'default_organization' => "org3",
-					],
+					'providers' => [
+						'Google' => [
+							'keys' =>
+								array (
+									'id' => 'ID',
+									'secret' => 'SECRET',
+								),
+							'enabled' => true,
+							'synchronize_user_contact' => true,
+							'default_organization' => "org1",
+						],
+						'MicrosoftGraph' => [
+							'keys' =>
+								array (
+									'id' => 'ID2',
+									'secret' => 'SECRET2',
+								),
+							'enabled' => false,
+							'synchronize_user_contact' => true,
+							'default_organization' => "org3",
+						],
+					]
 				],
 				'aExpectedRes' => [
 					'providers' => [
@@ -109,17 +113,19 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 			],
 			'configured SP not available by default in UI + org not visible by current user' => [
 				'aCombodoHybridAuthConf' => [
-					'XXX_SP' => [
-						'adapter' => 'namespace/XXX',
-						'keys' =>
-							array (
-								'id' => 'ID3',
-								'secret' => 'SECRET3',
-							),
-						'enabled' => true,
-						'synchronize_user_contact' => true,
-						'default_organization' => "org4",
-					],
+					'providers' => [
+						'XXX_SP' => [
+							'adapter' => 'namespace/XXX',
+							'keys' =>
+								array (
+									'id' => 'ID3',
+									'secret' => 'SECRET3',
+								),
+							'enabled' => true,
+							'synchronize_user_contact' => true,
+							'default_organization' => "org4",
+						],
+					]
 				],
 				'aExpectedRes' => [
 					'providers' => [
@@ -160,13 +166,15 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 		$aExpectedNewConf = $aCombodoHybridAuthConf;
 		if (sizeof($aCombodoHybridAuthConf)===0){
 			$aExpectedNewConf = [
-				'Google' => [
-					'keys' =>
-						array (
-							'id' => '',
-							'secret' => '',
-						),
-					'enabled' => false,
+				'providers' => [
+					'Google' => [
+						'keys' =>
+							array (
+								'id' => '',
+								'secret' => '',
+							),
+						'enabled' => false,
+					]
 				]
 			];
 		}

@@ -65,4 +65,65 @@ class ConfigTest extends ItopDataTestCase{
 
 		$this->assertEquals($aExpected, Config::GetProviders());
 	}
+
+	public function IsLoginModeSupportedProvider(){
+		return [
+			'disabled login mode not starting with hybridauth' => [
+				'sLoginMode' => 'disabled-loginmode',
+				'bExpected' => false,
+			],
+			'enabled login mode not starting with hybridauth' => [
+				'sLoginMode' => 'enabled-loginmode',
+				'bExpected' => false,
+			],
+			'disabled login mode' => [
+				'sLoginMode' => 'hybridauth-disabled-loginmode',
+				'bExpected' => false,
+				'bThrowException' => true,
+			],
+			'nominal case: enabled login mode' => [
+				'sLoginMode' => 'hybridauth-enabled-loginmode',
+				'bExpected' => true,
+			],
+			'not configured sLoginMode provider starting with hybridauth' => [
+				'sLoginMode' => 'hybridauth-unconfigured-provider',
+				'bExpected' => false,
+				'bThrowException' => true,
+			],
+			'not allowed sLoginMode provider starting with hybridauth' => [
+				'sLoginMode' => 'hybridauth-unallowed-loginmode',
+				'bExpected' => false,
+				'bThrowException' => false,
+				'bLoginModeAllowed' => false,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider IsLoginModeSupportedProvider
+	 */
+	public function testIsLoginModeSupported(string $sLoginMode, bool $bExpected, bool $bThrowException = false, bool $bLoginModeAllowed = true) {
+		$aProviderConf = [
+			'disabled-loginmode' => ['enabled' => false ],
+			'enabled-loginmode' => ['enabled' => true ],
+		];
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+
+		if ($bLoginModeAllowed) {
+			$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+			if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
+				$aAllowedLoginTypes[] = $sLoginMode;
+				MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			}
+		}
+
+		if ($bThrowException){
+			$this->expectException(\Exception::class);
+			$this->expectExceptionMessage("SSO configuration needs to be fixed.");
+		}
+
+		$this->assertEquals($bExpected, Config::IsLoginModeSupported($sLoginMode));
+	}
+
 }

@@ -24,10 +24,13 @@ class SSOConfigUtils {
 	}
 
 	public function GetTwigConfig() : array {
-		return $this->GetTwigConfigInternal(Config::GetProviders());
+		return $this->GetTwigConfigInternal(Config::GetHybridConfig());
 	}
 
 	public function GetTwigConfigInternal(array $aCombodoHybridAuthConf) {
+		$aCombodoHybridAuthConf = $aCombodoHybridAuthConf['providers'] ?? [];
+
+
 		$aOrg = $this->GetConfigRepository()->GetOrganizations();
 		$aSpList = ['Google', 'MicrosoftGraph'];
 
@@ -77,24 +80,24 @@ class SSOConfigUtils {
 	}
 
 	public function GenerateHybridConfFromTwigVars(array $aTwigVars) : array {
-		$aConf = [];
+		$aProviderConf = [];
 		foreach ($aTwigVars['providers'] as $sProviderName => $aProviderVars){
-			$aProviderConf = [];
+			$aCurrentProviderConf = [];
 			if (array_key_exists('adapter', $aProviderVars)){
-				$aProviderConf['adapter'] = $aProviderVars['adapter'];
+				$aCurrentProviderConf['adapter'] = $aProviderVars['adapter'];
 			}
-			$aProviderConf['keys'] = [
+			$aCurrentProviderConf['keys'] = [
 				'id' => $aProviderVars['ssoSpId'] ?? '',
 				'secret' => $aProviderVars['ssoSpSecret'] ?? '',
 			];
-			$aProviderConf['enabled'] = $aProviderVars['ssoEnabled'] ?? false;
+			$aCurrentProviderConf['enabled'] = $aProviderVars['ssoEnabled'] ?? false;
 			$bSynchroUser = $aProviderVars['ssoUserSync'] ?? false;
 			if ($bSynchroUser){
-				$aProviderConf['synchronize_user_contact'] = $bSynchroUser;
-				$aProviderConf['default_organization'] = $aProviderVars['ssoUserOrg'] ?? '';
+				$aCurrentProviderConf['synchronize_user_contact'] = $bSynchroUser;
+				$aCurrentProviderConf['default_organization'] = $aProviderVars['ssoUserOrg'] ?? '';
 			}
-			$aConf[$sProviderName] = $aProviderConf;
+			$aProviderConf[$sProviderName] = $aCurrentProviderConf;
 		}
-		return $aConf;
+		return ['providers' => $aProviderConf];
 	}
 }
