@@ -31,6 +31,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 				            'ssoUserOrg' => null,
 						]
 					],
+					'selectedSp' => 'Google',
 					'ssoSpList' => ['Google', 'MicrosoftGraph'],
 					'org' => ["org1", "org2", "org3"],
 				],
@@ -59,6 +60,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoUserOrg' => null,
 						]
 					],
+					'selectedSp' => 'MicrosoftGraph',
 					'ssoSpList' => ['Google', 'MicrosoftGraph'],
 					'org' => ["org1", "org2", "org3"],
 				],
@@ -107,6 +109,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoUserOrg' => "org3",
 						],
 					],
+					'selectedSp' => 'Google',
 					'ssoSpList' => ['Google', 'MicrosoftGraph'],
 					'org' => ["org1", "org2", "org3"],
 				],
@@ -139,6 +142,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'adapter' => 'namespace/XXX',
 						]
 					],
+					'selectedSp' => 'XXX_SP',
 					'ssoSpList' => ['Google', 'MicrosoftGraph', 'XXX_SP'],
 					'org' => ["org1", "org2", "org3", "org4"],
 				],

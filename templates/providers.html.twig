@@ -1,0 +1,46 @@
+{% apply spaceless %}
+{% UIFieldSet Standard {sLegend: 'combodo-hybridauth:SSOConnection'|dict_s} %}
+
+    {% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProvider'|dict_s, sDescription:'combodo-hybridauth:ServiceProviderToolTip'|dict_s} %}
+    {% UISelect ForSelect {sName:'ssoSP', SubmitOnChange:true} %}
+        {% for otherSsoSelectedId in conf.ssoSpList %}
+            {% if otherSsoSelectedId == selectedSp %}
+                {% UISelectOption ForSelectOption {sValue: otherSsoSelectedId, sLabel: otherSsoSelectedId, bSelected:true} %}
+            {% else %}
+                {% UISelectOption ForSelectOption {sValue: otherSsoSelectedId, sLabel: otherSsoSelectedId, bSelected:false} %}
+            {% endif %}
+        {% endfor %}
+    {% EndUISelect %}
+    {% EndUIField %}
+
+    {% UIField Small {sLabel: 'combodo-hybridauth:SSOEnabled'|dict_s} %}
+    <div id="ibo-field-ssoEnabled" class="ibo-field ibo-content-block ibo-block  ibo-field-small
+        " data-role="ibo-field" data-attribute-code="" data-attribute-type="" data-attribute-label=""
+         data-attribute-flag-hidden="false" data-attribute-flag-read-only="false"
+         data-attribute-flag-mandatory="false"
+         data-attribute-flag-must-change="false" data-attribute-flag-must-prompt="false"
+         data-attribute-flag-slave="false" data-value-raw="">
+        <div class="ibo-field--value">
+                <span class="switch" id="ssoEnabled"><input
+                            aria-label="{{ 'combodo-hybridauth:SSOEnabled'|dict_s }}"
+                            name="action" value="1"
+                            type="checkbox" {{ selected_provider_conf.ssoEnabled ? 'checked' : '' }}><span
+                            class="slider round"></span></span>
+        </div>
+    </div>
+    {% EndUIField %}
+
+    {% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProviderId'|dict_s, sDescription : 'combodo-hybridauth:ServiceProviderIdToolTip'|dict_s } %}
+    {% UIInput Standard {sType:'text', sName:'value', sValue: selected_provider_conf.ssoSpId, sId:'ssoSpId'} %}
+    {% EndUIField %}
+
+    {% UIField Small {sLabel: 'combodo-hybridauth:ServiceProviderSecret'|dict_s} %}
+    {% UIInput Standard {sType:'password', sName:'value', sValue: selected_provider_conf.ssoSpSecret, Placeholder:'●●●●●●●●●', sId:'ssoSpSecret'} %}
+    {% EndUIField %}
+
+{% EndUIFieldSet %}
+
+<div class="SSOButton">
+    {% UIButton Neutral {sLabel: 'combodo-hybridauth:TestConnection'|dict_s, sName:'', sId:'testConnectionButton'} %}
+</div>
+{% endapply %}

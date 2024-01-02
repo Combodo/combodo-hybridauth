@@ -83,8 +83,11 @@ class SSOConfigController extends Controller
         $oPanel->AddSubBlock($alert);
         $oPanel->AddMainBlock($oTabContainer);
         $this->aConfig['modulePath'] = utils::GetAbsoluteUrlModulePage(self::EXTENSION_NAME, 'index.php');
+	    $sSelectedSp = $this->aConfig['selectedSp'];
+	    $this->aConfig['selected_provider_conf'] = $this->aConfig['providers'][$sSelectedSp];
 
-	    $this->DisplayPage($this->aConfig, 'properties');
+		IssueLog::Info("test", null, [$this->aConfig]);
+		$this->DisplayPage([ 'conf' => $this->aConfig ] , 'sso-main');
     }
 
     private function UseConfigPasswordIfNeeded(string $sKey = null): void

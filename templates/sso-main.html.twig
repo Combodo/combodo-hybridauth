@@ -1,0 +1,12 @@
+{# @copyright   Copyright (C) 2010-2019 Combodo SARL #}
+{# @license     http://opensource.org/licenses/AGPL-3.0 #}
+{% set selectedSp = conf.selectedSp %}
+{% set selected_provider_conf = conf.selected_provider_conf %}
+{% UIMultiColumn Standard {} %}
+	{% UIColumn Standard {} %}
+		{% include 'providers.html.twig' %}
+	{% EndUIColumn %}
+	{% UIColumn Standard {} %}
+		{% include 'provider-settings.html.twig' %}
+	{% EndUIColumn %}
+{% EndUIMultiColumn %}

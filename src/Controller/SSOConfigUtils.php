@@ -32,12 +32,13 @@ class SSOConfigUtils {
 
 
 		$aOrg = $this->GetConfigRepository()->GetOrganizations();
-		$aSpList = ['Google', 'MicrosoftGraph'];
+		$aSpList = [ 'Google', 'MicrosoftGraph' ];
 
 		$aConfig = [
 			'providers' => [],
 		];
 
+		$sSelectedSp = null;
 		if (sizeof($aCombodoHybridAuthConf) === 0){
 			$aConfig['providers']['Google'] = [
 					'ssoEnabled' => false,
@@ -59,14 +60,19 @@ class SSOConfigUtils {
 				}
 
 				$aKeys = $aProviderConf['keys'] ?? [];
+				$sEnabled = $aProviderConf['enabled'] ?? false;
 				$aConfig['providers'][$sProviderName] = [
-					'ssoEnabled' => $aProviderConf['enabled'] ?? false,
+					'ssoEnabled' => $sEnabled,
 					'ssoSP' => $sProviderName,
 					'ssoSpId' => $aKeys['id'] ?? '',
 					'ssoSpSecret' => $aKeys['secret'] ?? '',
 					'ssoUserSync' => $aProviderConf['synchronize_user_contact'] ?? false,
 					'ssoUserOrg' => $sDefaultOrg,
 				];
+
+				if (is_null($sSelectedSp) && $sEnabled){
+					$sSelectedSp = $sProviderName;
+				}
 				$sAdapter = $aProviderConf['adapter'] ?? null;
 				if (! is_null($sAdapter)){
 					$aConfig['providers'][$sProviderName]['adapter'] = $sAdapter;
@@ -74,7 +80,12 @@ class SSOConfigUtils {
 			}
 		}
 
+		if (is_null($sSelectedSp)){
+			$sSelectedSp = $aSpList[0];
+		}
+
 		$aConfig['ssoSpList'] = $aSpList;
+		$aConfig['selectedSp'] = $sSelectedSp;
 		$aConfig['org'] = $aOrg;
 		return $aConfig;
 	}
