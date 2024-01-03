@@ -43,7 +43,8 @@ class SSOConfigController extends Controller
         try { // try in construct because it can be problem with GetConfigAsArray
             parent::__construct($sViewPath, $sModuleName, $aAdditionalPaths);
 	        $this->oSSOConfigUtils = new SSOConfigUtils();
-            $this->aConfig = $this->oSSOConfigUtils->GetTwigConfig();
+	        $sSelectedSP = utils::ReadParam('selected_sp', null);
+            $this->aConfig = $this->oSSOConfigUtils->GetTwigConfig($sSelectedSP);
         } catch (Exception|ExceptionWithContext $e) {
             $aContext = method_exists($e, "GetContext") ? $e->getContext() : [];
             IssueLog::Error($e->getMessage(), null, $aContext);

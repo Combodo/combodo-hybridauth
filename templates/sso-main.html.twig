@@ -2,11 +2,32 @@
 {# @license     http://opensource.org/licenses/AGPL-3.0 #}
 {% set selectedSp = conf.selectedSp %}
 {% set selected_provider_conf = conf.selected_provider_conf %}
+
+{% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProvider'|dict_s, sDescription : 'combodo-hybridauth:ServiceProviderToolTip'|dict_s } %}
+{% UIForm Standard {sId:'select_form'} %}
+{% UISelect ForSelect {sName:'selected_sp', SubmitOnChange:true} %}
+    {% for otherSsoSelectedId in conf.ssoSpList %}
+        {% if otherSsoSelectedId == selectedSp %}
+	        {% UISelectOption ForSelectOption {sValue: otherSsoSelectedId, sLabel: otherSsoSelectedId, bSelected:true} %}
+        {% else %}
+	        {% UISelectOption ForSelectOption {sValue: otherSsoSelectedId, sLabel: otherSsoSelectedId, bSelected:false} %}
+        {% endif %}
+    {% endfor %}
+{% EndUISelect %}
+{% EndUIForm %}
+{% EndUIField %}
+
+{% UIForm Standard {sId: 'providerForm'} %}
 {% UIMultiColumn Standard {} %}
 	{% UIColumn Standard {} %}
-		{% include 'providers.html.twig' %}
+		{% include 'sso-connection.html.twig' %}
 	{% EndUIColumn %}
 	{% UIColumn Standard {} %}
-		{% include 'provider-settings.html.twig' %}
+		{% include 'sso-provisioning.html.twig' %}
 	{% EndUIColumn %}
 {% EndUIMultiColumn %}
+{% EndUIForm %}
+
+<div class="SSOButton">
+	{% UIButton Neutral {sLabel: 'combodo-hybridauth:TestConnection'|dict_s, sName:'', sId:'testConnectionButton'} %}
+</div>

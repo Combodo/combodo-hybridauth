@@ -23,13 +23,13 @@ class SSOConfigUtils {
 		$this->oSssConfigRepository = $oSssConfigRepository;
 	}
 
-	public function GetTwigConfig() : array {
-		return $this->GetTwigConfigInternal(Config::GetHybridConfig());
+	public function GetTwigConfig(?string $sSelectedSPFromUI) : array {
+		return $this->GetTwigConfigInternal(Config::GetHybridConfig(), $sSelectedSPFromUI);
 	}
 
-	public function GetTwigConfigInternal(array $aCombodoHybridAuthConf) {
+	public function GetTwigConfigInternal(array $aCombodoHybridAuthConf, ?string $sSelectedSPFromUI=null) {
+		$sSelectedSp = null;
 		$aCombodoHybridAuthConf = $aCombodoHybridAuthConf['providers'] ?? [];
-
 
 		$aOrg = $this->GetConfigRepository()->GetOrganizations();
 		$aSpList = [ 'Google', 'MicrosoftGraph' ];
@@ -38,11 +38,11 @@ class SSOConfigUtils {
 			'providers' => [],
 		];
 
-		$sSelectedSp = null;
 		if (sizeof($aCombodoHybridAuthConf) === 0){
-			$aConfig['providers']['Google'] = [
+			$sDefaultSpWhenNoSSoYet = is_null($sSelectedSPFromUI) ? 'Google' : $sSelectedSPFromUI;
+			$aConfig['providers'][$sDefaultSpWhenNoSSoYet] = [
 					'ssoEnabled' => false,
-					'ssoSP' => 'Google',
+					'ssoSP' => $sDefaultSpWhenNoSSoYet,
 					'ssoSpId' => '',
 					'ssoSpSecret' => '',
 					'ssoUserSync' => false,
@@ -70,7 +70,9 @@ class SSOConfigUtils {
 					'ssoUserOrg' => $sDefaultOrg,
 				];
 
-				if (is_null($sSelectedSp) && $sEnabled){
+				if (null !== $sSelectedSPFromUI && $sProviderName===$sSelectedSPFromUI){
+					$sSelectedSp = $sSelectedSPFromUI;
+				} else if (is_null($sSelectedSPFromUI) && is_null($sSelectedSp) && $sEnabled){
 					$sSelectedSp = $sProviderName;
 				}
 				$sAdapter = $aProviderConf['adapter'] ?? null;
@@ -81,7 +83,21 @@ class SSOConfigUtils {
 		}
 
 		if (is_null($sSelectedSp)){
-			$sSelectedSp = $aSpList[0];
+			if (null !== $sSelectedSPFromUI){
+				//force selected SP from UI and add it as well
+				$aConfig['providers'][$sSelectedSPFromUI] = [
+					'ssoEnabled' => false,
+					'ssoSP' => $sSelectedSPFromUI,
+					'ssoSpId' => '',
+					'ssoSpSecret' => '',
+					'ssoUserSync' => false,
+					'ssoUserOrg' => null,
+				];
+				$sSelectedSp = $sSelectedSPFromUI;
+			} else {
+				//first sp in the list
+				$sSelectedSp = $aSpList[0];
+			}
 		}
 
 		$aConfig['ssoSpList'] = $aSpList;
