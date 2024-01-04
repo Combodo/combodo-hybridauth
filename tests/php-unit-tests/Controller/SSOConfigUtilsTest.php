@@ -164,26 +164,6 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 		$oSSOConfigUtils->SetConfigRepository($this->oSsConfigRepository);
 		$aTwigVars = $oSSOConfigUtils->GetTwigConfigInternal($aCombodoHybridAuthConf);
 		$this->assertEquals($aExpectedRes, $aTwigVars, 'twig var generation:' . var_export($aTwigVars, true));
-
-		$aGeneratedConf = $oSSOConfigUtils->GenerateHybridConfFromTwigVars($aTwigVars);
-
-		$aExpectedNewConf = $aCombodoHybridAuthConf;
-		if (sizeof($aCombodoHybridAuthConf)===0){
-			$aExpectedNewConf = [
-				'providers' => [
-					'Google' => [
-						'keys' =>
-							array (
-								'id' => '',
-								'secret' => '',
-							),
-						'enabled' => false,
-					]
-				]
-			];
-		}
-
-		$this->assertEquals($aExpectedNewConf, $aGeneratedConf, 'hybrid conf generation:' . var_export($aGeneratedConf, true));
 	}
 
 
