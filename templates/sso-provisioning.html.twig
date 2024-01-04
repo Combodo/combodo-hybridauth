@@ -18,7 +18,7 @@
     {% EndUIField %}
 
     {% UIField Standard {sLabel: 'combodo-hybridauth:SSOUserOrganization'|dict_s, sDescription:'combodo-hybridauth:SSOUserOrganizationToolTip'|dict_s} %}
-    {% UISelect ForSelect {sName:'ssoOrg', SubmitOnChange:true} %}
+    {% UISelect ForSelect {sName:'ssoOrg'} %}
     {% for orgName in conf.org %}
         {% if orgName == selected_provider_conf.ssoUserOrg %}
             {% UISelectOption ForSelectOption {sValue: orgName, sLabel: orgName, bSelected:true} %}
