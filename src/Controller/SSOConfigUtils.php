@@ -23,7 +23,7 @@ class SSOConfigUtils {
 		$this->oSssConfigRepository = $oSssConfigRepository;
 	}
 
-	public function GetTwigConfig(?string $sSelectedSPFromUI) : array {
+	public function GetTwigConfig(?string $sSelectedSPFromUI=null) : array {
 		return $this->GetTwigConfigInternal(Config::GetHybridConfig(), $sSelectedSPFromUI);
 	}
 
@@ -106,25 +106,38 @@ class SSOConfigUtils {
 		return $aConfig;
 	}
 
-	public function GenerateHybridConfFromTwigVars(array $aTwigVars) : array {
-		$aProviderConf = [];
-		foreach ($aTwigVars['providers'] as $sProviderName => $aProviderVars){
-			$aCurrentProviderConf = [];
-			if (array_key_exists('adapter', $aProviderVars)){
-				$aCurrentProviderConf['adapter'] = $aProviderVars['adapter'];
-			}
-			$aCurrentProviderConf['keys'] = [
-				'id' => $aProviderVars['ssoSpId'] ?? '',
-				'secret' => $aProviderVars['ssoSpSecret'] ?? '',
+	/**
+	 * Generate current provider conf and indicate if it is enabled
+	 */
+	public function GenerateHybridProviderConf(array $aFormData, array &$aProvidersConfig, string $sSelectedSP) : bool {
+		$bEnabled = ($aFormData['ssoEnabled'] === 'true');
+
+		if (array_key_exists($sSelectedSP, $aProvidersConfig)) {
+			$aCurrentProviderConf = $aProvidersConfig[$sSelectedSP];
+			$aCurrentProviderConf['enabled'] = $bEnabled;
+			$aCurrentProviderConf['keys']['id'] = $aFormData['ssoSpId'] ?? '';
+		} else {
+			$aCurrentProviderConf = [
+				'keys' => [
+					'id' => $aFormData['ssoSpId'] ?? '',
+					'secret' => '',
+				],
+				'enabled' => $bEnabled,
 			];
-			$aCurrentProviderConf['enabled'] = $aProviderVars['ssoEnabled'] ?? false;
-			$bSynchroUser = $aProviderVars['ssoUserSync'] ?? false;
-			if ($bSynchroUser){
-				$aCurrentProviderConf['synchronize_user_contact'] = $bSynchroUser;
-				$aCurrentProviderConf['default_organization'] = $aProviderVars['ssoUserOrg'] ?? '';
-			}
-			$aProviderConf[$sProviderName] = $aCurrentProviderConf;
 		}
-		return ['providers' => $aProviderConf];
+
+		$ssoSpSecret = $aFormData['ssoSpSecret'];
+		if (strlen($ssoSpSecret)!==0 || $ssoSpSecret !== "●●●●●●●●●") {
+			$aCurrentProviderConf['keys']['secret'] = $ssoSpSecret;
+		}
+
+		$bSynchroUser = ($aFormData['ssoUserSync'] === 'true');
+		$aCurrentProviderConf['synchronize_user_contact'] = $bSynchroUser;
+		if ($bSynchroUser){
+			$aCurrentProviderConf['default_organization'] = $aFormData['ssoUserOrg'] ?? '';
+		}
+
+		$aProvidersConfig[$sSelectedSP] = $aCurrentProviderConf;
+		return $bEnabled;
 	}
 }

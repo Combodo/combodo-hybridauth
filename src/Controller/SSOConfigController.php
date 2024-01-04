@@ -12,6 +12,9 @@ use Combodo\iTop\Application\UI\Base\Component\Panel\PanelUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Component\Toolbar\ToolbarUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Layout\TabContainer\TabContainer;
 use Combodo\iTop\Application\UI\Base\UIException;
+use Combodo\iTop\Extension\LDAPConfiguration\Exceptions\ExceptionWithContext;
+use Combodo\iTop\Extension\LDAPConfiguration\Repository\LDAP\authentLDAP\AuthentLDAPConfig;
+use Combodo\iTop\HybridAuth\Config;
 use CoreTemplateException;
 use Dict;
 use ErrorPage;
@@ -38,14 +41,15 @@ class SSOConfigController extends Controller
     /**
      * @throws InvalidParameterException|Exception
      */
-    public function __construct($sViewPath, $sModuleName = 'core', $aAdditionalPaths = [], $oLDAPConfigUtils=null, $oSyncObject=null)
+    public function __construct($sViewPath, $sModuleName = 'core')
     {
         try { // try in construct because it can be problem with GetConfigAsArray
-            parent::__construct($sViewPath, $sModuleName, $aAdditionalPaths);
+            parent::__construct($sViewPath, $sModuleName);
 	        $this->oSSOConfigUtils = new SSOConfigUtils();
 	        $sSelectedSP = utils::ReadParam('selected_sp', null);
             $this->aConfig = $this->oSSOConfigUtils->GetTwigConfig($sSelectedSP);
-        } catch (Exception|ExceptionWithContext $e) {
+	        $this->HidePasswords();
+		} catch (Exception|ExceptionWithContext $e) {
             $aContext = method_exists($e, "GetContext") ? $e->getContext() : [];
             IssueLog::Error($e->getMessage(), null, $aContext);
             http_response_code(500);
@@ -55,6 +59,16 @@ class SSOConfigController extends Controller
             $oP->output();
         }
     }
+
+	private function HidePasswords(){
+		$aProviders = $this->aConfig['providers'];
+		foreach ($aProviders as $sProvider => $aConf){
+			$sSecret = $aConf['ssoSpSecret'];
+			if (strlen($sSecret) !== 0){
+				$this->aConfig['providers'][$sProvider]['ssoSpSecret'] = '●●●●●●●●●';
+			}
+		}
+	}
 
     /**
      * @throws UIException
@@ -88,20 +102,46 @@ class SSOConfigController extends Controller
 	    $this->aConfig['selected_provider_conf'] = $this->aConfig['providers'][$sSelectedSp];
 
 		IssueLog::Info("test", null, [$this->aConfig]);
-		$this->DisplayPage([ 'conf' => $this->aConfig ] , 'sso-main');
+	    $twigVars = [
+			'conf' => $this->aConfig,
+			'sso_url' => utils::GetAbsoluteUrlModulePage(self::EXTENSION_NAME, 'index.php'),
+
+	    ];
+	    $this->DisplayPage($twigVars, 'sso-main');
     }
 
-    private function UseConfigPasswordIfNeeded(string $sKey = null): void
-    { // if no new password entered = use the password from config
-        if ($sKey) {
-            if (!key_exists("ldappassword", utils::ReadParam($sKey, null, false, 'raw'))) {
-                $_REQUEST[$sKey]['ldappassword'] = $this->aConfig['ldappassword'];
-            }
-        } else {
-            if (!utils::ReadParam("ldappassword", null, false, 'raw_data')
-                && key_exists('ldappassword', $this->aConfig)) {
-                $_REQUEST['ldappassword'] = $this->aConfig['ldappassword'];
-            }
-        }
-    }
+	public function OperationSave()
+	{
+		$aFormData = utils::ReadParam("SSOConfig", null, false, 'raw_data');
+		$sSelectedSP = $aFormData['ssoSP'];
+		$aProvidersConfig = Config::Get('providers');
+		IssueLog::Info('Before OperationSave', null,
+			[
+				'aProvidersConfig' => $aProvidersConfig,
+			]
+		);
+
+		$bEnabled = $this->oSSOConfigUtils->GenerateHybridProviderConf($aFormData, $aProvidersConfig, $sSelectedSP);
+
+		Config::SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled);
+
+		@chmod(utils::GetConfig()->GetLoadedFile(), 0770); // Allow overwriting the file
+		utils::GetConfig()->WriteToFile();
+		@chmod(utils::GetConfig()->GetLoadedFile(), 0440); // Read-only
+
+		/**
+		 * $this->DisplayJSONPage([
+		 * "code" => 126,
+		 * "msg" => Dict::S('combodo-ldap-synchro-configuration:Apply:ErrorWhileWritingFile')
+		 * ]);
+		 * throw new ExceptionWithContext("Unable to write the config file '$sConfFile'", [
+		 * "method" => "OperationApplyConfig"
+		 * ]);
+		 */
+
+		$this->DisplayJSONPage([
+			"code" => 0,
+			"msg" => 'OK'
+		]);
+	}
 }

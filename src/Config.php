@@ -16,6 +16,39 @@ class Config
 		return $aConfig;
 	}
 
+	public static function SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled)
+	{
+		IssueLog::Info('SetHybridConfig', null,
+			[
+				'aProviderConf' => $aProvidersConfig,
+				'sSelectedSP' => $sSelectedSP,
+				'bEnabled' => $bEnabled]
+		);
+
+		utils::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProvidersConfig);
+
+		$sLoginMode = "hybridauth-$sSelectedSP";
+		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		if (in_array($sLoginMode, $aAllowedLoginTypes)){
+			if (! $bEnabled){
+				//remove login mode
+				foreach ($aAllowedLoginTypes as $i => $sCurrentLoginMode){
+					if ($sCurrentLoginMode === $sLoginMode){
+						unset($aAllowedLoginTypes[$i]);
+						break;
+					}
+				}
+				MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			}
+		} else {
+			if ($bEnabled){
+				//add login mode
+				$aAllowedLoginTypes[]=$sLoginMode;
+				MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			}
+		}
+	}
+
 	public static function Get($sName, $default=[])
 	{
 		return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);

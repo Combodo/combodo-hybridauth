@@ -9,11 +9,11 @@
          data-attribute-flag-must-change="false" data-attribute-flag-must-prompt="false"
          data-attribute-flag-slave="false" data-value-raw="">
         <div class="ibo-field--value">
-                <span class="switch" id="ssoEnabled"><input
-                            aria-label="{{ 'combodo-hybridauth:SSOEnabled'|dict_s }}"
-                            name="action" value="1"
-                            type="checkbox" {{ selected_provider_conf.ssoEnabled ? 'checked' : '' }}><span
-                            class="slider round"></span></span>
+                <span class="switch">
+                    <input id="ssoEnabled" aria-label="{{ 'combodo-hybridauth:SSOEnabled'|dict_s }}" name="action" value="1"
+                            type="checkbox" {{ selected_provider_conf.ssoEnabled ? 'checked' : '' }}>
+                    <span class="slider round"/>
+                </span>
         </div>
     </div>
 {% EndUIField %}

@@ -1,0 +1,41 @@
+function collectDataProperties(){
+	const returnObj = {
+		"ssoSP": document.getElementById("selected_sp").value,
+		"ssoEnabled": document.getElementById("ssoEnabled").checked,
+		"ssoSpId": document.getElementById("ssoSpId").value,
+		"ssoUserSync": document.getElementById("ssoUserSync").checked,
+		"ssoUserOrg": document.getElementById("ssoUserOrg").value,
+		"ssoSpSecret": document.getElementById("ssoSpSecret").value,
+	}
+
+	return returnObj;
+}
+
+function saveSettings(){
+	$('#SaveButton').disabled=true;
+
+	let data = collectDataProperties();
+	console.log(data);
+	url = "{{ sso_url | raw }}&operation=Save&selected_sp=" + data['ssoSP'];
+
+	$.ajax({
+		type: "POST",
+		url: url,
+		data: { 'SSOConfig' : data }
+	})
+	.done(function (data) {
+		$('#SaveButton').disabled=false;
+		if (data.code !== 0) {
+			console.log(data);
+		}
+	})
+	.fail(function (data) {
+		$('#SaveButton').disabled=false;
+		console.log(data);
+	});
+};
+
+function changeSP(newSP){
+	url = "{{ sso_url | raw }}&selected_sp=" + newSP;
+	window.location.href = url;
+}

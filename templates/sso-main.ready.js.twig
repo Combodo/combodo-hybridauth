@@ -1,6 +1,15 @@
 
 document.getElementById("selected_sp").addEventListener('change', function () {
-    sp = this.value;
-    url = GetAbsoluteUrlAppRoot()+ 'pages/exec.php?exec_module=combodo-hybridauth&exec_page=index.php&selected_sp=' + sp;
-    window.location.href = url;
+    changeSP(this.value);
 }, false);
+
+document.getElementById("SaveButton").addEventListener('click', function () {
+    saveSettings();
+}, false);
+
+document.addEventListener('click', e => {
+    const switchEl = e.target.closest('.switch')
+    if (switchEl) {
+        switchEl.querySelector('input').toggleAttribute('checked');
+    }
+});
