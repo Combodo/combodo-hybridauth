@@ -11,12 +11,12 @@ function collectDataProperties(){
 	return returnObj;
 }
 
-function saveSettings(){
+function callController(action){
 	$('#SaveButton').disabled=true;
 
 	let data = collectDataProperties();
 	console.log(data);
-	url = "{{ sso_url | raw }}&operation=Save&selected_sp=" + data['ssoSP'];
+	url = "{{ sso_url | raw }}&selected_sp=" + data['ssoSP'] + "&operation=" + action;
 
 	$.ajax({
 		type: "POST",
@@ -34,6 +34,8 @@ function saveSettings(){
 		console.log(data);
 	});
 };
+
+testConnexion
 
 function changeSP(newSP){
 	url = "{{ sso_url | raw }}&selected_sp=" + newSP;

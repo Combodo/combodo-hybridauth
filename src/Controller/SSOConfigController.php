@@ -15,6 +15,7 @@ use Combodo\iTop\Application\UI\Base\UIException;
 use Combodo\iTop\Extension\LDAPConfiguration\Exceptions\ExceptionWithContext;
 use Combodo\iTop\Extension\LDAPConfiguration\Repository\LDAP\authentLDAP\AuthentLDAPConfig;
 use Combodo\iTop\HybridAuth\Config;
+use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use CoreTemplateException;
 use Dict;
 use ErrorPage;
@@ -45,7 +46,8 @@ class SSOConfigController extends Controller
     {
         try { // try in construct because it can be problem with GetConfigAsArray
             parent::__construct($sViewPath, $sModuleName);
-	        $this->oSSOConfigUtils = new SSOConfigUtils();
+			$aProposedSpList = Config::GetProposedSpList();
+	        $this->oSSOConfigUtils = new SSOConfigUtils($aProposedSpList);
 	        $sSelectedSP = utils::ReadParam('selected_sp', null);
             $this->aConfig = $this->oSSOConfigUtils->GetTwigConfig($sSelectedSP);
 	        $this->HidePasswords();
@@ -70,12 +72,6 @@ class SSOConfigController extends Controller
 		}
 	}
 
-    /**
-     * @throws UIException
-     * @throws LoaderError
-     * @throws CoreTemplateException
-     * @throws Exception
-     */
     public function OperationMain()
     {
         $oPage = new iTopWebPage(Dict::S('Menu:SSOConfig'));
@@ -98,10 +94,12 @@ class SSOConfigController extends Controller
         $oPanel->AddSubBlock($alert);
         $oPanel->AddMainBlock($oTabContainer);
         $this->aConfig['modulePath'] = utils::GetAbsoluteUrlModulePage(self::EXTENSION_NAME, 'index.php');
-	    $sSelectedSp = $this->aConfig['selectedSp'];
-	    $this->aConfig['selected_provider_conf'] = $this->aConfig['providers'][$sSelectedSp];
 
-		IssueLog::Info("test", null, [$this->aConfig]);
+		$sSelectedSp = $this->aConfig['selectedSp'] ?? null;
+		if (! is_null($sSelectedSp) && array_key_exists($sSelectedSp, $this->aConfig['providers'])){
+			$this->aConfig['selected_provider_conf'] = $this->aConfig['providers'][$sSelectedSp];
+		}
+
 	    $twigVars = [
 			'conf' => $this->aConfig,
 			'sso_url' => utils::GetAbsoluteUrlModulePage(self::EXTENSION_NAME, 'index.php'),
@@ -115,11 +113,6 @@ class SSOConfigController extends Controller
 		$aFormData = utils::ReadParam("SSOConfig", null, false, 'raw_data');
 		$sSelectedSP = $aFormData['ssoSP'];
 		$aProvidersConfig = Config::Get('providers');
-		IssueLog::Info('Before OperationSave', null,
-			[
-				'aProvidersConfig' => $aProvidersConfig,
-			]
-		);
 
 		$bEnabled = $this->oSSOConfigUtils->GenerateHybridProviderConf($aFormData, $aProvidersConfig, $sSelectedSP);
 
@@ -138,6 +131,25 @@ class SSOConfigController extends Controller
 		 * "method" => "OperationApplyConfig"
 		 * ]);
 		 */
+
+		$this->DisplayJSONPage([
+			"code" => 0,
+			"msg" => 'OK'
+		]);
+	}
+
+	public function OperationTest()
+	{
+		$aFormData = utils::ReadParam("SSOConfig", null, false, 'raw_data');
+		$sSelectedSP = $aFormData['ssoSP'];
+		$aProvidersConfig = Config::Get('providers');
+
+		$bEnabled = $this->oSSOConfigUtils->GenerateHybridProviderConf($aFormData, $aProvidersConfig, $sSelectedSP);
+
+		Config::SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled);
+
+		$oHybridauthService = new HybridauthService();
+		$oHybridauthService->authenticate($sSelectedSP);
 
 		$this->DisplayJSONPage([
 			"code" => 0,

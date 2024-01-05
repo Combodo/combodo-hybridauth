@@ -5,7 +5,6 @@
 
 {% UIPanel Neutral {sTitle:'combodo-hybridauth:SSOSettings'|dict_s, sId:'sso_section'} %}
 {% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProvider'|dict_s, sDescription : 'combodo-hybridauth:ServiceProviderToolTip'|dict_s } %}
-{% UIForm Standard {sId:'select_form'} %}
 {% UISelect ForSelect {sId:'selected_sp' , sName:'selected_sp'} %}
     {% for otherSsoSelectedId in conf.ssoSpList %}
         {% if otherSsoSelectedId == selectedSp %}
@@ -15,12 +14,10 @@
         {% endif %}
     {% endfor %}
 {% EndUISelect %}
-{% EndUIForm %}
 {% EndUIField %}
 
 <BR/>
 
-{% UIForm Standard {sId: 'providerForm'} %}
 {% UIMultiColumn Standard {} %}
 	{% UIColumn Standard {} %}
 		{% include 'sso-connection.html.twig' %}
@@ -29,14 +26,12 @@
 		{% include 'sso-provisioning.html.twig' %}
 	{% EndUIColumn %}
 {% EndUIMultiColumn %}
-{% EndUIForm %}
 
 <BR/>
 
 <div class="SSOButton">
-	{% UIButton Neutral {sLabel: 'combodo-hybridauth:Save'|dict_s, sName:'', sId:'SaveButton'} %}
-
 	{% UIButton Neutral {sLabel: 'combodo-hybridauth:TestConnection'|dict_s, sName:'', sId:'TestButton'} %}
+	{% UIButton Neutral {sLabel: 'combodo-hybridauth:Save'|dict_s, sName:'', sId:'SaveButton'} %}
 </div>
 
 {% EndUIPanel %}

@@ -118,7 +118,6 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 				'aCombodoHybridAuthConf' => [
 					'providers' => [
 						'XXX_SP' => [
-							'adapter' => 'namespace/XXX',
 							'keys' =>
 								array (
 									'id' => 'ID3',
@@ -139,7 +138,6 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoSpSecret' => 'SECRET3',
 							'ssoUserSync' => true,
 							'ssoUserOrg' => "org4",
-							'adapter' => 'namespace/XXX',
 						]
 					],
 					'selectedSp' => 'XXX_SP',
@@ -160,7 +158,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 				[ "org1", "org2", "org3" ]
 			);
 
-		$oSSOConfigUtils = new SSOConfigUtils();
+		$oSSOConfigUtils = new SSOConfigUtils([ 'Google', 'MicrosoftGraph' ]);
 		$oSSOConfigUtils->SetConfigRepository($this->oSsConfigRepository);
 		$aTwigVars = $oSSOConfigUtils->GetTwigConfigInternal($aCombodoHybridAuthConf);
 		$this->assertEquals($aExpectedRes, $aTwigVars, 'twig var generation:' . var_export($aTwigVars, true));
@@ -240,7 +238,6 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 				'aCombodoHybridAuthConf' => [
 					'providers' => [
 						'XXX_SP' => [
-							'adapter' => 'namespace/XXX',
 							'keys' =>
 								array (
 									'id' => 'ID3',
@@ -261,7 +258,6 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoSpSecret' => 'SECRET3',
 							'ssoUserSync' => true,
 							'ssoUserOrg' => "org4",
-							'adapter' => 'namespace/XXX',
 						],
 						'MicrosoftGraph' => [
 							'ssoEnabled' => false,
@@ -290,7 +286,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 				[ "org1", "org2", "org3" ]
 			);
 
-		$oSSOConfigUtils = new SSOConfigUtils();
+		$oSSOConfigUtils = new SSOConfigUtils([ 'Google', 'MicrosoftGraph' ]);
 		$oSSOConfigUtils->SetConfigRepository($this->oSsConfigRepository);
 
 		$aTwigVars = $oSSOConfigUtils->GetTwigConfigInternal($aCombodoHybridAuthConf, "MicrosoftGraph");

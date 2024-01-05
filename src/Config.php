@@ -2,6 +2,7 @@
 
 namespace Combodo\iTop\HybridAuth;
 
+use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use MetaModel;
 use utils;
 use IssueLog;
@@ -100,5 +101,17 @@ class Config
 		//login_mode forced and not configured. exit to stop login automata
 		IssueLog::Error("Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.", null, ['sLoginMode' => $sLoginMode]);
 		throw new \Exception("SSO configuration needs to be fixed.");
+	}
+
+	public static function GetProposedSpList($oHybridauthService=null) : array {
+		$aList = self::Get('ui-proposed-providers', null);
+		if (null !== $aList){
+			return $aList;
+		}
+
+		if (is_null($oHybridauthService)){
+			$oHybridauthService = new HybridauthService();
+		}
+		return $oHybridauthService->ListProviders();
 	}
 }

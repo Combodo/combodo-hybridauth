@@ -1,10 +1,13 @@
-
 document.getElementById("selected_sp").addEventListener('change', function () {
     changeSP(this.value);
 }, false);
 
 document.getElementById("SaveButton").addEventListener('click', function () {
-    saveSettings();
+    callController('Save');
+}, false);
+
+document.getElementById("TestButton").addEventListener('click', function () {
+    callController('Test');
 }, false);
 
 document.addEventListener('click', e => {

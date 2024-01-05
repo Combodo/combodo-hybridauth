@@ -9,7 +9,11 @@ class SSOConfigUtils {
 	/** @var SssConfigRepository $oSssConfigRepository */
 	private $oSssConfigRepository;
 
-	public function __construct(){
+	/** @var array $aSpList */
+	private $aSpList;
+
+	public function __construct(array $aSpList){
+		$this->aSpList = $aSpList;
 	}
 
 	public function GetConfigRepository(): SssConfigRepository {
@@ -32,14 +36,13 @@ class SSOConfigUtils {
 		$aCombodoHybridAuthConf = $aCombodoHybridAuthConf['providers'] ?? [];
 
 		$aOrg = $this->GetConfigRepository()->GetOrganizations();
-		$aSpList = [ 'Google', 'MicrosoftGraph' ];
 
 		$aConfig = [
 			'providers' => [],
 		];
 
 		if (sizeof($aCombodoHybridAuthConf) === 0){
-			$sDefaultSpWhenNoSSoYet = is_null($sSelectedSPFromUI) ? 'Google' : $sSelectedSPFromUI;
+			$sDefaultSpWhenNoSSoYet = is_null($sSelectedSPFromUI) ? $this->aSpList[0] : $sSelectedSPFromUI;
 			$aConfig['providers'][$sDefaultSpWhenNoSSoYet] = [
 					'ssoEnabled' => false,
 					'ssoSP' => $sDefaultSpWhenNoSSoYet,
@@ -48,10 +51,30 @@ class SSOConfigUtils {
 					'ssoUserSync' => false,
 					'ssoUserOrg' => null,
 			];
+			$sSelectedSp = $sDefaultSpWhenNoSSoYet;
+			if (! in_array($sDefaultSpWhenNoSSoYet, $this->aSpList)){
+				$this->aSpList[] = $sDefaultSpWhenNoSSoYet;
+			}
 		} else {
+			if (null !== $sSelectedSPFromUI && ! array_key_exists($sSelectedSPFromUI, $aCombodoHybridAuthConf)){
+				$aConfig['providers'][$sSelectedSPFromUI] = [
+					'ssoEnabled' => false,
+					'ssoSP' => $sSelectedSPFromUI,
+					'ssoSpId' => '',
+					'ssoSpSecret' => '',
+					'ssoUserSync' => false,
+					'ssoUserOrg' => null,
+				];
+				$sSelectedSp = $sSelectedSPFromUI;
+				if (! in_array($sSelectedSPFromUI, $this->aSpList)){
+					$this->aSpList[] = $sSelectedSPFromUI;
+				}
+			}
+
+			$sFirstEnabledProvider = null;
 			foreach ($aCombodoHybridAuthConf as $sProviderName => $aProviderConf){
-				if (! in_array($sProviderName, $aSpList)){
-					$aSpList []= $sProviderName;
+				if (! in_array($sProviderName, $this->aSpList)){
+					$this->aSpList []= $sProviderName;
 				}
 
 				$sDefaultOrg = $aProviderConf['default_organization'] ?? '';
@@ -72,35 +95,26 @@ class SSOConfigUtils {
 
 				if (null !== $sSelectedSPFromUI && $sProviderName===$sSelectedSPFromUI){
 					$sSelectedSp = $sSelectedSPFromUI;
-				} else if (is_null($sSelectedSPFromUI) && is_null($sSelectedSp) && $sEnabled){
-					$sSelectedSp = $sProviderName;
 				}
-				$sAdapter = $aProviderConf['adapter'] ?? null;
-				if (! is_null($sAdapter)){
-					$aConfig['providers'][$sProviderName]['adapter'] = $sAdapter;
+
+				if (is_null($sSelectedSp) && is_null($sFirstEnabledProvider) && $sEnabled){
+					$sFirstEnabledProvider = $sProviderName;
+				}
+			}
+
+			if (is_null($sSelectedSp)){
+				if (null !== $sFirstEnabledProvider){
+					$sSelectedSp = $sFirstEnabledProvider;
+				} else {
+					//first sp in the list
+					$sSelectedSp = $this->aSpList[0];
 				}
 			}
 		}
 
-		if (is_null($sSelectedSp)){
-			if (null !== $sSelectedSPFromUI){
-				//force selected SP from UI and add it as well
-				$aConfig['providers'][$sSelectedSPFromUI] = [
-					'ssoEnabled' => false,
-					'ssoSP' => $sSelectedSPFromUI,
-					'ssoSpId' => '',
-					'ssoSpSecret' => '',
-					'ssoUserSync' => false,
-					'ssoUserOrg' => null,
-				];
-				$sSelectedSp = $sSelectedSPFromUI;
-			} else {
-				//first sp in the list
-				$sSelectedSp = $aSpList[0];
-			}
-		}
+		sort($this->aSpList);
+		$aConfig['ssoSpList'] = $this->aSpList;
 
-		$aConfig['ssoSpList'] = $aSpList;
 		$aConfig['selectedSp'] = $sSelectedSp;
 		$aConfig['org'] = $aOrg;
 		return $aConfig;
@@ -127,7 +141,7 @@ class SSOConfigUtils {
 		}
 
 		$ssoSpSecret = $aFormData['ssoSpSecret'];
-		if (strlen($ssoSpSecret)!==0 || $ssoSpSecret !== "●●●●●●●●●") {
+		if (strlen($ssoSpSecret)!==0 && $ssoSpSecret !== "●●●●●●●●●") {
 			$aCurrentProviderConf['keys']['secret'] = $ssoSpSecret;
 		}
 

@@ -3,6 +3,7 @@
 namespace Combodo\iTop\HybridAuth\Test;
 
 use Combodo\iTop\HybridAuth\Config;
+use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
 use MetaModel;
 use utils;
@@ -124,6 +125,27 @@ class ConfigTest extends ItopDataTestCase{
 		}
 
 		$this->assertEquals($bExpected, Config::IsLoginModeSupported($sLoginMode));
+	}
+
+	public function testGetProposedSpListWithNoConf(){
+		$oHybridauthService = $this->createMock(HybridauthService::class);
+		$oHybridauthService->expects($this->once())
+			->method('ListProviders')
+			->willReturn(['Google', 'MicrosoftGraph', 'etc...']);
+		;
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui-proposed-provider', null);
+		$this->assertEquals(['Google', 'MicrosoftGraph', 'etc...'], Config::GetProposedSpList($oHybridauthService));
+	}
+
+	public function testGetProposedSpList(){
+		$oHybridauthService = $this->createMock(HybridauthService::class);
+		$oHybridauthService->expects($this->never())
+			->method('ListProviders');
+		;
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui-proposed-providers', ['Google']);
+		$this->assertEquals(['Google'], Config::GetProposedSpList($oHybridauthService));
 	}
 
 }
