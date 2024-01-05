@@ -2,6 +2,7 @@
 
 namespace Combodo\iTop\HybridAuth;
 
+use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use MetaModel;
 use utils;
@@ -55,7 +56,7 @@ class Config
 		return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
 	}
 
-	public static function GetProviders()
+	public static function ListProviders()
 	{
 		$aLoginModules = [];
 		$aProviders = self::Get('providers');
@@ -83,7 +84,7 @@ class Config
 			return false;
 		}
 
-		$aConfiguredModes = Config::GetProviders();
+		$aConfiguredModes = Config::ListProviders();
 		foreach ($aConfiguredModes as $sProvider => $bEnabled)
 		{
 			$sConfiguredMode = "hybridauth-$sProvider";
@@ -103,6 +104,18 @@ class Config
 		throw new \Exception("SSO configuration needs to be fixed.");
 	}
 
+	public static function GetProviderConf(?string $sLoginMode) : ?array {
+		$aProviderConfList = self::Get('providers');
+		foreach ($aProviderConfList as $sProvider => $aCurrentConf)
+		{
+			$sConfiguredMode = "hybridauth-$sProvider";
+			if ($sConfiguredMode === $sLoginMode){
+				return $aCurrentConf;
+			}
+		}
+		return null;
+	}
+
 	public static function GetProposedSpList($oHybridauthService=null) : array {
 		$aList = self::Get('ui-proposed-providers', null);
 		if (null !== $aList){
@@ -113,5 +126,33 @@ class Config
 			$oHybridauthService = new HybridauthService();
 		}
 		return $oHybridauthService->ListProviders();
+	}
+
+	public static function UserSynchroEnabled(?string $sLoginMode) : bool {
+		if (Config::Get('synchronize_user')){
+			return true;
+		}
+		if (Config::Get('synchronize_contact')){
+			return true;
+		}
+
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (is_null($aCurrentProviderConf)){
+			return false;
+		}
+
+		return $aCurrentProviderConf['synchronize_user_contact'] ?? false;
+	}
+
+	public static function GetDefaultOrg(?string $sLoginMode) {
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (null !== $aCurrentProviderConf){
+			$sDefaultOrg = $aCurrentProviderConf['default_organization'] ?? null;
+			if (null !== $sDefaultOrg){
+				return $sDefaultOrg;
+			}
+		}
+
+		return Config::Get('default_organization');
 	}
 }

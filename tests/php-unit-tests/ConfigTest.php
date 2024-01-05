@@ -2,6 +2,7 @@
 
 namespace Combodo\iTop\HybridAuth\Test;
 
+use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
@@ -64,7 +65,7 @@ class ConfigTest extends ItopDataTestCase{
 	public function testGetProviders(array $aExpected, array $aProviderConf){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
-		$this->assertEquals($aExpected, Config::GetProviders());
+		$this->assertEquals($aExpected, Config::ListProviders());
 	}
 
 	public function IsLoginModeSupportedProvider(){
@@ -146,6 +147,109 @@ class ConfigTest extends ItopDataTestCase{
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui-proposed-providers', ['Google']);
 		$this->assertEquals(['Google'], Config::GetProposedSpList($oHybridauthService));
+	}
+
+	public function testGetProviderConf(){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'Google' => [ 'ga' => 'bu']
+			]
+		);
+
+		$this->assertEquals([ 'ga' => 'bu'], Config::GetProviderConf('hybridauth-Google'));
+		$this->assertEquals(null, Config::GetProviderConf('hybridauth-MS'));
+	}
+
+	public function UserSynchroEnabled_BackwardCompatibilityProvider(){
+		return [
+			'disabled' => [
+				'bExpectedRes' => false,
+				'synchronize_user' => false,
+				'synchronize_contact' => false,
+			],
+			'synchronize_user' => [
+				'bExpectedRes' => true,
+				'synchronize_user' => true,
+				'synchronize_contact' => false,
+			],
+			'synchronize_contact' => [
+				'bExpectedRes' => true,
+				'synchronize_user' => false,
+				'synchronize_contact' => true,
+			],
+			'both' => [
+				'bExpectedRes' => true,
+				'synchronize_user' => true,
+				'synchronize_contact' => true,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider UserSynchroEnabled_BackwardCompatibilityProvider
+	 */
+	public function testUserSynchroEnabled_BackwardCompatibility($bExpectedRes, $bSynchroUser, $bSynchroContact){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', []);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', $bSynchroUser);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', $bSynchroContact);
+
+		$this->assertEquals($bExpectedRes, Config::UserSynchroEnabled('hybridauth-anyprovider'));
+	}
+
+	public function UserSynchroEnabledProvider(){
+		return [
+			'synchronize_user_contact missing in conf' => [
+				'bExpectedRes' => false,
+				'aConf' => [],
+			],
+			'disabled' => [
+				'bExpectedRes' => false,
+				'aConf' => [ 'synchronize_user_contact' => false ],
+			],
+			'enabled' => [
+				'bExpectedRes' => true,
+				'aConf' => [ 'synchronize_user_contact' => true ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider UserSynchroEnabledProvider
+	 */
+	public function testUserSynchroEnabled($bExpectedRes, $aConf){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'Google' => $aConf
+			]
+		);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+
+		$this->assertEquals($bExpectedRes, Config::UserSynchroEnabled('hybridauth-Google'));
+	}
+
+	public function testUserSynchroEnabledNoConf(){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', []);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+
+		$this->assertEquals(false, Config::UserSynchroEnabled('hybridauth-anyprovider'));
+	}
+
+	public function testGetDefaultOrg(){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'Google' => ['default_organization' => 'provider-org'],
+				'NoDefaultOrg' => [],
+			]
+		);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', 'overall-org');
+
+		$this->assertEquals('provider-org', Config::GetDefaultOrg('hybridauth-Google'));
+		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-NoDefaultOrg'));
+		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-MissingProvider'));
 	}
 
 }

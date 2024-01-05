@@ -50,7 +50,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	public function ListSupportedLoginModes()
 	{
 		$aLoginModes = array();
-		foreach (Config::GetProviders() as $sProvider => $bEnabled)
+		foreach (Config::ListProviders() as $sProvider => $bEnabled)
 		{
 			if ($bEnabled){
 				$aLoginModes[] = "hybridauth-$sProvider";
@@ -218,13 +218,14 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnCheckCredentials(&$iErrorCode)
 	{
-		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
+		$sLoginMode = Session::Get('login_mode');
+		if (Config::IsLoginModeSupported($sLoginMode)) {
 			if (!Session::IsSet('auth_user'))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
 				return LoginWebPage::LOGIN_FSM_ERROR;
 			}
-			self::DoUserProvisioning();
+			self::DoUserProvisioning($sLoginMode);
 		}
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
@@ -298,11 +299,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		}
 	}
 
-	private function DoUserProvisioning()
+	private function DoUserProvisioning(?string $sLoginMode)
 	{
 		try
 		{
-			if (!Config::Get('synchronize_user'))
+			if (! Config::UserSynchroEnabled($sLoginMode))
 			{
 				return; // No automatic User provisioning
 			}
@@ -325,14 +326,10 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$oPerson = LoginWebPage::FindPerson($sEmail);
 			if ($oPerson == null)
 			{
-				if (!Config::Get('synchronize_contact'))
-				{
-					return; // No automatic Contact provisioning
-				}
 				// Create the person
 				$sFirstName = $oUserProfile->firstName;
 				$sLastName = $oUserProfile->lastName;
-				$sOrganization = Config::Get('default_organization');
+				$sOrganization = Config::GetDefaultOrg($sLoginMode);
 				$aAdditionalParams = array('phone' => $oUserProfile->phone);
 				IssueLog::Info("SSO Person provisioning", null,
 					[
