@@ -68,7 +68,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		}
 
 		if (! Session::IsSet('login_mode')) {
-			$sLoginModeFromHttp = $this->GetLoginModeFromHttp();
+			$sLoginModeFromHttp = self::GetLoginModeFromHttp();
 
 			if (is_null($sLoginModeFromHttp)) {
 				//no login_mode provided even by http
@@ -144,7 +144,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	/**
 	 * @return mixed|null
 	 */
-	private function GetLoginModeFromHttp(){
+	public static function GetLoginModeFromHttp(){
 		$sLoginMode = utils::ReadParam('login_mode', null, false, 'raw_data');
 		if (!is_null($sLoginMode)){
 			return $sLoginMode;
@@ -174,7 +174,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 		//set login_mode if unset in session but provided in url
 		if (! Session::IsSet('login_mode')) {
-			$sLoginMode = $this->GetLoginModeFromHttp();
+			$sLoginMode = self::GetLoginModeFromHttp();
 
 			if (is_null($sLoginMode)) {
 				IssueLog::Warning("No login_mode passed to service provider callback (landing.php)", SSOConfigController::LOG_CHANNEL);

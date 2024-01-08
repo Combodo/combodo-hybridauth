@@ -4,7 +4,7 @@
 {% set selected_provider_conf = conf.selected_provider_conf %}
 
 {% UIPanel Neutral {sTitle:'combodo-hybridauth:SSOSettings'|dict_s, sId:'sso_section'} %}
-{% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProvider'|dict_s, sDescription : 'combodo-hybridauth:ServiceProviderToolTip'|dict_s } %}
+{% UIField Standard {sLabel: 'combodo-hybridauth:ServiceProvider'|dict_s, sDescription:'combodo-hybridauth:ServiceProviderToolTip'|dict_s } %}
 {% UISelect ForSelect {sId:'selected_sp' , sName:'selected_sp'} %}
     {% for otherSsoSelectedId in conf.ssoSpList %}
         {% if otherSsoSelectedId == selectedSp %}
@@ -29,9 +29,18 @@
 
 <BR/>
 
+{% UIAlert ForInformation {sTitle:'combodo-hybridauth:LandingUrlTitle'|dict_s, sContent:'', sId:'landing_callback_url', IsHidden:false,
+	IsCollapsible:false,
+	IsClosable:false} %}
+.
+{% EndUIAlert %}
+
+<BR/>
+
 <div class="SSOButton">
-	{% UIButton Neutral {sLabel: 'combodo-hybridauth:TestConnection'|dict_s, sName:'', sId:'TestButton'} %}
 	{% UIButton Neutral {sLabel: 'combodo-hybridauth:Save'|dict_s, sName:'', sId:'SaveButton'} %}
+	{% UIButton Neutral {sLabel: 'combodo-hybridauth:TestConnection'|dict_s, sTooltip: 'combodo-hybridauth:TestConnectionToolTip'|dict_s,
+		sName:'', sId:'TestButton'} %}
 </div>
 
 {% EndUIPanel %}

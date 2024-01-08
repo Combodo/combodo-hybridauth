@@ -13,7 +13,6 @@ use Combodo\iTop\Application\UI\Base\Component\Toolbar\ToolbarUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Layout\TabContainer\TabContainer;
 use Combodo\iTop\Application\UI\Base\UIException;
 use Combodo\iTop\HybridAuth\Config;
-use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use CoreTemplateException;
 use Dict;
 use ErrorPage;
@@ -22,7 +21,8 @@ use InvalidParameterException;
 use IssueLog;
 use iTopWebPage;
 use Twig\Error\LoaderError;
-use utils;
+use utils;;
+use UserRights;
 
 if (!defined('SSO_CONFIG_DIR')) {
 	define('SSO_CONFIG_DIR', realpath(dirname(__DIR__, 2)));
@@ -79,10 +79,13 @@ class SSOConfigController extends Controller
 			$this->aConfig['selected_provider_conf'] = $this->aConfig['providers'][$sSelectedSp];
 		}
 
+	    $sMsg = \Dict::Format('combodo-hybridauth:LandingUrlMessage', utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php');
+		IssueLog::Info($sMsg);
 	    $twigVars = [
 			'conf' => $this->aConfig,
 			'sso_url' => utils::GetAbsoluteUrlModulePage(self::EXTENSION_NAME, 'index.php'),
-
+			'landing_url_msg' => $sMsg,
+			'test_sso_url' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/test-sso.php',
 	    ];
 	    $this->DisplayPage($twigVars, 'sso-main');
     }
@@ -110,25 +113,6 @@ class SSOConfigController extends Controller
 		 * "method" => "OperationApplyConfig"
 		 * ]);
 		 */
-
-		$this->DisplayJSONPage([
-			"code" => 0,
-			"msg" => 'OK'
-		]);
-	}
-
-	public function OperationTest()
-	{
-		$aFormData = utils::ReadParam("SSOConfig", null, false, 'raw_data');
-		$sSelectedSP = $aFormData['ssoSP'];
-		$aProvidersConfig = Config::Get('providers');
-
-		$bEnabled = $this->oSSOConfigUtils->GenerateHybridProviderConf($aFormData, $aProvidersConfig, $sSelectedSP);
-
-		Config::SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled);
-
-		$oHybridauthService = new HybridauthService();
-		$oHybridauthService->authenticate($sSelectedSP);
 
 		$this->DisplayJSONPage([
 			"code" => 0,

@@ -7,8 +7,9 @@ document.getElementById("SaveButton").addEventListener('click', function () {
 }, false);
 
 document.getElementById("TestButton").addEventListener('click', function () {
-    callController('Test');
+    testConnexion();
 }, false);
+
 
 document.addEventListener('click', e => {
     const switchEl = e.target.closest('.switch')
@@ -16,3 +17,5 @@ document.addEventListener('click', e => {
         switchEl.querySelector('input').toggleAttribute('checked');
     }
 });
+
+$('#TestButton').prop('title', "{{ 'combodo-hybridauth:TestConnectionToolTip'|dict_s}}");

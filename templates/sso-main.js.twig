@@ -1,3 +1,6 @@
+var landing_callback_url = $('#landing_callback_url');
+landing_callback_url.find('.ibo-alert--body').html("{{ landing_url_msg | raw }}");
+
 function collectDataProperties(){
 	const returnObj = {
 		"ssoSP": document.getElementById("selected_sp").value,
@@ -15,7 +18,7 @@ function callController(action){
 	$('#SaveButton').disabled=true;
 
 	let data = collectDataProperties();
-	console.log(data);
+	//console.log(data);
 	url = "{{ sso_url | raw }}&selected_sp=" + data['ssoSP'] + "&operation=" + action;
 
 	$.ajax({
@@ -35,7 +38,11 @@ function callController(action){
 	});
 };
 
-testConnexion
+function testConnexion(){
+	let data = collectDataProperties();
+	url = "{{ test_sso_url | raw }}?login_mode=hybridauth-" + data['ssoSP'];
+	window.location.href = url;
+}
 
 function changeSP(newSP){
 	url = "{{ sso_url | raw }}&selected_sp=" + newSP;
