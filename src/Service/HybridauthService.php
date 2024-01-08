@@ -3,6 +3,7 @@
 namespace Combodo\iTop\HybridAuth\Service;
 
 use Combodo\iTop\HybridAuth\Config;
+use Combodo\iTop\HybridAuth\Controller\SSOConfigController;
 use Hybridauth\Adapter\AdapterInterface;
 use Hybridauth\Hybridauth;
 use Hybridauth\Logger\Logger;
@@ -25,14 +26,14 @@ class HybridauthService {
 		$aConfig = Config::GetHybridConfig();
 		$sOauthClassPath = Config::Get('oauth_test_class_path', null);
 		if (! is_null($sOauthClassPath)){
-			IssueLog::Info("loading service provider class (from conf oauth_test_class_path): " . $sOauthClassPath);
+			IssueLog::Info("loading service provider class (from conf oauth_test_class_path): " . $sOauthClassPath, SSOConfigController::LOG_CHANNEL);
 			require_once $sOauthClassPath;
 		}
 
 		$bDebug = Config::Get('debug');
 		$oLogger = ($bDebug) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
 		if ($bDebug){
-			\IssueLog::Info("Conf passed to HybdridAuth", null, [ 'conf' => $aConfig ]);
+			\IssueLog::Info("Conf passed to HybdridAuth", SSOConfigController::LOG_CHANNEL, [ 'conf' => $aConfig ]);
 		}
 		$oHybridAuth = new Hybridauth($aConfig, null, null, $oLogger);
 		$oAuthAdapter = $oHybridAuth->authenticate($sName);

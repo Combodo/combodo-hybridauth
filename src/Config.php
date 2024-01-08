@@ -3,6 +3,7 @@
 namespace Combodo\iTop\HybridAuth;
 
 use Combodo\iTop\Application\Helper\Session;
+use Combodo\iTop\HybridAuth\Controller\SSOConfigController;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use MetaModel;
 use utils;
@@ -20,7 +21,7 @@ class Config
 
 	public static function SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled)
 	{
-		IssueLog::Info('SetHybridConfig', null,
+		IssueLog::Info('SetHybridConfig', SSOConfigController::LOG_CHANNEL,
 			[
 				'aProviderConf' => $aProvidersConfig,
 				'sSelectedSP' => $sSelectedSP,
@@ -80,7 +81,7 @@ class Config
 
 		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 		if (! in_array($sLoginMode, $aAllowedModes)){
-			IssueLog::Warning("SSO mode not allowed in iTop configuration", null, ['sLoginMode' => $sLoginMode]);
+			IssueLog::Warning("SSO mode not allowed in iTop configuration", SSOConfigController::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 			return false;
 		}
 
@@ -93,14 +94,16 @@ class Config
 					return true;
 				} else {
 					//login_mode forced and not enabled. exit to stop login automata
-					IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration.", null, ['sLoginMode' => $sLoginMode]);
+					IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration."
+						, SSOConfigController::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 					throw new \Exception("SSO configuration needs to be fixed.");
 				}
 			}
 		}
 
 		//login_mode forced and not configured. exit to stop login automata
-		IssueLog::Error("Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.", null, ['sLoginMode' => $sLoginMode]);
+		IssueLog::Error("Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.",
+			SSOConfigController::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 		throw new \Exception("SSO configuration needs to be fixed.");
 	}
 

@@ -13,7 +13,6 @@ use Combodo\iTop\Application\UI\Base\Component\Toolbar\ToolbarUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Layout\TabContainer\TabContainer;
 use Combodo\iTop\Application\UI\Base\UIException;
 use Combodo\iTop\Extension\LDAPConfiguration\Exceptions\ExceptionWithContext;
-use Combodo\iTop\Extension\LDAPConfiguration\Repository\LDAP\authentLDAP\AuthentLDAPConfig;
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use CoreTemplateException;
@@ -33,6 +32,7 @@ if (!defined('SSO_CONFIG_DIR')) {
 class SSOConfigController extends Controller
 {
     const EXTENSION_NAME = "combodo-hybridauth";
+    const LOG_CHANNEL = "Hybridauth";
     const TEMPLATE_FOLDER = '/templates';
 
     private array $aConfig;
@@ -53,7 +53,7 @@ class SSOConfigController extends Controller
 	        $this->HidePasswords();
 		} catch (Exception|ExceptionWithContext $e) {
             $aContext = method_exists($e, "GetContext") ? $e->getContext() : [];
-            IssueLog::Error($e->getMessage(), null, $aContext);
+            IssueLog::Error($e->getMessage(), self::LOG_CHANNEL, $aContext);
             http_response_code(500);
             $oP = new ErrorPage(Dict::S('UI:PageTitle:FatalError'));
             $oP->add("<h1>" . Dict::S('UI:FatalErrorMessage') . "</h1>\n");
