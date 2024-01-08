@@ -21,7 +21,7 @@ class Config
 	/**
 	 * configure SSO for a specific provider. if needed, it adds/removes allowed login mode.
 	 */
-	public static function SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled)
+	public static function SetHybridConfig(array $aProvidersConfig, string $sSelectedSP, bool $bEnabled)
 	{
 		IssueLog::Info('SetHybridConfig', SSOConfigController::LOG_CHANNEL,
 			[

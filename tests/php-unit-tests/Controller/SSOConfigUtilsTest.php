@@ -29,7 +29,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 				            'ssoSpSecret' => '',
 				            'ssoUserSync' => false,
 				            'ssoUserOrg' => null,
-						]
+						],
 					],
 					'selectedSp' => 'Google',
 					'ssoSpList' => ['Google', 'MicrosoftGraph'],
@@ -46,8 +46,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 									'secret' => 'SECRET',
 								),
 							'enabled' => true,
-						]
-					]
+						],
+					],
 				],
 				'aExpectedRes' => [
 					'providers' => [
@@ -58,7 +58,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoSpSecret' => 'SECRET',
 							'ssoUserSync' => false,
 							'ssoUserOrg' => null,
-						]
+						],
 					],
 					'selectedSp' => 'MicrosoftGraph',
 					'ssoSpList' => ['Google', 'MicrosoftGraph'],
@@ -88,7 +88,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'synchronize_user_contact' => true,
 							'default_organization' => "org3",
 						],
-					]
+					],
 				],
 				'aExpectedRes' => [
 					'providers' => [
@@ -127,7 +127,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'synchronize_user_contact' => true,
 							'default_organization' => "org4",
 						],
-					]
+					],
 				],
 				'aExpectedRes' => [
 					'providers' => [
@@ -138,7 +138,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoSpSecret' => 'SECRET3',
 							'ssoUserSync' => true,
 							'ssoUserOrg' => "org4",
-						]
+						],
 					],
 					'selectedSp' => 'XXX_SP',
 					'ssoSpList' => ['Google', 'MicrosoftGraph', 'XXX_SP'],
@@ -178,7 +178,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoSpSecret' => '',
 							'ssoUserSync' => false,
 							'ssoUserOrg' => null,
-						]
+						],
 					],
 					'selectedSp' => 'MicrosoftGraph',
 					'ssoSpList' => ['Google', 'MicrosoftGraph'],
@@ -208,7 +208,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'synchronize_user_contact' => true,
 							'default_organization' => "org3",
 						],
-					]
+					],
 				],
 				'aExpectedRes' => [
 					'providers' => [
@@ -247,7 +247,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'synchronize_user_contact' => true,
 							'default_organization' => "org4",
 						],
-					]
+					],
 				],
 				'aExpectedRes' => [
 					'providers' => [
@@ -266,7 +266,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'ssoSpSecret' => '',
 							'ssoUserSync' => false,
 							'ssoUserOrg' => null,
-						]
+						],
 					],
 					'selectedSp' => 'MicrosoftGraph',
 					'ssoSpList' => ['Google', 'MicrosoftGraph', 'XXX_SP'],
@@ -291,5 +291,156 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 
 		$aTwigVars = $oSSOConfigUtils->GetTwigConfigInternal($aCombodoHybridAuthConf, "MicrosoftGraph");
 		$this->assertEquals($aExpectedRes, $aTwigVars, 'twig var generation:' . var_export($aTwigVars, true));
+	}
+
+	public function GenerateHybridProviderConfWithoutUserSyncProvider() {
+		return [
+			'first sso conf + enabled' => [
+				'aFormData' => [
+					'ssoEnabled' => 'true',
+					'ssoSpId' => 'ssoSpIdXXX',
+					'ssoSpSecret' => 'ssoSpSecretYYY',
+				],
+				'aProvidersConfig' => [
+				],
+				'bExpectedEnabled' => true,
+				'bExpectedProvidersConfig' => [
+					'Google' => [
+						'keys' => [
+							'id' => 'ssoSpIdXXX',
+							'secret' => 'ssoSpSecretYYY',
+						],
+						'enabled' => true,
+						'synchronize_user_contact' => false,
+					]
+				]
+			],
+			'first sso conf + enabled + user sync' => [
+				'aFormData' => [
+					'ssoEnabled' => 'true',
+					'ssoSpId' => 'ssoSpIdXXX',
+					'ssoSpSecret' => 'ssoSpSecretYYY',
+					'ssoUserSync' => 'true',
+					'ssoUserOrg' => 'Org1',
+				],
+				'aProvidersConfig' => [
+				],
+				'bExpectedEnabled' => true,
+				'bExpectedProvidersConfig' => [
+					'Google' => [
+						'keys' => [
+							'id' => 'ssoSpIdXXX',
+							'secret' => 'ssoSpSecretYYY',
+						],
+						'enabled' => true,
+						'synchronize_user_contact' => true,
+						'default_organization' => 'Org1',
+					]
+				]
+			],
+			'first sso conf + disabled' => [
+				'aFormData' => [
+					'ssoEnabled' => 'false',
+					'ssoSpId' => 'ssoSpIdXXX',
+					'ssoSpSecret' => 'ssoSpSecretYYY',
+				],
+				'aProvidersConfig' => [
+				],
+				'bExpectedEnabled' => false,
+				'bExpectedProvidersConfig' => [
+					'Google' => [
+						'keys' => [
+							'id' => 'ssoSpIdXXX',
+							'secret' => 'ssoSpSecretYYY',
+						],
+						'enabled' => false,
+						'synchronize_user_contact' => false,
+					]
+				]
+			],
+			'edit sso conf + disable user sync + pwd untouched' => [
+				'aFormData' => [
+					'ssoEnabled' => 'false',
+					'ssoSpId' => 'ssoSpIdXXX',
+					'ssoSpSecret' => '●●●●●●●●●',
+					'ssoUserSync' => 'false',
+					'ssoUserOrg' => 'Org2',
+				],
+				'aProvidersConfig' => [
+					'Google' => [
+						'any_key_not_configurable_in_ui' => 'val',
+						'keys' => [
+							'id' => 'ssoSpIdXXX',
+							'secret' => 'ssoSpSecretYYY',
+						],
+						'enabled' => true,
+						'synchronize_user_contact' => true,
+						'default_organization' => 'Org1',
+
+					]
+				],
+				'bExpectedEnabled' => true,
+				'bExpectedProvidersConfig' => [
+					'Google' => [
+						'any_key_not_configurable_in_ui' => 'val',
+						'keys' => [
+							'id' => 'ssoSpIdXXX',
+							'secret' => 'ssoSpSecretYYY',
+						],
+						'enabled' => false,
+						'synchronize_user_contact' => false,
+						'default_organization' => 'Org1',
+					]
+				]
+			],
+			'edit sso conf + change user sync org + pwd touched' => [
+				'aFormData' => [
+					'ssoEnabled' => 'true',
+					'ssoSpId' => 'ssoSpIdXXX',
+					'ssoSpSecret' => 'ssoSpSecretYYY123',
+					'ssoUserSync' => 'true',
+					'ssoUserOrg' => 'Org2',
+				],
+				'aProvidersConfig' => [
+					'Google' => [
+						'any_key_not_configurable_in_ui' => 'val',
+						'keys' => [
+							'id' => 'ssoSpIdXXX',
+							'secret' => 'ssoSpSecretYYY',
+						],
+						'enabled' => false,
+						'synchronize_user_contact' => true,
+						'default_organization' => 'Org1',
+
+					]
+				],
+				'bExpectedEnabled' => true,
+				'bExpectedProvidersConfig' => [
+					'Google' => [
+						'any_key_not_configurable_in_ui' => 'val',
+						'keys' => [
+							'id' => 'ssoSpIdXXX',
+							'secret' => 'ssoSpSecretYYY123',
+						],
+						'enabled' => true,
+						'synchronize_user_contact' => true,
+						'default_organization' => 'Org2',
+					]
+				]
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider GenerateHybridProviderConf
+	 */
+	public function testGenerateHybridProviderConf(array $aFormData, array $aProvidersConfig,
+		bool $bExpectedEnabled, array $bExpectedProvidersConfig){
+		$oSSOConfigUtils = new SSOConfigUtils([]);
+		$sSelectedSp = 'Google';
+		$bEnabled = $oSSOConfigUtils->GenerateHybridProviderConf($aFormData, $aProvidersConfig, $sSelectedSp);
+		$this->assertEquals($bExpectedEnabled, $bEnabled);
+		$this->assertEquals($bExpectedProvidersConfig, $aProvidersConfig);
+
 	}
 }

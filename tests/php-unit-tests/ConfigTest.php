@@ -135,7 +135,7 @@ class ConfigTest extends ItopDataTestCase{
 			->willReturn(['Google', 'MicrosoftGraph', 'etc...']);
 		;
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui-proposed-provider', null);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui-proposed-providers', null);
 		$this->assertEquals(['Google', 'MicrosoftGraph', 'etc...'], Config::GetProposedSpList($oHybridauthService));
 	}
 
@@ -152,7 +152,7 @@ class ConfigTest extends ItopDataTestCase{
 	public function testGetProviderConf(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
-				'Google' => [ 'ga' => 'bu']
+				'Google' => [ 'ga' => 'bu'],
 			]
 		);
 
@@ -220,7 +220,7 @@ class ConfigTest extends ItopDataTestCase{
 	public function testUserSynchroEnabled($bExpectedRes, $aConf){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
-				'Google' => $aConf
+				'Google' => $aConf,
 			]
 		);
 
@@ -251,6 +251,52 @@ class ConfigTest extends ItopDataTestCase{
 		$this->assertEquals('provider-org', Config::GetDefaultOrg('hybridauth-Google'));
 		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-NoDefaultOrg'));
 		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-MissingProvider'));
+	}
+
+	public function SetHybridConfigProvider() {
+		return [
+			'enable + allowed loginmode untouched' => [
+				"bEnabled" => true,
+				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google' ],
+				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google' ],
+			],
+			'enable + shoud add login mode' => [
+				"bEnabled" => true,
+				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
+				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google', 'hybridauth-MicrosoftGraph' ],
+			],
+			'disabled + allowed loginmode untouched' => [
+				"bEnabled" => false,
+				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
+				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
+			],
+			'enable + should remove login mode' => [
+				"bEnabled" => false,
+				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google' ],
+				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider SetHybridConfigProvider
+	 */
+	public function testSetHybridConfig(bool $bEnabled, array $aAllowedLoginTypes, array $aExpectedAllowedLoginTypes) {
+		MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => []]);
+
+		$sSelectedSP = 'MicrosoftGraph';
+		$aProvidersConfig = [
+			'Google' => [],
+			$sSelectedSP => [],
+		];
+		Config::SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled);
+
+		$this->assertEquals($aProvidersConfig,
+			MetaModel::GetConfig()->GetModuleSetting('combodo-hybridauth', 'providers', [])
+		);
+
+		$this->assertEquals($aExpectedAllowedLoginTypes, MetaModel::GetConfig()->GetAllowedLoginTypes());
 	}
 
 }

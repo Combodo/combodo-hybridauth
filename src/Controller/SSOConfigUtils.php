@@ -127,7 +127,8 @@ class SSOConfigUtils {
 	 * Generate current provider conf and indicate if it is enabled
 	 */
 	public function GenerateHybridProviderConf(array $aFormData, array &$aProvidersConfig, string $sSelectedSP) : bool {
-		$bEnabled = ($aFormData['ssoEnabled'] === 'true');
+		$sFoundSsoEnabled = $aFormData['ssoEnabled'] ?? 'false';
+		$bEnabled = ($sFoundSsoEnabled === 'true');
 
 		if (array_key_exists($sSelectedSP, $aProvidersConfig)) {
 			$aCurrentProviderConf = $aProvidersConfig[$sSelectedSP];
@@ -143,12 +144,14 @@ class SSOConfigUtils {
 			];
 		}
 
-		$ssoSpSecret = $aFormData['ssoSpSecret'];
-		if (strlen($ssoSpSecret)!==0 && $ssoSpSecret !== "●●●●●●●●●") {
+		$noSecretProviderString = "●●●●●●●●●";
+		$ssoSpSecret = $aFormData['ssoSpSecret'] ?? $noSecretProviderString;
+		if (strlen($ssoSpSecret)!==0 && $ssoSpSecret !== $noSecretProviderString) {
 			$aCurrentProviderConf['keys']['secret'] = $ssoSpSecret;
 		}
 
-		$bSynchroUser = ($aFormData['ssoUserSync'] === 'true');
+		$sSsoUserSyncFound = $aFormData['ssoUserSync'] ?? 'false';
+		$bSynchroUser = ($sSsoUserSyncFound === 'true');
 		$aCurrentProviderConf['synchronize_user_contact'] = $bSynchroUser;
 		if ($bSynchroUser){
 			$aCurrentProviderConf['default_organization'] = $aFormData['ssoUserOrg'] ?? '';
