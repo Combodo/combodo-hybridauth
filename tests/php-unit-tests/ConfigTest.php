@@ -158,6 +158,7 @@ class ConfigTest extends ItopDataTestCase{
 
 		$this->assertEquals([ 'ga' => 'bu'], Config::GetProviderConf('hybridauth-Google'));
 		$this->assertEquals(null, Config::GetProviderConf('hybridauth-MS'));
+		$this->assertEquals(null, Config::GetProviderConf(null));
 	}
 
 	public function UserSynchroEnabled_BackwardCompatibilityProvider(){

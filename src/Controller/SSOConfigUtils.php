@@ -5,6 +5,9 @@ namespace Combodo\iTop\HybridAuth\Controller;
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\Repository\SssConfigRepository;
 
+/**
+ * Class dedicated to handle convert sso conf to twig variables and vice versa
+ */
 class SSOConfigUtils {
 	/** @var SssConfigRepository $oSssConfigRepository */
 	private $oSssConfigRepository;

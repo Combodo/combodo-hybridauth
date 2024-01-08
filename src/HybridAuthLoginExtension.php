@@ -32,6 +32,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	/** @var ?HybridauthService $oHybridauthService */
 	static $oHybridauthService;
 
+	//used only for testing purpose
 	public static function SetHybridauthService(?HybridauthService $oHybridauthService): void {
 		self::$oHybridauthService = $oHybridauthService;
 	}
@@ -275,11 +276,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	private static function GetProviderName()
 	{
-		$sLoginMode = Session::Get('login_mode') ?? '';
+		$sLoginMode = Session::Get('login_mode', '');
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		if (false === $sProviderName){
 			\IssueLog::Error("login_mode provided not SSO compliant", SSOConfigController::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
-			throw new \Exception();
+			throw new \Exception("login_mode provided not SSO compliant");
 		}
 		return $sProviderName;
 	}
@@ -300,7 +301,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		}
 	}
 
-	private function DoUserProvisioning(?string $sLoginMode)
+	private function DoUserProvisioning(string $sLoginMode)
 	{
 		try
 		{

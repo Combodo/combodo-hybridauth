@@ -12,7 +12,6 @@ use Combodo\iTop\Application\UI\Base\Component\Panel\PanelUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Component\Toolbar\ToolbarUIBlockFactory;
 use Combodo\iTop\Application\UI\Base\Layout\TabContainer\TabContainer;
 use Combodo\iTop\Application\UI\Base\UIException;
-use Combodo\iTop\Extension\LDAPConfiguration\Exceptions\ExceptionWithContext;
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use CoreTemplateException;
@@ -57,7 +56,6 @@ class SSOConfigController extends Controller
             http_response_code(500);
             $oP = new ErrorPage(Dict::S('UI:PageTitle:FatalError'));
             $oP->add("<h1>" . Dict::S('UI:FatalErrorMessage') . "</h1>\n");
-            $oP->add(get_class($e) . ' : ' . htmlentities($e->GetMessage(), ENT_QUOTES, 'utf-8'));
             $oP->output();
         }
     }
@@ -74,25 +72,6 @@ class SSOConfigController extends Controller
 
     public function OperationMain()
     {
-        $oPage = new iTopWebPage(Dict::S('Menu:SSOConfig'));
-        $oPage->add_saas('env-' . utils::GetCurrentEnvironment() . '/' . static::EXTENSION_NAME . '/assets/css/combodo-hybridauth.scss');
-
-        $oPanel = PanelUIBlockFactory::MakeForInformation(Dict::S('combodo-hybridauth:MainTitle'));
-        $oToolbar = ToolbarUIBlockFactory::MakeStandard();
-        $oCancelButton = ButtonUIBlockFactory::MakeForCancel(null, null, null, true, "combodo-hybridauth-cancel");
-        $oCancelButton->AddCSSClasses(['action', 'cancel']);
-        $oToolbar->AddSubBlock($oCancelButton);
-        $oApplyButton = ButtonUIBlockFactory::MakeForPrimaryAction(Dict::S('combodo-hybridauth:Apply'), null, null, true, "combodo-hybridauth-apply");
-        $oApplyButton->AddCSSClass('action');
-        $oToolbar->AddSubBlock($oApplyButton);
-        $oToolbar->AddCSSClass('ibo-toolbar-top');
-        $oPanel->AddToolbarBlock($oToolbar);
-        $oPage->AddSubBlock($oPanel);
-
-        $oTabContainer = new TabContainer('tabs1', 'sso_config');
-        $alert = new Html('<div style="margin-bottom: 50px" id="connectionAlert"></div>');
-        $oPanel->AddSubBlock($alert);
-        $oPanel->AddMainBlock($oTabContainer);
         $this->aConfig['modulePath'] = utils::GetAbsoluteUrlModulePage(self::EXTENSION_NAME, 'index.php');
 
 		$sSelectedSp = $this->aConfig['selectedSp'] ?? null;

@@ -2,7 +2,6 @@
 
 namespace Combodo\iTop\HybridAuth;
 
-use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Controller\SSOConfigController;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use MetaModel;
@@ -19,6 +18,9 @@ class Config
 		return $aConfig;
 	}
 
+	/**
+	 * configure SSO for a specific provider. if needed, it adds/removes allowed login mode.
+	 */
 	public static function SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled)
 	{
 		IssueLog::Info('SetHybridConfig', SSOConfigController::LOG_CHANNEL,
@@ -73,7 +75,7 @@ class Config
 	 *
 	 * @return bool
 	 */
-	public static function IsLoginModeSupported($sLoginMode)
+	public static function IsLoginModeSupported(?string $sLoginMode)
 	{
 		if (! utils::StartsWith($sLoginMode, 'hybridauth-')){
 			return false;
@@ -119,6 +121,9 @@ class Config
 		return null;
 	}
 
+	/**
+	 * List SSO providers that will be proposed in Configuration UI
+	 */
 	public static function GetProposedSpList($oHybridauthService=null) : array {
 		$aList = self::Get('ui-proposed-providers', null);
 		if (null !== $aList){
@@ -131,7 +136,7 @@ class Config
 		return $oHybridauthService->ListProviders();
 	}
 
-	public static function UserSynchroEnabled(?string $sLoginMode) : bool {
+	public static function UserSynchroEnabled(string $sLoginMode) : bool {
 		if (Config::Get('synchronize_user')){
 			return true;
 		}
@@ -147,7 +152,7 @@ class Config
 		return $aCurrentProviderConf['synchronize_user_contact'] ?? false;
 	}
 
-	public static function GetDefaultOrg(?string $sLoginMode) {
+	public static function GetDefaultOrg(string $sLoginMode) {
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf){
 			$sDefaultOrg = $aCurrentProviderConf['default_organization'] ?? null;
