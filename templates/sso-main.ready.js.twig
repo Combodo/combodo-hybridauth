@@ -15,7 +15,8 @@ document.addEventListener('click', e => {
     const switchEl = e.target.closest('.switch')
     if (switchEl) {
         switchEl.querySelector('input').toggleAttribute('checked');
+        setTestButtonState();
     }
 });
 
-$('#TestButton').prop('title', "{{ 'combodo-hybridauth:TestConnectionToolTip'|dict_s}}");
+setTestButtonState();

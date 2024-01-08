@@ -23,6 +23,7 @@ use iTopWebPage;
 use Twig\Error\LoaderError;
 use utils;;
 use UserRights;
+use LoginWebPage;
 
 if (!defined('SSO_CONFIG_DIR')) {
 	define('SSO_CONFIG_DIR', realpath(dirname(__DIR__, 2)));
@@ -92,17 +93,7 @@ class SSOConfigController extends Controller
 
 	public function OperationSave()
 	{
-		$aFormData = utils::ReadParam("SSOConfig", null, false, 'raw_data');
-		$sSelectedSP = $aFormData['ssoSP'];
-		$aProvidersConfig = Config::Get('providers');
-
-		$bEnabled = $this->oSSOConfigUtils->GenerateHybridProviderConf($aFormData, $aProvidersConfig, $sSelectedSP);
-
-		Config::SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled);
-
-		@chmod(utils::GetConfig()->GetLoadedFile(), 0770); // Allow overwriting the file
-		utils::GetConfig()->WriteToFile();
-		@chmod(utils::GetConfig()->GetLoadedFile(), 0440); // Read-only
+		$this->SaveConfiguration();
 
 		/**
 		 * $this->DisplayJSONPage([
@@ -118,5 +109,22 @@ class SSOConfigController extends Controller
 			"code" => 0,
 			"msg" => 'OK'
 		]);
+	}
+
+	public function SaveConfiguration() : string
+	{
+		$aFormData = utils::ReadParam("SSOConfig", null, false, 'raw_data');
+		$sSelectedSP = $aFormData['ssoSP'];
+		$aProvidersConfig = Config::Get('providers');
+
+		$bEnabled = $this->oSSOConfigUtils->GenerateHybridProviderConf($aFormData, $aProvidersConfig, $sSelectedSP);
+
+		Config::SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled);
+
+		@chmod(utils::GetConfig()->GetLoadedFile(), 0770); // Allow overwriting the file
+		utils::GetConfig()->WriteToFile();
+		@chmod(utils::GetConfig()->GetLoadedFile(), 0440); // Read-only
+
+		return $sSelectedSP;
 	}
 }

@@ -35,13 +35,36 @@ function callController(action){
 	.fail(function (data) {
 		$('#SaveButton').disabled=false;
 		console.log(data);
+		return false;
 	});
+	return true;
 };
 
 function testConnexion(){
+	$('#TestButton').disabled=true;
+	$res = callController('Save');
+
+	if ($res){
+		let data = collectDataProperties();
+		url = "{{ test_sso_url | raw }}?login_mode=hybridauth-" + data['ssoSP'];
+		window.location.href = url;
+	}
+	$('#TestButton').disabled=false;
+}
+
+function setTestButtonState() {
 	let data = collectDataProperties();
-	url = "{{ test_sso_url | raw }}?login_mode=hybridauth-" + data['ssoSP'];
-	window.location.href = url;
+	let button = $('#TestButton');
+
+	button.prop('title', "{{ 'combodo-hybridauth:TestConnectionToolTip'|dict_s}}");
+	if (data["ssoEnabled"] === true) {
+		button.disabled=false;
+		button.removeClass('ibo-is-hidden');
+	} else {
+		button.addClass('ibo-is-hidden');
+		button.disabled=true;
+
+	}
 }
 
 function changeSP(newSP){
