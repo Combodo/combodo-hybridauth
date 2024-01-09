@@ -35,21 +35,35 @@ function callController(action){
 	.fail(function (data) {
 		$('#SaveButton').disabled=false;
 		console.log(data);
-		return false;
 	});
-	return true;
 };
 
 function testConnexion(){
 	$('#TestButton').disabled=true;
-	$res = callController('Save');
 
-	if ($res){
-		let data = collectDataProperties();
-		url = "{{ test_sso_url | raw }}?login_mode=hybridauth-" + data['ssoSP'];
-		window.location.href = url;
-	}
-	$('#TestButton').disabled=false;
+	let data = collectDataProperties();
+	//console.log(data);
+	url = "{{ sso_url | raw }}&selected_sp=" + data['ssoSP'] + "&operation=Save";
+
+	$.ajax({
+		type: "POST",
+		url: url,
+		data: { 'SSOConfig' : data }
+	})
+	.done(function (data) {
+		$('#TestButton').disabled=false;
+		if (data.code === 0) {
+			let data = collectDataProperties();
+			url = "{{ test_sso_url | raw }}?login_mode=hybridauth-" + data['ssoSP'];
+			window.location.href = url;
+		} else {
+			console.log(data);
+		}
+	})
+	.fail(function (data) {
+		$('#TestButton').disabled=false;
+		console.log(data);
+	});
 }
 
 function setTestButtonState() {
