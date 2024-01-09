@@ -379,7 +379,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 
 					]
 				],
-				'bExpectedEnabled' => true,
+				'bExpectedEnabled' => false,
 				'bExpectedProvidersConfig' => [
 					'Google' => [
 						'any_key_not_configurable_in_ui' => 'val',
@@ -432,7 +432,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 	}
 
 	/**
-	 * @dataProvider GenerateHybridProviderConf
+	 * @dataProvider GenerateHybridProviderConfWithoutUserSyncProvider
 	 */
 	public function testGenerateHybridProviderConf(array $aFormData, array $aProvidersConfig,
 		bool $bExpectedEnabled, array $bExpectedProvidersConfig){
