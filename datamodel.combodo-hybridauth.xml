@@ -3,18 +3,33 @@
   <constants>
   </constants>
   <classes>
+    <class id="RessourceHybridAuthMenu" _delta="define">
+      <parent>AbstractResource</parent>
+      <properties>
+        <comment>/* HybridAuth Menu access control. */</comment>
+        <abstract>true</abstract>
+        <category>grant_by_profile</category>
+      </properties>
+      <presentation/>
+      <methods/>
+    </class>
   </classes>
   <menus>
     <menu id="SSOConfig" xsi:type="WebPageMenuNode" _delta="define">
       <rank>40</rank>
       <parent>AdminTools</parent>
       <url>index.php</url>
-      <enable_class>UserLocal</enable_class>
+      <enable_class>RessourceHybridAuthMenu</enable_class>
       <enable_action>UR_ACTION_MODIFY</enable_action>
     </menu>
   </menus>
   <user_rights>
     <groups>
+      <group id="HybridAuthMenu" _delta="define">
+        <classes>
+          <class id="RessourceHybridAuthMenu"/>
+        </classes>
+      </group>
     </groups>
     <profiles>
     </profiles>
