@@ -125,7 +125,7 @@ class Config
 	 * List SSO providers that will be proposed in Configuration UI
 	 */
 	public static function GetProposedSpList($oHybridauthService=null) : array {
-		$aList = self::Get('ui-proposed-providers', null);
+		$aList = self::Get('ui_proposed_providers', null);
 		if (null !== $aList){
 			return $aList;
 		}

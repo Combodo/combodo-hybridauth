@@ -135,7 +135,7 @@ class ConfigTest extends ItopDataTestCase{
 			->willReturn(['Google', 'MicrosoftGraph', 'etc...']);
 		;
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui-proposed-providers', null);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui_proposed_providers', null);
 		$this->assertEquals(['Google', 'MicrosoftGraph', 'etc...'], Config::GetProposedSpList($oHybridauthService));
 	}
 
@@ -145,7 +145,7 @@ class ConfigTest extends ItopDataTestCase{
 			->method('ListProviders');
 		;
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui-proposed-providers', ['Google']);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui_proposed_providers', ['Google']);
 		$this->assertEquals(['Google'], Config::GetProposedSpList($oHybridauthService));
 	}
 

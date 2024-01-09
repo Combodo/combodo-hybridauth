@@ -10,7 +10,7 @@
 //
 SetupWebPage::AddModule(
 	__FILE__, // Path to the current file, all other file names are relative to the directory containing this file
-	'combodo-hybridauth/1.1.2',
+	'combodo-hybridauth/1.2.2',
 	array(
 		// Identification
 		//
@@ -77,6 +77,13 @@ SetupWebPage::AddModule(
 						'secret' => '...',
 					),
 				),
+			),
+			//service provider list filter: without ui_proposed_providers option all providers proposed in ui
+			'ui_proposed_providers' => array (
+				'Google',
+				'Twitter',
+				'Facebook',
+				'MicrosoftGraph',
 			),
 		),
 	)
