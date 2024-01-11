@@ -25,13 +25,11 @@
   </menus>
   <user_rights>
     <groups>
-      <group id="HybridAuthMenu" _delta="define">
+      <group id="RessourceHybridAuthMenu" _delta="define">
         <classes>
           <class id="RessourceHybridAuthMenu"/>
         </classes>
       </group>
     </groups>
-    <profiles>
-    </profiles>
   </user_rights>
 </itop_design>
