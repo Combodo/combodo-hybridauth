@@ -75,7 +75,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 									'secret' => 'SECRET',
 								),
 							'enabled' => true,
-							'synchronize_user_contact' => true,
+							'synchronize_user' => true,
 							'default_organization' => "org1",
 						],
 						'MicrosoftGraph' => [
@@ -85,7 +85,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 									'secret' => 'SECRET2',
 								),
 							'enabled' => false,
-							'synchronize_user_contact' => true,
+							'synchronize_user' => true,
 							'default_organization' => "org3",
 						],
 					],
@@ -124,7 +124,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 									'secret' => 'SECRET3',
 								),
 							'enabled' => true,
-							'synchronize_user_contact' => true,
+							'synchronize_user' => true,
 							'default_organization' => "org4",
 						],
 					],
@@ -195,7 +195,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 									'secret' => 'SECRET',
 								),
 							'enabled' => true,
-							'synchronize_user_contact' => true,
+							'synchronize_user' => true,
 							'default_organization' => "org1",
 						],
 						'MicrosoftGraph' => [
@@ -205,7 +205,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 									'secret' => 'SECRET2',
 								),
 							'enabled' => false,
-							'synchronize_user_contact' => true,
+							'synchronize_user' => true,
 							'default_organization' => "org3",
 						],
 					],
@@ -244,7 +244,7 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 									'secret' => 'SECRET3',
 								),
 							'enabled' => true,
-							'synchronize_user_contact' => true,
+							'synchronize_user' => true,
 							'default_organization' => "org4",
 						],
 					],
@@ -311,7 +311,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'secret' => 'ssoSpSecretYYY',
 						],
 						'enabled' => true,
-						'synchronize_user_contact' => false,
+						'synchronize_user' => false,
+						'synchronize_contact' => false,
 					]
 				]
 			],
@@ -333,7 +334,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'secret' => 'ssoSpSecretYYY',
 						],
 						'enabled' => true,
-						'synchronize_user_contact' => true,
+						'synchronize_user' => true,
+						'synchronize_contact' => true,
 						'default_organization' => 'Org1',
 					]
 				]
@@ -354,7 +356,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'secret' => 'ssoSpSecretYYY',
 						],
 						'enabled' => false,
-						'synchronize_user_contact' => false,
+						'synchronize_user' => false,
+						'synchronize_contact' => false,
 					]
 				]
 			],
@@ -374,7 +377,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'secret' => 'ssoSpSecretYYY',
 						],
 						'enabled' => true,
-						'synchronize_user_contact' => true,
+						'synchronize_user' => true,
+						'synchronize_contact' => true,
 						'default_organization' => 'Org1',
 
 					]
@@ -388,7 +392,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'secret' => 'ssoSpSecretYYY',
 						],
 						'enabled' => false,
-						'synchronize_user_contact' => false,
+						'synchronize_user' => false,
+						'synchronize_contact' => false,
 						'default_organization' => 'Org1',
 					]
 				]
@@ -409,7 +414,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'secret' => 'ssoSpSecretYYY',
 						],
 						'enabled' => false,
-						'synchronize_user_contact' => true,
+						'synchronize_user' => true,
+						'synchronize_contact' => true,
 						'default_organization' => 'Org1',
 
 					]
@@ -423,7 +429,8 @@ class SSOConfigUtilsTest extends ItopDataTestCase {
 							'secret' => 'ssoSpSecretYYY123',
 						],
 						'enabled' => true,
-						'synchronize_user_contact' => true,
+						'synchronize_user' => true,
+						'synchronize_contact' => true,
 						'default_organization' => 'Org2',
 					]
 				]

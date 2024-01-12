@@ -92,7 +92,7 @@ class SSOConfigUtils {
 					'ssoSP' => $sProviderName,
 					'ssoSpId' => $aKeys['id'] ?? '',
 					'ssoSpSecret' => $aKeys['secret'] ?? '',
-					'ssoUserSync' => $aProviderConf['synchronize_user_contact'] ?? false,
+					'ssoUserSync' => $aProviderConf['synchronize_user'] ?? false,
 					'ssoUserOrg' => $sDefaultOrg,
 				];
 
@@ -152,7 +152,8 @@ class SSOConfigUtils {
 
 		$sSsoUserSyncFound = $aFormData['ssoUserSync'] ?? 'false';
 		$bSynchroUser = ($sSsoUserSyncFound === 'true');
-		$aCurrentProviderConf['synchronize_user_contact'] = $bSynchroUser;
+		$aCurrentProviderConf['synchronize_user'] = $bSynchroUser;
+		$aCurrentProviderConf['synchronize_contact'] = $bSynchroUser;
 		if ($bSynchroUser){
 			$aCurrentProviderConf['default_organization'] = $aFormData['ssoUserOrg'] ?? '';
 		}

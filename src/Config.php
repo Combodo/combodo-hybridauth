@@ -140,6 +140,16 @@ class Config
 		if (Config::Get('synchronize_user')){
 			return true;
 		}
+
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (is_null($aCurrentProviderConf)){
+			return false;
+		}
+
+		return $aCurrentProviderConf['synchronize_user'] ?? false;
+	}
+
+	public static function ContactSynchroEnabled(string $sLoginMode) : bool {
 		if (Config::Get('synchronize_contact')){
 			return true;
 		}
@@ -149,7 +159,7 @@ class Config
 			return false;
 		}
 
-		return $aCurrentProviderConf['synchronize_user_contact'] ?? false;
+		return $aCurrentProviderConf['synchronize_contact'] ?? false;
 	}
 
 	public static function GetDefaultOrg(string $sLoginMode) {

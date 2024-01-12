@@ -161,55 +161,27 @@ class ConfigTest extends ItopDataTestCase{
 		$this->assertEquals(null, Config::GetProviderConf(null));
 	}
 
-	public function UserSynchroEnabled_BackwardCompatibilityProvider(){
-		return [
-			'disabled' => [
-				'bExpectedRes' => false,
-				'synchronize_user' => false,
-				'synchronize_contact' => false,
-			],
-			'synchronize_user' => [
-				'bExpectedRes' => true,
-				'synchronize_user' => true,
-				'synchronize_contact' => false,
-			],
-			'synchronize_contact' => [
-				'bExpectedRes' => true,
-				'synchronize_user' => false,
-				'synchronize_contact' => true,
-			],
-			'both' => [
-				'bExpectedRes' => true,
-				'synchronize_user' => true,
-				'synchronize_contact' => true,
-			],
-		];
-	}
-
-	/**
-	 * @dataProvider UserSynchroEnabled_BackwardCompatibilityProvider
-	 */
-	public function testUserSynchroEnabled_BackwardCompatibility($bExpectedRes, $bSynchroUser, $bSynchroContact){
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', []);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', $bSynchroUser);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', $bSynchroContact);
-
-		$this->assertEquals($bExpectedRes, Config::UserSynchroEnabled('hybridauth-anyprovider'));
-	}
-
 	public function UserSynchroEnabledProvider(){
 		return [
-			'synchronize_user_contact missing in conf' => [
+			'synchronize_user missing in conf' => [
 				'bExpectedRes' => false,
-				'aConf' => [],
+				'aProviderConf' => [],
+				'bOverallOption' => false,
 			],
-			'disabled' => [
+			'synchronize_user disabled in provider' => [
 				'bExpectedRes' => false,
-				'aConf' => [ 'synchronize_user_contact' => false ],
+				'aProviderConf' => [ 'synchronize_user' => false ],
+				'bOverallOption' => false,
 			],
-			'enabled' => [
+			'synchronize_user enabled in provider' => [
 				'bExpectedRes' => true,
-				'aConf' => [ 'synchronize_user_contact' => true ],
+				'aProviderConf' => [ 'synchronize_user' => true ],
+				'bOverallOption' => false,
+			],
+			'synchronize_user enabled globally' => [
+				'bExpectedRes' => true,
+				'aProviderConf' => [ 'synchronize_user' => false ],
+				'bOverallOption' => true,
 			],
 		];
 	}
@@ -217,25 +189,56 @@ class ConfigTest extends ItopDataTestCase{
 	/**
 	 * @dataProvider UserSynchroEnabledProvider
 	 */
-	public function testUserSynchroEnabled($bExpectedRes, $aConf){
+	public function testUserSynchroEnabled($bExpectedRes, $aProviderConf, $bOverallOption){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
-				'Google' => $aConf,
+				'Google' => $aProviderConf,
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', $bOverallOption);
 
 		$this->assertEquals($bExpectedRes, Config::UserSynchroEnabled('hybridauth-Google'));
 	}
 
-	public function testUserSynchroEnabledNoConf(){
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', []);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+	public function ContactSynchroEnabledProvider(){
+		return [
+			'synchronize_user missing in conf' => [
+				'bExpectedRes' => false,
+				'aProviderConf' => [],
+				'bOverallOption' => false,
+			],
+			'synchronize_user disabled in provider' => [
+				'bExpectedRes' => false,
+				'aProviderConf' => [ 'synchronize_contact' => false ],
+				'bOverallOption' => false,
+			],
+			'synchronize_user enabled in provider' => [
+				'bExpectedRes' => true,
+				'aProviderConf' => [ 'synchronize_contact' => true ],
+				'bOverallOption' => false,
+			],
+			'synchronize_user enabled globally' => [
+				'bExpectedRes' => true,
+				'aProviderConf' => [ 'synchronize_contact' => false ],
+				'bOverallOption' => true,
+			],
+		];
+	}
 
-		$this->assertEquals(false, Config::UserSynchroEnabled('hybridauth-anyprovider'));
+	/**
+	 * @dataProvider ContactSynchroEnabledProvider
+	 */
+	public function testContactSynchroEnabled($bExpectedRes, $aProviderConf, $bOverallOption){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'Google' => $aProviderConf,
+			]
+		);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', $bOverallOption);
+
+		$this->assertEquals($bExpectedRes, Config::ContactSynchroEnabled('hybridauth-Google'));
 	}
 
 	public function testGetDefaultOrg(){

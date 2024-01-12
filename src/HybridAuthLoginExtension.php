@@ -328,6 +328,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$oPerson = LoginWebPage::FindPerson($sEmail);
 			if ($oPerson == null)
 			{
+				if (! Config::ContactSynchroEnabled($sLoginMode))
+				{
+					return; // No automatic Contact provisioning
+				}
+
 				// Create the person
 				$sFirstName = $oUserProfile->firstName;
 				$sLastName = $oUserProfile->lastName;
