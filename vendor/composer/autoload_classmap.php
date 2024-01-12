@@ -7,10 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Combodo\\iTop\\HybridAuth\\Config' => $baseDir . '/src/Config.php',
-    'Combodo\\iTop\\HybridAuth\\Controller\\SSOConfigController' => $baseDir . '/src/Controller/SSOConfigController.php',
-    'Combodo\\iTop\\HybridAuth\\Controller\\SSOConfigUtils' => $baseDir . '/src/Controller/SSOConfigUtils.php',
     'Combodo\\iTop\\HybridAuth\\HybridAuthLoginExtension' => $baseDir . '/src/HybridAuthLoginExtension.php',
-    'Combodo\\iTop\\HybridAuth\\Repository\\SssConfigRepository' => $baseDir . '/src/Repository/SssConfigRepository.php',
     'Combodo\\iTop\\HybridAuth\\Service\\HybridauthService' => $baseDir . '/src/Service/HybridauthService.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'Hybridauth\\Adapter\\AbstractAdapter' => $vendorDir . '/hybridauth/hybridauth/src/Adapter/AbstractAdapter.php',

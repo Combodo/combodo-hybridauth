@@ -77,13 +77,6 @@ SetupWebPage::AddModule(
 					),
 				),
 			),
-			//service provider list filter: without ui_proposed_providers option all providers proposed in ui
-			'ui_proposed_providers' => array (
-				'Google',
-				'Twitter',
-				'Facebook',
-				'MicrosoftGraph',
-			),
 		),
 	)
 );

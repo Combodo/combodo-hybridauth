@@ -9,7 +9,6 @@ namespace Combodo\iTop\HybridAuth;
 
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
-use Combodo\iTop\HybridAuth\Controller\SSOConfigController;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Dict;
 use Exception;
@@ -29,6 +28,8 @@ if (!class_exists('Combodo\iTop\Application\Helper\Session')) {
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginUIExtension
 {
+	const LOG_CHANNEL = "Hybridauth";
+
 	/** @var ?HybridauthService $oHybridauthService */
 	static $oHybridauthService;
 
@@ -177,7 +178,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$sLoginMode = self::GetLoginModeFromHttp();
 
 			if (is_null($sLoginMode)) {
-				IssueLog::Warning("No login_mode passed to service provider callback (landing.php)", SSOConfigController::LOG_CHANNEL);
+				IssueLog::Warning("No login_mode passed to service provider callback (landing.php)", HybridAuthLoginExtension::LOG_CHANNEL);
 				throw new \Exception("No SSO mode specified by service provider.");
 			}
 			if (Config::IsLoginModeSupported($sLoginMode)) {
@@ -189,7 +190,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		// Get the info from provider
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 		$oUserProfile = $oAuthAdapter->getUserProfile();
-		IssueLog::Info("SSO UserProfile returned by service provider", SSOConfigController::LOG_CHANNEL,
+		IssueLog::Info("SSO UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'oUserProfile' => $oUserProfile,
 			]);
@@ -279,7 +280,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		$sLoginMode = Session::Get('login_mode', '');
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		if (false === $sProviderName){
-			\IssueLog::Error("login_mode provided not SSO compliant", SSOConfigController::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
+			\IssueLog::Error("login_mode provided not SSO compliant", HybridAuthLoginExtension::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
 			throw new \Exception("login_mode provided not SSO compliant");
 		}
 		return $sProviderName;
@@ -316,7 +317,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			}
 			$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 			$oUserProfile = $oAuthAdapter->getUserProfile();
-			IssueLog::Info("SSO UserProfile returned by service provider", SSOConfigController::LOG_CHANNEL,
+			IssueLog::Info("SSO UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'oUserProfile' => $oUserProfile,
 			]
@@ -338,7 +339,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				$sLastName = $oUserProfile->lastName;
 				$sOrganization = Config::GetDefaultOrg($sLoginMode);
 				$aAdditionalParams = array('phone' => $oUserProfile->phone);
-				IssueLog::Info("SSO Person provisioning", SSOConfigController::LOG_CHANNEL,
+				IssueLog::Info("SSO Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
 					[
 						'first_name' => $sFirstName,
 						'last_name' => $sLastName,
@@ -351,7 +352,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			}
 			$sProfile = Config::GetSynchroProfile($sLoginMode);
 			$aProfiles = array($sProfile);
-			IssueLog::Info("SSO User provisioning", SSOConfigController::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
+			IssueLog::Info("SSO User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
 			LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
 		}
 		catch (Exception $e)
@@ -414,7 +415,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		try{
 			return self::GetHybridauthService()->authenticate($sName);
 		} catch(\Exception $e){
-			\IssueLog::Error("Fail to authenticate with provider name '$sName'", SSOConfigController::LOG_CHANNEL, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
+			\IssueLog::Error("Fail to authenticate with provider name '$sName'", HybridAuthLoginExtension::LOG_CHANNEL, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
 			throw $e;
 		}
 	}

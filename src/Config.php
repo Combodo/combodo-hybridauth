@@ -2,7 +2,6 @@
 
 namespace Combodo\iTop\HybridAuth;
 
-use Combodo\iTop\HybridAuth\Controller\SSOConfigController;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use MetaModel;
 use utils;
@@ -23,7 +22,7 @@ class Config
 	 */
 	public static function SetHybridConfig(array $aProvidersConfig, string $sSelectedSP, bool $bEnabled)
 	{
-		IssueLog::Info('SetHybridConfig', SSOConfigController::LOG_CHANNEL,
+		IssueLog::Info('SetHybridConfig', HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'aProviderConf' => $aProvidersConfig,
 				'sSelectedSP' => $sSelectedSP,
@@ -83,7 +82,7 @@ class Config
 
 		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 		if (! in_array($sLoginMode, $aAllowedModes)){
-			IssueLog::Warning("SSO mode not allowed in iTop configuration", SSOConfigController::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
+			IssueLog::Warning("SSO mode not allowed in iTop configuration", HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 			return false;
 		}
 
@@ -97,7 +96,7 @@ class Config
 				} else {
 					//login_mode forced and not enabled. exit to stop login automata
 					IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration."
-						, SSOConfigController::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
+						, HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 					throw new \Exception("SSO configuration needs to be fixed.");
 				}
 			}
@@ -105,7 +104,7 @@ class Config
 
 		//login_mode forced and not configured. exit to stop login automata
 		IssueLog::Error("Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.",
-			SSOConfigController::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
+			HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 		throw new \Exception("SSO configuration needs to be fixed.");
 	}
 

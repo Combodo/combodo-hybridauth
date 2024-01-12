@@ -30,10 +30,7 @@ class ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751
 
     public static $classMap = array (
         'Combodo\\iTop\\HybridAuth\\Config' => __DIR__ . '/../..' . '/src/Config.php',
-        'Combodo\\iTop\\HybridAuth\\Controller\\SSOConfigController' => __DIR__ . '/../..' . '/src/Controller/SSOConfigController.php',
-        'Combodo\\iTop\\HybridAuth\\Controller\\SSOConfigUtils' => __DIR__ . '/../..' . '/src/Controller/SSOConfigUtils.php',
         'Combodo\\iTop\\HybridAuth\\HybridAuthLoginExtension' => __DIR__ . '/../..' . '/src/HybridAuthLoginExtension.php',
-        'Combodo\\iTop\\HybridAuth\\Repository\\SssConfigRepository' => __DIR__ . '/../..' . '/src/Repository/SssConfigRepository.php',
         'Combodo\\iTop\\HybridAuth\\Service\\HybridauthService' => __DIR__ . '/../..' . '/src/Service/HybridauthService.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Hybridauth\\Adapter\\AbstractAdapter' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Adapter/AbstractAdapter.php',
