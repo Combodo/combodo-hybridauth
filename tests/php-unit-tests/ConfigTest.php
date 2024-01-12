@@ -241,6 +241,41 @@ class ConfigTest extends ItopDataTestCase{
 		$this->assertEquals($bExpectedRes, Config::ContactSynchroEnabled('hybridauth-Google'));
 	}
 
+	public function GetSynchroProfileProvider(){
+		return [
+			'default_profile missing in conf' => [
+				'bExpectedRes' => 'Portal User',
+				'aProviderConf' => [],
+				'bOverallOption' => null,
+			],
+			'synchronize_user set in provider' => [
+				'bExpectedRes' => 'SuperUser',
+				'aProviderConf' => [ 'default_profile' => 'SuperUser' ],
+				'bOverallOption' => null,
+			],
+			'synchronize_user set globally' => [
+				'bExpectedRes' => 'SuperUser',
+				'aProviderConf' => [],
+				'bOverallOption' => 'SuperUser',
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider GetSynchroProfileProvider
+	 */
+	public function testGetSynchroProfile($bExpectedRes, $aProviderConf, $bOverallOption){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'Google' => $aProviderConf,
+			]
+		);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $bOverallOption);
+
+		$this->assertEquals($bExpectedRes, Config::GetSynchroProfile('hybridauth-Google'));
+	}
+
 	public function testGetDefaultOrg(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -255,6 +290,7 @@ class ConfigTest extends ItopDataTestCase{
 		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-NoDefaultOrg'));
 		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-MissingProvider'));
 	}
+
 
 	public function SetHybridConfigProvider() {
 		return [

@@ -349,7 +349,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				);
 				$oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
 			}
-			$sProfile = Config::Get('default_profile');
+			$sProfile = Config::GetSynchroProfile($sLoginMode);
 			$aProfiles = array($sProfile);
 			IssueLog::Info("SSO User provisioning", SSOConfigController::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
 			LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);

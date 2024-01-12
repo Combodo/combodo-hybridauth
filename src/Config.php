@@ -149,6 +149,18 @@ class Config
 		return $aCurrentProviderConf['synchronize_user'] ?? false;
 	}
 
+	public static function GetSynchroProfile(string $sLoginMode) : string {
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (null !== $aCurrentProviderConf){
+			$sDefautProfile = $aCurrentProviderConf['default_profile'] ?? null;
+			if (null !== $sDefautProfile){
+				return $sDefautProfile;
+			}
+		}
+
+		return Config::Get('default_profile', 'Portal User');
+	}
+
 	public static function ContactSynchroEnabled(string $sLoginMode) : bool {
 		if (Config::Get('synchronize_contact')){
 			return true;
