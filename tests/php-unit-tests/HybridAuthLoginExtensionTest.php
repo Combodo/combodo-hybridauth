@@ -37,7 +37,6 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	{
 		parent::setUp();
 
-		$this->RequireOnceItopFile('sources/Application/Helper/Session.php');
 		$this->RequireOnceItopFile('env-production/combodo-hybridauth/vendor/autoload.php');
 		$this->RequireOnceUnitTestFile('Provider/ServiceProviderMock.php');
 
