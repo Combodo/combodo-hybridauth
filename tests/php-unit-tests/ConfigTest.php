@@ -128,27 +128,6 @@ class ConfigTest extends ItopDataTestCase{
 		$this->assertEquals($bExpected, Config::IsLoginModeSupported($sLoginMode));
 	}
 
-	public function testGetProposedSpListWithNoConf(){
-		$oHybridauthService = $this->createMock(HybridauthService::class);
-		$oHybridauthService->expects($this->once())
-			->method('ListProviders')
-			->willReturn(['Google', 'MicrosoftGraph', 'etc...']);
-		;
-
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui_proposed_providers', null);
-		$this->assertEquals(['Google', 'MicrosoftGraph', 'etc...'], Config::GetProposedSpList($oHybridauthService));
-	}
-
-	public function testGetProposedSpList(){
-		$oHybridauthService = $this->createMock(HybridauthService::class);
-		$oHybridauthService->expects($this->never())
-			->method('ListProviders');
-		;
-
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'ui_proposed_providers', ['Google']);
-		$this->assertEquals(['Google'], Config::GetProposedSpList($oHybridauthService));
-	}
-
 	public function testGetProviderConf(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[

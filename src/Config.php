@@ -120,21 +120,6 @@ class Config
 		return null;
 	}
 
-	/**
-	 * List SSO providers that will be proposed in Configuration UI
-	 */
-	public static function GetProposedSpList($oHybridauthService=null) : array {
-		$aList = self::Get('ui_proposed_providers', null);
-		if (null !== $aList){
-			return $aList;
-		}
-
-		if (is_null($oHybridauthService)){
-			$oHybridauthService = new HybridauthService();
-		}
-		return $oHybridauthService->ListProviders();
-	}
-
 	public static function UserSynchroEnabled(string $sLoginMode) : bool {
 		if (Config::Get('synchronize_user')){
 			return true;
