@@ -56,7 +56,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
 
 		$_SESSION = [];
-		$this->sUniqId = "SSO" . uniqid();
+		$this->sUniqId = "OpenID" . uniqid();
 		$this->oOrg = $this->CreateOrganization($this->sUniqId);
 
 		$oProfile = MetaModel::GetObjectFromOQL("SELECT URP_Profiles WHERE name = :name",
@@ -260,7 +260,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php", false, []);
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
-		$this->assertTrue(false !== strpos($sOutput, "No SSO mode specified by service provider"), "An error occurred should appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+		$this->assertTrue(false !== strpos($sOutput, "No OpenID mode specified by service provider"), "An error occurred should appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
 
 	public function testLandingPageFailureInvalidSSOLoginMode(){

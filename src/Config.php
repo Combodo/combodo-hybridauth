@@ -18,7 +18,7 @@ class Config
 	}
 
 	/**
-	 * configure SSO for a specific provider. if needed, it adds/removes allowed login mode.
+	 * configure OpenID specific provider. if needed, it adds/removes allowed login mode.
 	 */
 	public static function SetHybridConfig(array $aProvidersConfig, string $sSelectedSP, bool $bEnabled)
 	{
@@ -86,19 +86,19 @@ class Config
 			return false;
 		}
 
-		$aConfiguredModes = Config::ListProviders();
+		$aConfiguredModes = static::ListProviders();
 		foreach ($aConfiguredModes as $sProvider => $bEnabled)
 		{
 			$sConfiguredMode = "hybridauth-$sProvider";
 			if ($sConfiguredMode === $sLoginMode){
 				if ($bEnabled){
 					return true;
-				} else {
-					//login_mode forced and not enabled. exit to stop login automata
-					IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration."
-						, HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
-					throw new \Exception("Login modes configuration needs to be fixed.");
 				}
+
+				//login_mode forced and not enabled. exit to stop login automata
+				IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration."
+					, HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
+				throw new \Exception("Login modes configuration needs to be fixed.");
 			}
 		}
 
@@ -109,7 +109,7 @@ class Config
 	}
 
 	public static function GetProviderConf(?string $sLoginMode) : ?array {
-		$aProviderConfList = self::Get('providers');
+		$aProviderConfList = static::Get('providers');
 		foreach ($aProviderConfList as $sProvider => $aCurrentConf)
 		{
 			$sConfiguredMode = "hybridauth-$sProvider";
@@ -120,8 +120,8 @@ class Config
 		return null;
 	}
 
-	public static function UserSynchroEnabled(string $sLoginMode) : bool {
-		if (Config::Get('synchronize_user')){
+	public static function IsUserSynchroEnabled(string $sLoginMode) : bool {
+		if (static::Get('synchronize_user')){
 			return true;
 		}
 
@@ -142,11 +142,11 @@ class Config
 			}
 		}
 
-		return Config::Get('default_profile', 'Portal User');
+		return static::Get('default_profile', 'Portal User');
 	}
 
-	public static function ContactSynchroEnabled(string $sLoginMode) : bool {
-		if (Config::Get('synchronize_contact')){
+	public static function IsContactSynchroEnabled(string $sLoginMode) : bool {
+		if (static::Get('synchronize_contact')){
 			return true;
 		}
 
@@ -167,6 +167,6 @@ class Config
 			}
 		}
 
-		return Config::Get('default_organization');
+		return static::Get('default_organization');
 	}
 }

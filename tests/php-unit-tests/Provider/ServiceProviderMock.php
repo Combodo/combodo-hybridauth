@@ -21,7 +21,7 @@ class ServiceProviderMock extends OAuth2 {
 	public function authenticate() {
 		if (! Session::IsSet('auth_user')){
 			$aData = $this->GetData();
-			\IssueLog::Info("ServiceProvider->authenticate data to pass to SSO:", null, $aData);
+			\IssueLog::Info("ServiceProvider->authenticate data to pass to OpenID:", null, $aData);
 
 			$sEmail = $aData['profile_email'] ?? null;
 			if (! is_null($sEmail)) {
@@ -36,7 +36,7 @@ class ServiceProviderMock extends OAuth2 {
 
 	public function getUserProfile() : Profile {
 		$aData = $this->GetData();
-		\IssueLog::Info("ServiceProvider->getUserProfile data to pass to SSO:", null, $aData);
+		\IssueLog::Info("ServiceProvider->getUserProfile data to pass to OpenID:", null, $aData);
 		$class = new \ReflectionClass(Profile::class);
 
 		$oProfile = new Profile();

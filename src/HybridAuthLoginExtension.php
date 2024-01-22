@@ -116,7 +116,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				{
 					if (!Session::IsSet('login_will_redirect'))
 					{
-						// we are about to be redirected to the SSO provider
+						// we are about to be redirected to the OpenID provider
 						Session::Set('login_will_redirect', true);
 					}
 					else
@@ -179,7 +179,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 			if (is_null($sLoginMode)) {
 				IssueLog::Warning("No login_mode passed to service provider callback (landing.php)", HybridAuthLoginExtension::LOG_CHANNEL);
-				throw new \Exception("No SSO mode specified by service provider.");
+				throw new \Exception("No OpenID mode specified by service provider.");
 			}
 			if (Config::IsLoginModeSupported($sLoginMode)) {
 				Session::Set('login_mode', $sLoginMode);
@@ -190,13 +190,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		// Get the info from provider
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 		$oUserProfile = $oAuthAdapter->getUserProfile();
-		IssueLog::Info("SSO UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
+		IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'oUserProfile' => $oUserProfile,
 			]);
 		Session::Set('auth_user', $oUserProfile->email);
 
-		// Already redirected to SSO provider
+		// Already redirected to OpenID provider
 		Session::Unset('login_will_redirect');
 
 		$sURL = Session::Get('login_original_page');
@@ -280,8 +280,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		$sLoginMode = Session::Get('login_mode', '');
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		if (false === $sProviderName){
-			\IssueLog::Error("login_mode provided not SSO compliant", HybridAuthLoginExtension::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
-			throw new \Exception("login_mode provided not SSO compliant");
+			\IssueLog::Error("login_mode provided not OpenID compliant", HybridAuthLoginExtension::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
+			throw new \Exception("login_mode provided not OpenID compliant");
 		}
 		return $sProviderName;
 	}
@@ -306,7 +306,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	{
 		try
 		{
-			if (! Config::UserSynchroEnabled($sLoginMode))
+			if (! Config::IsUserSynchroEnabled($sLoginMode))
 			{
 				return; // No automatic User provisioning
 			}
@@ -317,7 +317,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			}
 			$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 			$oUserProfile = $oAuthAdapter->getUserProfile();
-			IssueLog::Info("SSO UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
+			IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'oUserProfile' => $oUserProfile,
 			]
@@ -329,7 +329,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$oPerson = LoginWebPage::FindPerson($sEmail);
 			if ($oPerson == null)
 			{
-				if (! Config::ContactSynchroEnabled($sLoginMode))
+				if (! Config::IsContactSynchroEnabled($sLoginMode))
 				{
 					return; // No automatic Contact provisioning
 				}
@@ -339,7 +339,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				$sLastName = $oUserProfile->lastName;
 				$sOrganization = Config::GetDefaultOrg($sLoginMode);
 				$aAdditionalParams = array('phone' => $oUserProfile->phone);
-				IssueLog::Info("SSO Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
+				IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
 					[
 						'first_name' => $sFirstName,
 						'last_name' => $sLastName,
@@ -352,7 +352,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			}
 			$sProfile = Config::GetSynchroProfile($sLoginMode);
 			$aProfiles = array($sProfile);
-			IssueLog::Info("SSO User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
+			IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
 			LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
 		}
 		catch (Exception $e)
@@ -400,8 +400,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	}
 
 	/**
-	 * If not connected to the SSO provider, redirect and exit.
-	 * If already connected, just get the info from the SSO provider and return.
+	 * If not connected to the OpenID provider, redirect and exit.
+	 * If already connected, just get the info from the OpenID provider and return.
 	 *
 	 * @return \Hybridauth\Adapter\AdapterInterface
 	 *

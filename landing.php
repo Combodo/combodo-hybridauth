@@ -14,7 +14,7 @@ use MetaModel;
 use utils;
 
 /**
- *  Return from SSO Provider after a successful login
+ *  Return from OpenID Provider after a successful login
  */
 require_once('../../approot.inc.php');
 require_once (APPROOT.'bootstrap.inc.php');
