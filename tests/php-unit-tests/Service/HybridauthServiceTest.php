@@ -3,7 +3,6 @@
 
 namespace Combodo\iTop\HybridAuth\Test\Service;
 
-use Combodo\iTop\HybridAuth\Repository\SssConfigRepository;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Combodo\iTop\Test\UnitTest\ItopTestCase;
 
