@@ -82,7 +82,7 @@ class Config
 
 		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 		if (! in_array($sLoginMode, $aAllowedModes)){
-			IssueLog::Warning("SSO mode not allowed in iTop configuration", HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
+			IssueLog::Warning("Login mode not allowed in ".ITOP_APPLICATION_SHORT." configuration", HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 			return false;
 		}
 
