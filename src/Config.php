@@ -105,7 +105,7 @@ class Config
 		//login_mode forced and not configured. exit to stop login automata
 		IssueLog::Error("Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.",
 			HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
-		throw new \Exception("SSO configuration needs to be fixed.");
+		throw new \Exception("Login modes configuration needs to be fixed.");
 	}
 
 	public static function GetProviderConf(?string $sLoginMode) : ?array {
