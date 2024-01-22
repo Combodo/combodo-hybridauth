@@ -250,7 +250,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	public function testLandingPage(){
 		$aData = ['profile_email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php?login_mode=" . $this->sLoginMode, false, []);
+		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php?login_mode=" . $this->sLoginMode, false, []);
 		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:" . $sOutput);
 		$this->assertFalse(strpos($sOutput, "An error occurred"), "An error occurred should NOT appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
@@ -258,7 +258,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	public function testLandingPageFailureNoLoginModeProvided(){
 		$aData = ['profile_email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php", false, []);
+		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php", false, []);
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
 		$this->assertTrue(false !== strpos($sOutput, "No login_mode specified by service provider"), "An error occurred should appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
 	}
@@ -266,7 +266,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	public function testLandingPageFailureInvalidSSOLoginMode(){
 		$aData = ['profile_email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl("/env-production/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured", false, []);
+		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured", false, []);
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
 	}
 }
