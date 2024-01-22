@@ -18,7 +18,13 @@ class Config
 	}
 
 	/**
-	 * configure OpenID specific provider. if needed, it adds/removes allowed login mode.
+	 * Configure OpenID specific provider. if needed, it adds/removes allowed login mode.
+	 *
+	 * @param array $aProvidersConfig Complete "providers" setting for the module
+	 * @param string $sSelectedSP Service provider to enable/disable
+	 * @param bool $bEnabled Whether $sSelectedSP must be enabled or disabled
+	 *
+	 * @since 1.2.0
 	 */
 	public static function SetHybridConfig(array $aProvidersConfig, string $sSelectedSP, bool $bEnabled)
 	{
@@ -70,11 +76,11 @@ class Config
 	}
 
 	/**
-	 * @param string $sLoginMode
+	 * @param string|null $sLoginMode
 	 *
 	 * @return bool
 	 */
-	public static function IsLoginModeSupported(?string $sLoginMode)
+	public static function IsLoginModeSupported(?string $sLoginMode) : bool
 	{
 		if (! utils::StartsWith($sLoginMode, 'hybridauth-')){
 			return false;

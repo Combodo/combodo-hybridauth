@@ -179,7 +179,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 			if (is_null($sLoginMode)) {
 				IssueLog::Warning("No login_mode passed to service provider callback (landing.php)", HybridAuthLoginExtension::LOG_CHANNEL);
-				throw new \Exception("No OpenID mode specified by service provider.");
+				throw new \Exception("No login_mode mode specified by service provider.");
 			}
 			if (Config::IsLoginModeSupported($sLoginMode)) {
 				Session::Set('login_mode', $sLoginMode);
