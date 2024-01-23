@@ -9,10 +9,9 @@ namespace Combodo\iTop\HybridAuth;
 
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
+use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Dict;
 use Exception;
-use Hybridauth\Hybridauth;
-use Hybridauth\Logger\Logger;
 use iLoginUIExtension;
 use iLogoutExtension;
 use IssueLog;
@@ -29,7 +28,24 @@ if (!class_exists('Combodo\iTop\Application\Helper\Session')) {
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginUIExtension
 {
-    /**
+	const LOG_CHANNEL = "Hybridauth";
+
+	/** @var ?HybridauthService $oHybridauthService */
+	static $oHybridauthService;
+
+	//used only for testing purpose
+	public static function SetHybridauthService(?HybridauthService $oHybridauthService): void {
+		self::$oHybridauthService = $oHybridauthService;
+	}
+
+	public static function GetHybridauthService(): HybridauthService {
+		if (is_null(self::$oHybridauthService)){
+			self::$oHybridauthService = new HybridauthService();
+		}
+		return self::$oHybridauthService;
+	}
+
+	/**
 	 * Return the list of supported login modes for this plugin
 	 *
 	 * @return array of supported login modes
@@ -37,9 +53,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	public function ListSupportedLoginModes()
 	{
 		$aLoginModes = array();
-		foreach (Config::GetProviders() as $sProvider)
+		foreach (Config::ListProviders() as $sProvider => $bEnabled)
 		{
-			$aLoginModes[] = "hybridauth-$sProvider";
+			if ($bEnabled){
+				$aLoginModes[] = "hybridauth-$sProvider";
+			}
 		}
 		return $aLoginModes;
 	}
@@ -49,14 +67,34 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (!Session::IsInitialized()) {
 			Session::Start();
 		}
+
+		if (! Session::IsSet('login_mode')) {
+			$sLoginModeFromHttp = self::GetLoginModeFromHttp();
+
+			if (is_null($sLoginModeFromHttp)) {
+				//no login_mode provided even by http
+				return LoginWebPage::LOGIN_FSM_CONTINUE;
+			}
+
+			if (false === Config::IsLoginModeSupported($sLoginModeFromHttp)) {
+				//login_mode provided by http not supported by current login extension
+				return LoginWebPage::LOGIN_FSM_CONTINUE;
+			}
+
+			Session::Set('login_mode', $sLoginModeFromHttp);
+			Session::WriteClose();
+		} else if (false === Config::IsLoginModeSupported(Session::Get('login_mode'))){
+			return LoginWebPage::LOGIN_FSM_CONTINUE;
+		}
+
 		Session::Unset('HYBRIDAUTH::STORAGE');
-		$sOriginURL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot()))
-		{
+		$sOriginURL = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot())) {
 			// If the found URL does not start with the configured AppRoot URL
 			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
 		}
 		Session::Set('login_original_page', $sOriginURL);
+
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
@@ -71,41 +109,27 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			Session::Start();
 		}
 
-		if (!Session::IsSet('login_mode'))
-		{
-			$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
-			$aSupportedLoginModes = self::ListSupportedLoginModes();
-			foreach ($aAllowedModes as $sLoginMode)
-			{
-				if (in_array($sLoginMode, $aSupportedLoginModes))
-				{
-					Session::Set('login_mode', $sLoginMode);
-					break;
-				}
-			}
-		}
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
 			if (!Session::IsSet('auth_user'))
 			{
 				try
 				{
-                    if (!Session::IsSet('login_will_redirect'))
-                    {
-                        // we are about to be redirected to the SSO provider
-	                    Session::Set('login_will_redirect', true);
-                    }
-                    else
-                    {
-                        if (empty(utils::ReadParam('login_hybridauth')))
-                        {
-	                        Session::Unset('login_will_redirect');
-                            $iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
-                            return LoginWebPage::LOGIN_FSM_ERROR;
-                        }
-                    }
-                    // Proceed and sign in (redirect to provider and exit)
-                    self::ConnectHybridAuth();
+					if (!Session::IsSet('login_will_redirect'))
+					{
+						// we are about to be redirected to the OpenID provider
+						Session::Set('login_will_redirect', true);
+					}
+					else
+					{
+						if (empty(utils::ReadParam('login_hybridauth')))
+						{
+							Session::Unset('login_will_redirect');
+							$iErrorCode = LoginWebPage::EXIT_CODE_MISSINGLOGIN;
+							return LoginWebPage::LOGIN_FSM_ERROR;
+						}
+					}
+					// Proceed and sign in (redirect to provider and exit)
+					self::ConnectHybridAuth();
 				}
 				catch (Exception $e)
 				{
@@ -118,24 +142,100 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
+	/**
+	 * @return mixed|null
+	 */
+	public static function GetLoginModeFromHttp(){
+		$sLoginMode = utils::ReadParam('login_mode', null, false, 'raw_data');
+		if (!is_null($sLoginMode)){
+			return $sLoginMode;
+		}
+
+
+		return $_REQUEST['login_mode'] ?? null;
+	}
+
+	/**
+	 * @return string : iTop URL to redirect to from Service Provider callback page landing.php
+	 * @throws \Hybridauth\Exception\InvalidArgumentException
+	 * @throws \Hybridauth\Exception\RuntimeException
+	 * @throws \Hybridauth\Exception\UnexpectedValueException
+	 */
+	public function HandleServiceProviderCallback() : string {
+		Session::Start();
+
+		$bLoginDebug = MetaModel::GetConfig()->Get('login_debug');
+		if ($bLoginDebug) {
+			IssueLog::Info('---------------------------------');
+			IssueLog::Info($_SERVER['REQUEST_URI']);
+			IssueLog::Info("--> Entering Hybrid Auth landing page");
+			$sSessionLog = session_id().' '.utils::GetSessionLog();
+			IssueLog::Info("SESSION: $sSessionLog");
+		}
+
+		//set login_mode if unset in session but provided in url
+		if (! Session::IsSet('login_mode')) {
+			$sLoginMode = self::GetLoginModeFromHttp();
+
+			if (is_null($sLoginMode)) {
+				IssueLog::Warning("No login_mode passed to service provider callback (landing.php)", HybridAuthLoginExtension::LOG_CHANNEL);
+				throw new \Exception("No login_mode specified by service provider.");
+			}
+			if (Config::IsLoginModeSupported($sLoginMode)) {
+				Session::Set('login_mode', $sLoginMode);
+				Session::WriteClose();
+			}
+		}
+
+		// Get the info from provider
+		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
+		$oUserProfile = $oAuthAdapter->getUserProfile();
+		IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
+			[
+				'oUserProfile' => $oUserProfile,
+			]);
+		Session::Set('auth_user', $oUserProfile->email);
+
+		// Already redirected to OpenID provider
+		Session::Unset('login_will_redirect');
+
+		$sURL = Session::Get('login_original_page');
+		if (empty($sURL)) {
+			$sURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php?login_hybridauth=connected';
+		} else {
+			if (strpos($sURL, '?') !== false) {
+				$sURL = "$sURL&login_hybridauth=connected";
+			} else {
+				$sURL = "$sURL?login_hybridauth=connected";
+			}
+		}
+
+		if ($bLoginDebug) {
+			$sSessionLog = session_id().' '.utils::GetSessionLog();
+			IssueLog::Info("SESSION: $sSessionLog");
+		}
+
+		Session::WriteClose();
+		return $sURL;
+	}
+
 	protected function OnCheckCredentials(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		$sLoginMode = Session::Get('login_mode');
+		if (Config::IsLoginModeSupported($sLoginMode)) {
 			if (!Session::IsSet('auth_user'))
 			{
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
 				return LoginWebPage::LOGIN_FSM_ERROR;
 			}
-			self::DoUserProvisioning();
+			self::DoUserProvisioning($sLoginMode);
 		}
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
 	}
 
 	protected function OnCredentialsOK(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
 			$sAuthUser = Session::Get('auth_user');
 			if (!LoginWebPage::CheckUser($sAuthUser))
 			{
@@ -149,8 +249,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnError(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
 			Session::Unset('HYBRIDAUTH::STORAGE');
 			Session::Unset('hybridauth_count');
 			if (LoginWebPage::getIOnExit() === LoginWebPage::EXIT_RETURN) {
@@ -161,7 +260,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			{
 				$oLoginWebPage = new LoginWebPage();
 				$oLoginWebPage->DisplayLogoutPage(false, Dict::S('HybridAuth:Error:UserNotAllowed'));
-				exit();
+				exit(-1);
 			}
 		}
 		return LoginWebPage::LOGIN_FSM_CONTINUE;
@@ -169,8 +268,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	protected function OnConnected(&$iErrorCode)
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
+		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
 			Session::Set('can_logoff', true);
 			return LoginWebPage::CheckLoggedUser($iErrorCode);
 		}
@@ -179,8 +277,12 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	private static function GetProviderName()
 	{
-		$sLoginMode = Session::Get('login_mode');
+		$sLoginMode = Session::Get('login_mode', '');
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
+		if (false === $sProviderName){
+			\IssueLog::Error("login_mode provided not OpenID compliant", HybridAuthLoginExtension::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
+			throw new \Exception("login_mode provided not OpenID compliant");
+		}
 		return $sProviderName;
 	}
 
@@ -191,112 +293,130 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	{
 		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
 		{
-            $oAuthAdapter = self::ConnectHybridAuth();
-            // Does not redirect...
-            // and actually just clears the session variable,
-            // almost useless we can log again without any further user interaction
-            // At least it disconnects from iTop
+			$oAuthAdapter = self::ConnectHybridAuth();
+			// Does not redirect...
+			// and actually just clears the session variable,
+			// almost useless we can log again without any further user interaction
+			// At least it disconnects from iTop
 			$oAuthAdapter->disconnect();
 		}
 	}
 
-	private function DoUserProvisioning()
-    {
-        try
-        {
-            if (!Config::Get('synchronize_user'))
-            {
-                return; // No automatic User provisioning
-            }
-            $sEmail = Session::Get('auth_user');
-            if (LoginWebPage::FindUser($sEmail, false))
-            {
-                return; // User already present
-            }
-            $oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
-            $oUserProfile = $oAuthAdapter->getUserProfile();
-            if ($oUserProfile == null)
-            {
-                return; // No data available for this user
-            }
-            $oPerson = LoginWebPage::FindPerson($sEmail);
-            if ($oPerson == null)
-            {
-                if (!Config::Get('synchronize_contact'))
-                {
-                    return; // No automatic Contact provisioning
-                }
-                // Create the person
-                $sFirstName = $oUserProfile->firstName;
-                $sLastName = $oUserProfile->lastName;
-                $sOrganization = Config::Get('default_organization');
-                $aAdditionalParams = array('phone' => $oUserProfile->phone);
-                $oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
-            }
-            $sProfile = Config::Get('default_profile');
-            $aProfiles = array($sProfile);
-            LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
-        }
-        catch (Exception $e)
-        {
-            IssueLog::Error($e->getMessage());
-        }
-    }
+	private function DoUserProvisioning(string $sLoginMode)
+	{
+		try
+		{
+			if (! Config::IsUserSynchroEnabled($sLoginMode))
+			{
+				return; // No automatic User provisioning
+			}
+			$sEmail = Session::Get('auth_user');
+			if (LoginWebPage::FindUser($sEmail, false))
+			{
+				return; // User already present
+			}
+			$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
+			$oUserProfile = $oAuthAdapter->getUserProfile();
+			IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
+			[
+				'oUserProfile' => $oUserProfile,
+			]
+		);
+			if ($oUserProfile == null)
+			{
+				return; // No data available for this user
+			}
+			$oPerson = LoginWebPage::FindPerson($sEmail);
+			if ($oPerson == null)
+			{
+				if (! Config::IsContactSynchroEnabled($sLoginMode))
+				{
+					return; // No automatic Contact provisioning
+				}
 
-    public function GetTwigContext()
-    {
-	    $oLoginContext = new LoginTwigContext();
-	    $oLoginContext->SetLoaderPath(utils::GetAbsoluteModulePath('combodo-hybridauth').'view');
-	    $oLoginContext->AddCSSFile(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/css/hybridauth.css');
+				// Create the person
+				$sFirstName = $oUserProfile->firstName;
+				$sLastName = $oUserProfile->lastName;
+				$sOrganization = Config::GetDefaultOrg($sLoginMode);
+				$aAdditionalParams = array('phone' => $oUserProfile->phone);
+				IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
+					[
+						'first_name' => $sFirstName,
+						'last_name' => $sLastName,
+						'email' => $sEmail,
+						'org' => $sOrganization,
+						'addition_params' => $aAdditionalParams,
+					]
+				);
+				$oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
+			}
+			$sProfile = Config::GetSynchroProfile($sLoginMode);
+			$aProfiles = array($sProfile);
+			IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
+			LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
+		}
+		catch (Exception $e)
+		{
+			IssueLog::Error($e->getMessage());
+		}
+	}
 
-	    $aData = array();
-	    $aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
-	    foreach (Config::Get('providers') as $sProvider => $aProviderData) {
-		    // If provider not allowed -> next
-		    if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
-			    continue;
-		    }
-		    $sFaImage = null;
-		    $sIconUrl = null;
-		    if (isset($aProviderData['icon_url'])) {
-			    $sIconUrl = utils::StartsWith($aProviderData['icon_url'], "http") ? $aProviderData['icon_url'] : utils::GetAbsoluteUrlAppRoot().$aProviderData['icon_url'];
-		    } else {
-			    $sFaImage = utils::StartsWith($sProvider, "Microsoft") ? "fa-microsoft" : "fa-$sProvider";
-		    }
-		    $sLabel = isset($aProviderData['label']) ? Dict::Format($aProviderData['label'], $sProvider) : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
-		    $sTooltip = isset($aProviderData['tooltip']) ? Dict::Format($aProviderData['tooltip'], $sProvider) : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
-		    $aData[] = array(
-			    'sLoginMode' => "hybridauth-$sProvider",
-			    'sLabel'     => $sLabel,
-			    'sTooltip'   => $sTooltip,
-			    'sFaImage'   => $sFaImage,
-			    'sIconUrl'   => $sIconUrl,
-		    );
-	    }
+	public function GetTwigContext()
+	{
+		$oLoginContext = new LoginTwigContext();
+		$oLoginContext->SetLoaderPath(utils::GetAbsoluteModulePath('combodo-hybridauth').'view');
+		$oLoginContext->AddCSSFile(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/css/hybridauth.css');
 
-	    $oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
+		$aData = array();
+		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		foreach (Config::Get('providers') as $sProvider => $aProviderData) {
+			// If provider not allowed -> next
+			if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
+				continue;
+			}
+			$sFaImage = null;
+			$sIconUrl = null;
+			if (isset($aProviderData['icon_url'])) {
+				$sIconUrl = utils::StartsWith($aProviderData['icon_url'], "http") ? $aProviderData['icon_url'] : utils::GetAbsoluteUrlAppRoot().$aProviderData['icon_url'];
+			} else {
+				$sFaImage = utils::StartsWith($sProvider, "Microsoft") ? "fa-microsoft" : "fa-$sProvider";
+			}
+			$sLabel = isset($aProviderData['label']) ? Dict::Format($aProviderData['label'], $sProvider) : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
+			$sTooltip = isset($aProviderData['tooltip']) ? Dict::Format($aProviderData['tooltip'], $sProvider) : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
+			$aData[] = array(
+				'sLoginMode' => "hybridauth-$sProvider",
+				'sLabel'     => $sLabel,
+				'sTooltip'   => $sTooltip,
+				'sFaImage'   => $sFaImage,
+				'sIconUrl'   => $sIconUrl,
+			);
+		}
 
-	    $oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
+		$oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
 
-	    return $oLoginContext;
-    }
+		$oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
 
-    /**
-     * If not connected to the SSO provider, redirect and exit.
-     * If already connected, just get the info from the SSO provider and return.
-     *
-     * @return \Hybridauth\Adapter\AdapterInterface
-     *
-     * @throws \Hybridauth\Exception\InvalidArgumentException
-     * @throws \Hybridauth\Exception\RuntimeException
-     * @throws \Hybridauth\Exception\UnexpectedValueException
-     */
-    public static function ConnectHybridAuth()
-    {
-        $oLogger = (Config::Get('debug')) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
-        $aConfig = Config::GetHybridConfig();
-        $oHybridAuth = new Hybridauth($aConfig, null, null, $oLogger);
-        $oAuthAdapter = $oHybridAuth->authenticate(self::GetProviderName());
-        return $oAuthAdapter;
-    }
+		return $oLoginContext;
+	}
+
+	/**
+	 * If not connected to the OpenID provider, redirect and exit.
+	 * If already connected, just get the info from the OpenID provider and return.
+	 *
+	 * @return \Hybridauth\Adapter\AdapterInterface
+	 *
+	 * @throws \Hybridauth\Exception\InvalidArgumentException
+	 * @throws \Hybridauth\Exception\RuntimeException
+	 * @throws \Hybridauth\Exception\UnexpectedValueException
+	 */
+	public static function ConnectHybridAuth()
+	{
+		$sName = self::GetProviderName();
+		try{
+			return self::GetHybridauthService()->authenticate($sName);
+		} catch(\Exception $e){
+			\IssueLog::Error("Fail to authenticate with provider name '$sName'", HybridAuthLoginExtension::LOG_CHANNEL, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
+			throw $e;
+		}
+	}
 }

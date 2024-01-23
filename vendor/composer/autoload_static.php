@@ -11,6 +11,10 @@ class ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751
         array (
             'Hybridauth\\' => 11,
         ),
+        'C' => 
+        array (
+            'Combodo\\iTop\\HybridAuth\\' => 24,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -18,6 +22,100 @@ class ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751
         array (
             0 => __DIR__ . '/..' . '/hybridauth/hybridauth/src',
         ),
+        'Combodo\\iTop\\HybridAuth\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
+        ),
+    );
+
+    public static $classMap = array (
+        'Combodo\\iTop\\HybridAuth\\Config' => __DIR__ . '/../..' . '/src/Config.php',
+        'Combodo\\iTop\\HybridAuth\\HybridAuthLoginExtension' => __DIR__ . '/../..' . '/src/HybridAuthLoginExtension.php',
+        'Combodo\\iTop\\HybridAuth\\Service\\HybridauthService' => __DIR__ . '/../..' . '/src/Service/HybridauthService.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'Hybridauth\\Adapter\\AbstractAdapter' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Adapter/AbstractAdapter.php',
+        'Hybridauth\\Adapter\\AdapterInterface' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Adapter/AdapterInterface.php',
+        'Hybridauth\\Adapter\\DataStoreTrait' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Adapter/DataStoreTrait.php',
+        'Hybridauth\\Adapter\\OAuth1' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Adapter/OAuth1.php',
+        'Hybridauth\\Adapter\\OAuth2' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Adapter/OAuth2.php',
+        'Hybridauth\\Adapter\\OpenID' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Adapter/OpenID.php',
+        'Hybridauth\\Data\\Collection' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Data/Collection.php',
+        'Hybridauth\\Data\\Parser' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Data/Parser.php',
+        'Hybridauth\\Exception\\AuthorizationDeniedException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/AuthorizationDeniedException.php',
+        'Hybridauth\\Exception\\BadMethodCallException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/BadMethodCallException.php',
+        'Hybridauth\\Exception\\Exception' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/Exception.php',
+        'Hybridauth\\Exception\\ExceptionInterface' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/ExceptionInterface.php',
+        'Hybridauth\\Exception\\HttpClientFailureException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/HttpClientFailureException.php',
+        'Hybridauth\\Exception\\HttpRequestFailedException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/HttpRequestFailedException.php',
+        'Hybridauth\\Exception\\InvalidAccessTokenException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/InvalidAccessTokenException.php',
+        'Hybridauth\\Exception\\InvalidApplicationCredentialsException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/InvalidApplicationCredentialsException.php',
+        'Hybridauth\\Exception\\InvalidArgumentException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/InvalidArgumentException.php',
+        'Hybridauth\\Exception\\InvalidAuthorizationCodeException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/InvalidAuthorizationCodeException.php',
+        'Hybridauth\\Exception\\InvalidAuthorizationStateException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/InvalidAuthorizationStateException.php',
+        'Hybridauth\\Exception\\InvalidOauthTokenException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/InvalidOauthTokenException.php',
+        'Hybridauth\\Exception\\InvalidOpenidIdentifierException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/InvalidOpenidIdentifierException.php',
+        'Hybridauth\\Exception\\NotImplementedException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/NotImplementedException.php',
+        'Hybridauth\\Exception\\RuntimeException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/RuntimeException.php',
+        'Hybridauth\\Exception\\UnexpectedApiResponseException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/UnexpectedApiResponseException.php',
+        'Hybridauth\\Exception\\UnexpectedValueException' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Exception/UnexpectedValueException.php',
+        'Hybridauth\\HttpClient\\Curl' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/HttpClient/Curl.php',
+        'Hybridauth\\HttpClient\\Guzzle' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/HttpClient/Guzzle.php',
+        'Hybridauth\\HttpClient\\HttpClientInterface' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/HttpClient/HttpClientInterface.php',
+        'Hybridauth\\HttpClient\\Util' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/HttpClient/Util.php',
+        'Hybridauth\\Hybridauth' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Hybridauth.php',
+        'Hybridauth\\Logger\\Logger' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Logger/Logger.php',
+        'Hybridauth\\Logger\\LoggerInterface' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Logger/LoggerInterface.php',
+        'Hybridauth\\Logger\\Psr3LoggerWrapper' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Logger/Psr3LoggerWrapper.php',
+        'Hybridauth\\Provider\\AOLOpenID' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/AOLOpenID.php',
+        'Hybridauth\\Provider\\Amazon' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Amazon.php',
+        'Hybridauth\\Provider\\Authentiq' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Authentiq.php',
+        'Hybridauth\\Provider\\BitBucket' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/BitBucket.php',
+        'Hybridauth\\Provider\\Blizzard' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Blizzard.php',
+        'Hybridauth\\Provider\\BlizzardAPAC' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/BlizzardAPAC.php',
+        'Hybridauth\\Provider\\BlizzardEU' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/BlizzardEU.php',
+        'Hybridauth\\Provider\\Discord' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Discord.php',
+        'Hybridauth\\Provider\\Disqus' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Disqus.php',
+        'Hybridauth\\Provider\\Dribbble' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Dribbble.php',
+        'Hybridauth\\Provider\\Facebook' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Facebook.php',
+        'Hybridauth\\Provider\\Foursquare' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Foursquare.php',
+        'Hybridauth\\Provider\\GitHub' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/GitHub.php',
+        'Hybridauth\\Provider\\GitLab' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/GitLab.php',
+        'Hybridauth\\Provider\\Google' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Google.php',
+        'Hybridauth\\Provider\\Instagram' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Instagram.php',
+        'Hybridauth\\Provider\\LinkedIn' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/LinkedIn.php',
+        'Hybridauth\\Provider\\Mailru' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Mailru.php',
+        'Hybridauth\\Provider\\MicrosoftGraph' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/MicrosoftGraph.php',
+        'Hybridauth\\Provider\\Odnoklassniki' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Odnoklassniki.php',
+        'Hybridauth\\Provider\\OpenID' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/OpenID.php',
+        'Hybridauth\\Provider\\PaypalOpenID' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/PaypalOpenID.php',
+        'Hybridauth\\Provider\\Reddit' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Reddit.php',
+        'Hybridauth\\Provider\\Spotify' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Spotify.php',
+        'Hybridauth\\Provider\\StackExchange' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/StackExchange.php',
+        'Hybridauth\\Provider\\StackExchangeOpenID' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/StackExchangeOpenID.php',
+        'Hybridauth\\Provider\\Steam' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Steam.php',
+        'Hybridauth\\Provider\\SteemConnect' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/SteemConnect.php',
+        'Hybridauth\\Provider\\Tumblr' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Tumblr.php',
+        'Hybridauth\\Provider\\TwitchTV' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/TwitchTV.php',
+        'Hybridauth\\Provider\\Twitter' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Twitter.php',
+        'Hybridauth\\Provider\\Vkontakte' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Vkontakte.php',
+        'Hybridauth\\Provider\\WeChat' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/WeChat.php',
+        'Hybridauth\\Provider\\WeChatChina' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/WeChatChina.php',
+        'Hybridauth\\Provider\\WindowsLive' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/WindowsLive.php',
+        'Hybridauth\\Provider\\WordPress' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/WordPress.php',
+        'Hybridauth\\Provider\\Yahoo' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Yahoo.php',
+        'Hybridauth\\Provider\\YahooOpenID' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/YahooOpenID.php',
+        'Hybridauth\\Provider\\Yandex' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Provider/Yandex.php',
+        'Hybridauth\\Storage\\Session' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Storage/Session.php',
+        'Hybridauth\\Storage\\StorageInterface' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Storage/StorageInterface.php',
+        'Hybridauth\\Thirdparty\\OAuth\\OAuthConsumer' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Thirdparty/OAuth/OAuthConsumer.php',
+        'Hybridauth\\Thirdparty\\OAuth\\OAuthRequest' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Thirdparty/OAuth/OAuthRequest.php',
+        'Hybridauth\\Thirdparty\\OAuth\\OAuthSignatureMethod' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Thirdparty/OAuth/OAuthSignatureMethod.php',
+        'Hybridauth\\Thirdparty\\OAuth\\OAuthSignatureMethodHMACSHA1' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Thirdparty/OAuth/OAuthSignatureMethodHMACSHA1.php',
+        'Hybridauth\\Thirdparty\\OAuth\\OAuthUtil' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Thirdparty/OAuth/OAuthUtil.php',
+        'Hybridauth\\Thirdparty\\OpenID\\LightOpenID' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/Thirdparty/OpenID/LightOpenID.php',
+        'Hybridauth\\User\\Activity' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/User/Activity.php',
+        'Hybridauth\\User\\Contact' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/User/Contact.php',
+        'Hybridauth\\User\\Profile' => __DIR__ . '/..' . '/hybridauth/hybridauth/src/User/Profile.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -25,6 +123,7 @@ class ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751::$classMap;
 
         }, null, ClassLoader::class);
     }
