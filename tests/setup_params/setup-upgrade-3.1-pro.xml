@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<installation>
+	<!-- On manual installs, this file is generated in setup/install-*.xml -->
+	<mode>upgrade</mode>
+	<preinstall>
+		<copies type="array"/>
+	</preinstall>
+	<source_dir>datamodels/2.x/</source_dir>
+	<datamodel_version>2.5.0</datamodel_version>
+	<previous_configuration_file>default-config-itop.php</previous_configuration_file>
+	<extensions_dir>extensions</extensions_dir>
+	<target_env>production</target_env>
+	<workspace_dir></workspace_dir>
+	<database>
+		<server></server>
+		<user>jenkins_itop</user>
+		<pwd>IKnowYouSeeMeInJenkinsConf</pwd>
+		<name>itop_ci</name>
+		<db_tls_enabled></db_tls_enabled>
+		<db_tls_ca></db_tls_ca>
+		<prefix></prefix>
+	</database>
+	<url>http://localhost/iTop/</url>
+	<graphviz_path>/usr/bin/dot</graphviz_path>
+	<admin_account>
+		<user>admin</user>
+		<pwd>admin</pwd>
+		<language>EN US</language>
+	</admin_account>
+	<language>EN US</language>
+	<selected_modules type="array">
+		<!-- core modules -->
+		<item>authent-cas</item>
+		<item>authent-external</item>
+		<item>authent-ldap</item>
+		<item>authent-local</item>
+		<item>combodo-backoffice-darkmoon-theme</item>
+		<item>combodo-db-tools</item>
+		<item>itop-attachments</item>
+		<item>itop-backup</item>
+		<item>itop-bridge-cmdb-services</item>
+		<item>itop-bridge-cmdb-ticket</item>
+		<item>itop-bridge-datacenter-mgmt-services</item>
+		<item>itop-bridge-endusers-devices-services</item>
+		<item>itop-bridge-storage-mgmt-services</item>
+		<item>itop-bridge-virtualization-mgmt-services</item>
+		<item>itop-bridge-virtualization-storage</item>
+		<item>itop-change-mgmt</item>
+		<item>itop-config</item>
+		<item>itop-config-mgmt</item>
+		<item>itop-core-update</item>
+		<item>itop-datacenter-mgmt</item>
+		<item>itop-endusers-devices</item>
+		<item>itop-files-information</item>
+		<item>itop-knownerror-mgmt</item>
+		<item>itop-oauth-client</item>
+		<item>itop-portal</item>
+		<item>itop-portal-base</item>
+		<item>itop-profiles-itil</item>
+		<item>itop-request-mgmt</item>
+		<item>itop-service-mgmt</item>
+		<item>itop-sla-computation</item>
+		<item>itop-storage-mgmt</item>
+		<item>itop-structure</item>
+		<item>itop-themes-compat</item>
+		<item>itop-tickets</item>
+		<item>itop-virtualization-mgmt</item>
+		<item>itop-welcome-itil</item>
+		<!-- extenions modules -->
+		<item>authent-token</item>
+		<item>combodo-autodispatch-ticket</item>
+		<item>combodo-autoclose-ticket</item>
+		<item>combodo-calendar-view</item>
+		<item>combodo-custom-hyperlinks</item>
+		<item>combodo-dispatch-userrequest</item>
+		<item>combodo-hybridauth</item>
+		<item>combodo-impersonate</item>
+		<item>combodo-login-alternative-logo-placement</item>
+		<item>combodo-login-custom-background</item>
+		<item>combodo-login-custom-content</item>
+		<item>combodo-login-glass-theme</item>
+		<item>combodo-notify-on-expiration</item>
+		<item>combodo-password-expiration</item>
+		<item>combodo-portal-dynamic-branding-logo</item>
+		<item>combodo-saml</item>
+		<item>combodo-webhook-integration</item>
+		<item>combodo-workflow-graphical-view</item>
+		<item>customer-survey</item>
+		<item>email-reply</item>
+		<item>itop-communications</item>
+		<item>itop-faq-light</item>
+		<item>itop-fence</item>
+		<item>itop-log-mgmt</item>
+		<item>itop-object-copier</item>
+		<item>itop-stencils</item>
+		<item>itop-system-information</item>
+		<item>itsm-designer-connector</item>
+		<!-- approvals -->
+		<item>approval-base</item>
+		<item>combodo-approval-extended</item>
+		<item>combodo-coverage-windows-computation</item>
+		<item>combodo-sla-computation</item>
+		<item>itop-approval-portal</item>
+		<!-- request templates -->
+		<item>templates-base</item>
+		<item>itop-request-template</item>
+		<item>itop-request-template-portal</item>
+		<!-- mail to ticket automation -->
+		<item>combodo-cmdbchange-cleaner</item>
+		<item>combodo-email-synchro</item>
+		<item>combodo-oauth-email-synchro</item>
+		<item>itop-standard-email-synchro</item>
+		<!-- precanned replies -->
+		<item>precanned-replies</item>
+		<item>precanned-replies-pro</item>
+	</selected_modules>
+	<selected_extensions type="array">
+		<item>itop-config-mgmt-core</item>
+		<item>itop-config-mgmt-datacenter</item>
+		<item>itop-config-mgmt-end-user</item>
+		<item>itop-config-mgmt-storage</item>
+		<item>itop-config-mgmt-virtualization</item>
+		<item>itop-service-mgmt-enterprise</item>
+		<item>itop-ticket-mgmt-simple-ticket</item>
+		<item>itop-ticket-mgmt-simple-ticket-enhanced-portal</item>
+		<item>itop-change-mgmt-simple</item>
+		<item>itop-kown-error-mgmt</item>
+	</selected_extensions>
+	<sample_data>0</sample_data>
+	<old_addon></old_addon>
+	<options>
+		<generate_config>1</generate_config>
+	</options>
+	<mysql_bindir></mysql_bindir>
+</installation>
