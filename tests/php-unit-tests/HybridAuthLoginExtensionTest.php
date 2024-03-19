@@ -85,7 +85,8 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 
 		$sSsoMode = 'ServiceProviderMock';
 
-		$aServiceProviderConf = array_merge($this->oiTopConfig->GetModuleSetting('combodo-hybridauth', 'providers'),
+		$aCurrentModuleSettings = $this->oiTopConfig->GetModuleSetting('combodo-hybridauth', 'providers', []);
+		$aServiceProviderConf = array_merge($aCurrentModuleSettings,
 			[ "$sSsoMode" => [
 				'adapter' => 'Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock',
 				'keys' => [
