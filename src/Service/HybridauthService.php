@@ -30,7 +30,7 @@ class HybridauthService {
 			require_once $sOauthClassPath;
 		}
 
-		$bDebug = Config::Get('debug');
+		$bDebug = Config::GetDebug($sName);
 		$oLogger = ($bDebug) ? new Logger(Logger::DEBUG, APPROOT.'log/hybridauth.log') : null;
 		if ($bDebug){
 			\IssueLog::Info("Conf passed to HybdridAuth", HybridAuthLoginExtension::LOG_CHANNEL, [ 'conf' => $aConfig ]);

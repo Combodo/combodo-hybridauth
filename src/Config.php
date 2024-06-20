@@ -126,6 +126,19 @@ class Config
 		return null;
 	}
 
+	public static function GetDebug(string $sProviderName) : bool {
+		if (static::Get('debug')){
+			return true;
+		}
+
+		$aCurrentProviderConf = self::GetProviderConf("hybridauth-$sProviderName");
+		if (is_null($aCurrentProviderConf)){
+			return false;
+		}
+
+		return $aCurrentProviderConf['debug'] ?? false;
+	}
+
 	public static function IsUserSynchroEnabled(string $sLoginMode) : bool {
 		if (static::Get('synchronize_user')){
 			return true;

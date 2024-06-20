@@ -255,6 +255,47 @@ class ConfigTest extends ItopDataTestCase{
 		$this->assertEquals($bExpectedRes, Config::GetSynchroProfile('hybridauth-Google'));
 	}
 
+	public function GetDebugProvider(){
+		return [
+			'debug missing in conf' => [
+				'bExpectedRes' => false,
+				'aProviderConf' => [],
+				'bOverallOption' => false,
+			],
+			'debug disabled in provider' => [
+				'bExpectedRes' => false,
+				'aProviderConf' => [ 'debug' => false ],
+				'bOverallOption' => false,
+			],
+			'debug enabled in provider' => [
+				'bExpectedRes' => true,
+				'aProviderConf' => [ 'debug' => true ],
+				'bOverallOption' => false,
+			],
+			'debug enabled globally' => [
+				'bExpectedRes' => true,
+				'aProviderConf' => [ 'debug' => false ],
+				'bOverallOption' => true,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider GetDebugProvider
+	 */
+	public function testGetDebug($bExpectedRes, $aProviderConf, $bOverallOption){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'Google' => $aProviderConf,
+			]
+		);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'debug', $bOverallOption);
+
+		$this->assertEquals($bExpectedRes, Config::GetDebug('Google'));
+	}
+
+
 	public function testGetDefaultOrg(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
