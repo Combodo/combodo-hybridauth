@@ -380,7 +380,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				$sIconUrl = $aProviderData['icon_url'];
 			}
 
-			if (strlen($sIconUrl) != 0){
+			if (! empty(trim($sIconUrl))){
 				if (! utils::StartsWith($sIconUrl, "http") && strpos($sIconUrl, '.')!=0){
 					$sIconUrl = utils::GetAbsoluteUrlAppRoot() . $sIconUrl;
 				} else {
