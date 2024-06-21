@@ -377,10 +377,38 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$sFaImage = null;
 			$sIconUrl = null;
 			if (isset($aProviderData['icon_url'])) {
-				$sIconUrl = utils::StartsWith($aProviderData['icon_url'], "http") ? $aProviderData['icon_url'] : utils::GetAbsoluteUrlAppRoot().$aProviderData['icon_url'];
-			} else {
-				$sFaImage = utils::StartsWith($sProvider, "Microsoft") ? "fa-microsoft" : "fa-$sProvider";
+				$sIconUrl = $aProviderData['icon_url'];
 			}
+
+			if (strlen($sIconUrl) != 0){
+				if (! utils::StartsWith($sIconUrl, "http") && strpos($sIconUrl, '.')!=0){
+					$sIconUrl = utils::GetAbsoluteUrlAppRoot() . $sIconUrl;
+				} else {
+					$sFaImage = $sIconUrl;
+				}
+			} else {
+				$sAdapterClass = $sProvider;
+				if (array_key_exists('adapter', $aProviderData) && ! empty($aProviderData['adapter'])) {
+					try {
+						$sAdapterClass = $aProviderData['adapter'];
+						$oReflection = new \ReflectionClass($sAdapterClass);
+						$sAdapterClass = $oReflection->getShortName();
+					} catch (\ReflectionException $e) {
+						\IssueLog::Warning("Unknown SSO adapter class $sProvider", null, [$sAdapterClass]);
+					}
+				}
+
+				$sFaImage = utils::StartsWith($sAdapterClass, "Microsoft") ? "fa-microsoft" : "fa-$sAdapterClass";
+			}
+
+			\IssueLog::Debug("login button settings", null,
+				[
+					'sProvider' => $sProvider,
+					'sFaImage' => $sFaImage,
+					'sIconUrl' => $sIconUrl,
+				]
+			);
+
 			$sLabel = isset($aProviderData['label']) ? Dict::Format($aProviderData['label'], $sProvider) : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
 			$sTooltip = isset($aProviderData['tooltip']) ? Dict::Format($aProviderData['tooltip'], $sProvider) : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
 			$aData[] = array(

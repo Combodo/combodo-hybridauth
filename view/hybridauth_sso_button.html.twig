@@ -7,7 +7,7 @@
         {%  if aProvider.sFaImage is not null %}
             <i class="fab {{ aProvider.sFaImage|lower }} sso-image hybridauth-logo" aria-hidden="true"></i>
         {% else %}
-            <img class="sso-image hybridauth-logo" aria-hidden="true" src="{{ aProvider.sIconUrl|lower }}"></img>
+            <img class="sso-image hybridauth-logo" aria-hidden="true" src="{{ aProvider.sIconUrl }}"></img>
         {% endif %}
         {{ aProvider.sLabel }}
     </div>
