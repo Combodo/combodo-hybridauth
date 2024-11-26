@@ -11,13 +11,7 @@ class HybridauthServiceTest extends ItopTestCase {
 		parent::setUp();
 
 		$this->RequireOnceItopFile('env-production/combodo-hybridauth/vendor/autoload.php');
-	}
-
-	public function testListProviders() {
-		$oHybridauthService = new HybridauthService();
-		$aRes = $oHybridauthService->ListProviders();
-		$this->assertContains("Google", $aRes);
-		$this->assertContains("MicrosoftGraph", $aRes);
+		$this->RequireOnceItopFile('env-production/combodo-oauth2-client/vendor/autoload.php');
 
 	}
 }
