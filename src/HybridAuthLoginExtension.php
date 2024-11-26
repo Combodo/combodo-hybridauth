@@ -348,8 +348,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				}
 
 				// Create the person
-				$sFirstName = $oUserProfile->firstName;
-				$sLastName = $oUserProfile->lastName;
+				$sFirstName = $oUserProfile->firstName ?? $sEmail;
+				$sLastName = $oUserProfile->lastName ?? $sEmail;
 				$sOrganization = Config::GetDefaultOrg($sLoginMode);
 				$aAdditionalParams = array('phone' => $oUserProfile->phone);
 				IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
