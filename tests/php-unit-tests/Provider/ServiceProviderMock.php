@@ -23,7 +23,7 @@ class ServiceProviderMock extends OAuth2 {
 			$aData = $this->GetData();
 			\IssueLog::Info("ServiceProvider->authenticate data to pass to OpenID:", null, $aData);
 
-			$sEmail = $aData['profile_email'] ?? null;
+			$sEmail = $aData['email'] ?? null;
 			if (! is_null($sEmail)) {
 				Session::Set('auth_user', $sEmail);
 				Session::Unset('login_will_redirect');
@@ -41,13 +41,17 @@ class ServiceProviderMock extends OAuth2 {
 
 		$oProfile = new Profile();
 		$sProfileFields = ['firstName', 'lastName', 'email', 'phone'];
-		foreach ($sProfileFields as $sField) {
-			$sSessionFieldKey = 'profile_'.$sField;
-			$sValue = $aData[$sSessionFieldKey] ?? null;
-			if (!is_null($sValue)) {
+		foreach ($aData  as $sField => $sValue) {
+			if (in_array($sField, $sProfileFields)) {
 				$property = $class->getProperty($sField);
 				$property->setAccessible(true);
 				$property->setValue($oProfile, $sValue);
+			} else {
+				$property = $class->getProperty('data');
+				$property->setAccessible(true);
+				$aProfileData = $property->GetValue($oProfile);
+				$aProfileData[$sField] = $sValue;
+				$property->setValue($oProfile, $aProfileData);
 			}
 		}
 

@@ -155,7 +155,7 @@ class Config
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf){
 			$sDefautProfile = $aCurrentProviderConf['default_profile'] ?? null;
-			if (null !== $sDefautProfile){
+			if (utils::IsNotNullOrEmptyString($sDefautProfile)){
 				return $sDefautProfile;
 			}
 		}
@@ -180,7 +180,7 @@ class Config
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf){
 			$sDefaultOrg = $aCurrentProviderConf['default_organization'] ?? null;
-			if (null !== $sDefaultOrg){
+			if (utils::IsNotNullOrEmptyString($sDefaultOrg)){
 				return $sDefaultOrg;
 			}
 		}
