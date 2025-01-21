@@ -2,7 +2,6 @@
 
 namespace Combodo\iTop\HybridAuth;
 
-use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use MetaModel;
 use utils;
 use IssueLog;
@@ -82,7 +81,7 @@ class Config
 	 */
 	public static function IsLoginModeSupported(?string $sLoginMode) : bool
 	{
-		if (! utils::StartsWith($sLoginMode, 'hybridauth-')){
+		if (is_null($sLoginMode) || ! utils::StartsWith($sLoginMode, 'hybridauth-')){
 			return false;
 		}
 

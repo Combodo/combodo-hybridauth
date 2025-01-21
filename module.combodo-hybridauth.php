@@ -10,7 +10,7 @@
 //
 SetupWebPage::AddModule(
 	__FILE__, // Path to the current file, all other file names are relative to the directory containing this file
-	'combodo-hybridauth/1.2.2',
+	'combodo-hybridauth/1.2.4',
 	array(
 		// Identification
 		//
@@ -19,7 +19,9 @@ SetupWebPage::AddModule(
 
 		// Setup
 		//
-		'dependencies' => array(),
+		'dependencies' => array(
+			'combodo-oauth2-client/1.0.0',
+		),
 		'mandatory' => false,
 		'visible' => true,
 

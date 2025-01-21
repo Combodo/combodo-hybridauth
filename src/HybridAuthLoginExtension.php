@@ -109,6 +109,19 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			Session::Start();
 		}
 
+		if (!Session::IsSet('login_mode'))
+		{
+			$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+			$aSupportedLoginModes = self::ListSupportedLoginModes();
+			foreach ($aAllowedModes as $sLoginMode)
+			{
+				if (in_array($sLoginMode, $aSupportedLoginModes))
+				{
+					Session::Set('login_mode', $sLoginMode);
+					break;
+				}
+			}
+		}
 		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
 			if (!Session::IsSet('auth_user'))
 			{
@@ -335,9 +348,10 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				}
 
 				// Create the person
-				$sFirstName = $oUserProfile->firstName;
-				$sLastName = $oUserProfile->lastName;
+				$sFirstName = $oUserProfile->firstName ?? $sEmail;
+				$sLastName = $oUserProfile->lastName ?? $sEmail;
 				$sOrganization = $oUserProfile->data["organization"] ?? Config::GetDefaultOrg($sLoginMode);
+        
 				$aAdditionalParams = array('phone' => $oUserProfile->phone);
 				IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
 					[
