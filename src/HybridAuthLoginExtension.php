@@ -350,8 +350,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				// Create the person
 				$sFirstName = $oUserProfile->firstName ?? $sEmail;
 				$sLastName = $oUserProfile->lastName ?? $sEmail;
-				$sOrganization = $oUserProfile->data["organization"] ?? Config::GetDefaultOrg($sLoginMode);
-        
+				$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $oUserProfile->data["organization"] ?? null);
 				$aAdditionalParams = array('phone' => $oUserProfile->phone);
 				IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
 					[
@@ -373,6 +372,22 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		{
 			IssueLog::Error($e->getMessage());
 		}
+	}
+
+	private function GetOrganizationForProvisioning(string $sLoginMode, ?string $sIdPOrgName) : string
+	{
+		if (is_null($sIdPOrgName)){
+			return Config::GetDefaultOrg($sLoginMode);
+		}
+
+		$oOrg = MetaModel::GetObjectByName('Organization', $sIdPOrgName, false);
+		if (! is_null($oOrg))
+		{
+			return $sIdPOrgName;
+		}
+
+		IssueLog::Error(Dict::S('UI:Login:Error:WrongOrganizationName', null, ['idp_organization' => $sIdPOrgName]));
+		return Config::GetDefaultOrg($sLoginMode);
 	}
 
 	public function GetTwigContext()

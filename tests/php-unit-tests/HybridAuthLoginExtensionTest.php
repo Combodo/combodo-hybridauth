@@ -3,6 +3,7 @@
 namespace Combodo\iTop\HybridAuth\Test;
 
 use Combodo\iTop\HybridAuth\Config;
+use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
 use MetaModel;
@@ -94,7 +95,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 					'secret' => 'SECRET',
 				],
 				'enabled' => true,
-			]
+			],
 			]
 		);
 
@@ -175,7 +176,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	}
 
 	public function test_SSOConnectedAlready_NoiTopUserProvisioning_OK() {
-		$aData = ['profile_email' => $this->sEmail];
+		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 
 		$sOutput = $this->CallItopUrl("/pages/UI.php");
@@ -184,7 +185,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	}
 
 	public function test_SSOConnectedAlready_NoiTopUserProvisioning_UnknownUser() {
-		$aData = ['profile_email' => 'unknown_' . $this->sUniqId . '@titi.fr'];
+		$aData = ['email' => 'unknown_' . $this->sUniqId . '@titi.fr'];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 
 		$sOutput = $this->CallItopUrl("/pages/UI.php");
@@ -215,10 +216,10 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$sLatName = $this->sUniqId . "_lastName";
 		$sPhone = "123456789";
 		$aData = [
-			'profile_email' => $this->sProvisionedUserPersonEmail,
-			'profile_firstName' => $sFirstName,
-			'profile_lastName' => $sLatName,
-			'profile_phone' => $sPhone,
+			'email' => $this->sProvisionedUserPersonEmail,
+			'firstName' => $sFirstName,
+			'lastName' => $sLatName,
+			'phone' => $sPhone,
 		];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl("/pages/UI.php");
@@ -231,12 +232,47 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 				"user logged in => his lastname . ".$sLatName." . should appear in the welcome page :".$sOutput);
 		}
 
+		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $this->oOrg->GetKey());
+	}
+
+	public function test_SSOConnectedAlready_WithiTopUserProvisioning_UseIdPOrg_OK() {
+		$sProfile = "Configuration Manager";
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sProfile);
+
+		$this->SaveItopConfFile();
+
+		$this->sProvisionedUserPersonEmail = 'usercontacttoprovision_' .$this->sUniqId. '@test.fr';
+		$sFirstName = $this->sUniqId . "_firstName";
+		$sLatName = $this->sUniqId . "_lastName";
+		$sPhone = "123456789";
+
+		$sIdPOrgName = "IdP_".$this->sUniqId;
+		$oIdPOrg = $this->CreateOrganization($sIdPOrgName);
+		$aData = [
+			'email' => $this->sProvisionedUserPersonEmail,
+			'firstName' => $sFirstName,
+			'lastName' => $sLatName,
+			'phone' => $sPhone,
+			'organization' => $sIdPOrgName,
+		];
+		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
+		$sOutput = $this->CallItopUrl("/pages/UI.php");
+
+		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
+		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $oIdPOrg->GetKey());
+	}
+
+	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId) : void
+	{
 		$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedPerson);
 		$this->assertEquals($sFirstName, $oExpectedPerson->Get('first_name'));
 		$this->assertEquals($sPhone, $oExpectedPerson->Get('phone'));
 		$this->assertEquals($sLatName, $oExpectedPerson->Get('name'));
-		$this->assertEquals($this->oOrg->GetKey(), $oExpectedPerson->Get('org_id'));
+		$this->assertEquals($sOrgId, $oExpectedPerson->Get('org_id'));
 
 		$oExpectedUser = MetaModel::GetObjectByColumn("UserExternal", "login", $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedUser);
@@ -249,7 +285,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	}
 
 	public function testLandingPage(){
-		$aData = ['profile_email' => $this->sEmail];
+		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php?login_mode=" . $this->sLoginMode, false, []);
 		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:" . $sOutput);
@@ -257,7 +293,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	}
 
 	public function testLandingPageFailureNoLoginModeProvided(){
-		$aData = ['profile_email' => $this->sEmail];
+		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php", false, []);
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
@@ -265,9 +301,41 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 	}
 
 	public function testLandingPageFailureInvalidSSOLoginMode(){
-		$aData = ['profile_email' => $this->sEmail];
+		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured", false, []);
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
+	}
+
+	public function GetOrganizationForProvisioningProvider()
+	{
+		$sDefaultOrgName = 'IDP_ORG1'.uniqid();
+		$sOrgName2 = 'IDP_ORG2'.uniqid();
+		return [
+			'no org returned by IdP' => [ $sDefaultOrgName, $sOrgName2, null, $sDefaultOrgName ],
+			'unknown org returned by IdP' => [ $sDefaultOrgName, $sOrgName2, "unknown_IDP_Org", $sDefaultOrgName ],
+			'use IdP org name' => [ $sDefaultOrgName, $sOrgName2, $sOrgName2, $sOrgName2 ],
+		];
+	}
+
+	/**
+	 * @dataProvider GetOrganizationForProvisioningProvider
+	 */
+	public function testGetOrganizationForProvisioning(string $sDefaultOrgName, string $sOrgName2, ?string $sIdpOrgName, string $sExpectedOrgReturned)
+	{
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', "Configuration Manager");
+
+		$this->SaveItopConfFile();
+		$this->CreateOrganization($sDefaultOrgName);
+		$this->CreateOrganization($sOrgName2);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+
+		$sOrgName = $this->InvokeNonPublicMethod(HybridAuthLoginExtension::class, 'GetOrganizationForProvisioning', $oHybridAuthLoginExtension, [ $this->sLoginMode, $sIdpOrgName]);
+		$this->assertEquals($sExpectedOrgReturned, $sOrgName);
 	}
 }
