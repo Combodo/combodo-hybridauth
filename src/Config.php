@@ -154,9 +154,9 @@ class Config
 	public static function GetSynchroProfile(string $sLoginMode) : string {
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf){
-			$sDefautProfile = $aCurrentProviderConf['default_profile'] ?? null;
-			if (utils::IsNotNullOrEmptyString($sDefautProfile)){
-				return $sDefautProfile;
+			$sDefaultProfile = $aCurrentProviderConf['default_profile'] ?? null;
+			if (utils::IsNotNullOrEmptyString($sDefaultProfile)){
+				return $sDefaultProfile;
 			}
 		}
 
