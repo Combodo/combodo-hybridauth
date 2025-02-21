@@ -239,12 +239,23 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 		// Get the info from provider
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
-		$oUserProfile = $oAuthAdapter->getUserProfile();
+		$oUserProfile = null;
+		try{
+			$oUserProfile = $oAuthAdapter->getUserProfile();
+			$sEmail = $oUserProfile->email;
+			if (utils::IsNullOrEmptyString($sEmail)){
+				throw new \Exception("Identity provider HTTP Call OK but without providing user email");
+			}
+		} catch (\Exception $e){
+			\IssueLog::Error(Dict::S('HybridAuth:Error:UserNotAllowed'), null, [ "exception" => $e, 'oUserProfile' => $oUserProfile]);
+			throw $e;
+		}
+
 		IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'oUserProfile' => $oUserProfile,
 			]);
-		Session::Set('auth_user', $oUserProfile->email);
+		Session::Set('auth_user', $sEmail);
 
 		// Already redirected to OpenID provider
 		Session::Unset('login_will_redirect');
@@ -450,6 +461,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				'sIconUrl' => $sIconUrl,
 			];
 		}
+
 
 		$oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
 
