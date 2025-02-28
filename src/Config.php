@@ -63,6 +63,48 @@ class Config
 	}
 
 	/**
+	 * @return array
+	 * @since 1.2.6: N°8235 - consent form always proposed on Google/MSGraph side even if still connected
+	 */
+	public static function GetAuthenticatedHybridConfig() : array
+	{
+		$aConfig = self::GetHybridConfig();
+
+		$aProvidersToFix = ['MicrosoftGraph', 'Google'];
+		$aProviderClassesToFix = [Google::class, MicrosoftGraph::class];
+		foreach ($aConfig['providers'] as $sProvider => $aProviderConf){
+			if (array_key_exists('authorize_url_parameters', $aProviderConf)){
+				//itop conf already provides authorize_url_parameters: do not touch it
+				continue;
+			}
+
+			$bFixRequired = false;
+			if (array_key_exists('adapter', $aProviderConf)){
+				$sAdapterClass = $aProviderConf['adapter']??'';
+				if (class_exists($sAdapterClass)){
+					foreach ($aProviderClassesToFix as $sClassToCheck){
+						if ($sAdapterClass === $sClassToCheck){
+							$bFixRequired = true;
+							break;
+						}
+					}
+				}
+
+				if (!$bFixRequired){
+					continue;
+				}
+			}
+
+			if (!$bFixRequired && ! in_array($sProvider, $aProvidersToFix)){
+				continue;
+			}
+
+			$aConfig['providers'][$sProvider]['authorize_url_parameters']=['prompt' => ''];
+		}
+		return $aConfig;
+	}
+
+	/**
 	 * Configure OpenID specific provider. if needed, it adds/removes allowed login mode.
 	 *
 	 * @param array $aProvidersConfig Complete "providers" setting for the module
