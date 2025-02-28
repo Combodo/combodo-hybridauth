@@ -23,7 +23,7 @@ class HybridauthService {
 	 */
 	public function authenticate(string $sName)
 	{
-		$aConfig = Config::GetHybridConfig();
+		$aConfig = Config::GetAuthenticatedHybridConfig();
 		$sOauthClassPath = Config::Get('oauth_test_class_path', null);
 		if (! is_null($sOauthClassPath)){
 			IssueLog::Info("loading service provider class (from conf oauth_test_class_path): " . $sOauthClassPath, HybridAuthLoginExtension::LOG_CHANNEL);

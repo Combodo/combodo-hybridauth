@@ -2,9 +2,7 @@
 
 namespace Combodo\iTop\HybridAuth\Test;
 
-use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Config;
-use Combodo\iTop\HybridAuth\Service\HybridauthService;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
 use MetaModel;
 use utils;
@@ -358,4 +356,156 @@ class ConfigTest extends ItopDataTestCase{
 		$this->assertEquals($aExpectedAllowedLoginTypes, MetaModel::GetConfig()->GetAllowedLoginTypes());
 	}
 
+	public static function DisableConsentModeConfigurationProvider() {
+		$aUseCases = [];
+		foreach (['MicrosoftGraph', 'Google'] as $sProvider){
+			$aProviderConf = [
+				$sProvider => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+				],
+			];
+			$aExpected = [
+				$sProvider => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+					'authorize_url_parameters' => [
+						'prompt' => '',
+					],
+				],
+			];
+			$aUseCases["provider $sProvider : consent mode should be disabled"]=[$aProviderConf, $aExpected];
+
+			$aProviderConf = [
+				$sProvider => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+					'authorize_url_parameters' => [],
+				],
+			];
+			$aExpected = [
+				$sProvider => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+					'authorize_url_parameters' => [],
+				],
+			];
+			$aUseCases["provider $sProvider : authorize_url_parameters configured do not touch that part of the conf"]=[$aProviderConf, $aExpected];
+
+			$aProviderConf = [
+				"My-$sProvider" => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+					'adapter' => "Hybridauth\\Provider\\$sProvider",
+				],
+			];
+			$aExpected = [
+				"My-$sProvider" => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+					'adapter' => "Hybridauth\\Provider\\$sProvider",
+					'authorize_url_parameters' => [
+						'prompt' => '',
+					],
+				],
+			];
+
+			$aUseCases["adapter $sProvider : consent mode should be disabled"]=[$aProviderConf, $aExpected];			$aProviderConf = [
+				"My-$sProvider" => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+					'adapter' => "Hybridauth\\Provider\\$sProvider",
+					'authorize_url_parameters' => [],
+				],
+			];
+			$aExpected = [
+				"My-$sProvider" => [
+					'keys' => [
+						'id' => 'ID2',
+						'secret' => 'SECRET2',
+					],
+					'enabled' => true,
+					'adapter' => "Hybridauth\\Provider\\$sProvider",
+					'authorize_url_parameters' => [],
+				],
+			];
+			$aUseCases["adapter $sProvider : authorize_url_parameters configured do not touch that part of the conf"]=[$aProviderConf, $aExpected];
+		}
+
+		$aProviderConf = [
+			"Keycloak" => [
+				'keys' => [
+					'id' => 'ID2',
+					'secret' => 'SECRET2',
+				],
+				'enabled' => true,
+			],
+		];
+		$aExpected = [
+			"Keycloak" => [
+				'keys' => [
+					'id' => 'ID2',
+					'secret' => 'SECRET2',
+				],
+				'enabled' => true,
+			],
+		];
+		$aUseCases["provider Keycloak : do not touch the conf"]=[$aProviderConf, $aExpected];
+
+		$aProviderConf = [
+			"My-Keycloak" => [
+				'keys' => [
+					'id' => 'ID2',
+					'secret' => 'SECRET2',
+				],
+				'enabled' => true,
+				'adapter' => "Hybridauth\\Provider\\Keycloak",
+			],
+		];
+		$aExpected = [
+			"My-Keycloak" => [
+				'keys' => [
+					'id' => 'ID2',
+					'secret' => 'SECRET2',
+				],
+				'enabled' => true,
+				'adapter' => "Hybridauth\\Provider\\Keycloak",
+			],
+		];
+		$aUseCases["adapter Keycloak : do not touch the conf"]=[$aProviderConf, $aExpected];
+
+		return $aUseCases;
+	}
+
+	/**
+	 * @dataProvider DisableConsentModeConfigurationProvider
+	 */
+	public function testDisableConsentModeConfiguration_FixConsentMode($aProviderConf, $aExpected) {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+
+		$aResult = Config::GetAuthenticatedHybridConfig();
+		$this->assertEquals(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php', $aResult['callback'] ?? null);
+		$this->assertEquals($aExpected, $aResult['providers'] ?? null);
+	}
 }
