@@ -87,28 +87,32 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			return LoginWebPage::LOGIN_FSM_CONTINUE;
 		}
 
+		return LoginWebPage::LOGIN_FSM_CONTINUE;
+	}
+
+	private function PrepareIdentityProviderRedirection() {
 		Session::Unset('HYBRIDAUTH::STORAGE');
 		$sOriginURL = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 
-		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot())) {
-			// If the found URL does not start with the configured AppRoot URL
-			\IssueLog::Warning("login_original_page debug", null, 
+		$bLoginDebug = MetaModel::GetConfig()->Get('login_debug');
+		if ($bLoginDebug) {
+			\IssueLog::Info(__METHOD__, null,
 				[
 					'REQUEST_SCHEME' => $_SERVER['REQUEST_SCHEME'],
 					'HTTP_HOST' => $_SERVER['HTTP_HOST'],
 					'REQUEST_URI' => $_SERVER['REQUEST_URI'],
-					'previous_login_original_page' => $sOriginURL,
-					'login_original_page' => utils::GetAbsoluteUrlAppRoot().'pages/UI.php',
-
-				]		
+					'initial_login_original_page' => $sOriginURL,
+					'fallback_login_original_page' => utils::GetAbsoluteUrlAppRoot().'pages/UI.php',
+				]
 			);
-			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
-		} else {
-			\IssueLog::Warning("login_original_page debug", null, [ 'login_original_page' => $sOriginURL ]);
 		}
-		Session::Set('login_original_page', $sOriginURL);
 
-		return LoginWebPage::LOGIN_FSM_CONTINUE;
+		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot())) {
+			// If the found URL does not start with the configured AppRoot URL
+			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
+		}
+
+		Session::Set('login_original_page', $sOriginURL);
 	}
 
 	protected function OnReadCredentials(&$iErrorCode)
@@ -154,7 +158,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 							return LoginWebPage::LOGIN_FSM_ERROR;
 						}
 					}
+
 					// Proceed and sign in (redirect to provider and exit)
+					$this->PrepareIdentityProviderRedirection();
 					self::ConnectHybridAuth();
 				}
 				catch (Exception $e)
