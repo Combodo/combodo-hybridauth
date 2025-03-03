@@ -132,9 +132,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 				]
 			);
+		}
+
+		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot())) {
+			// If the found URL does not start with the configured AppRoot URL
 			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
-		} else {
-			\IssueLog::Warning("login_original_page debug", null, [ 'login_original_page' => $sOriginURL ]);
 		}
 
 		Session::Set('login_original_page', $sOriginURL);
