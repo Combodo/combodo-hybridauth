@@ -89,9 +89,22 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 		Session::Unset('HYBRIDAUTH::STORAGE');
 		$sOriginURL = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+
 		if (!utils::StartsWith($sOriginURL, utils::GetAbsoluteUrlAppRoot())) {
 			// If the found URL does not start with the configured AppRoot URL
+			\IssueLog::Warning("login_original_page debug", null, 
+				[
+					'REQUEST_SCHEME' => $_SERVER['REQUEST_SCHEME'],
+					'HTTP_HOST' => $_SERVER['HTTP_HOST'],
+					'REQUEST_URI' => $_SERVER['REQUEST_URI'],
+					'previous_login_original_page' => $sOriginURL,
+					'login_original_page' => utils::GetAbsoluteUrlAppRoot().'pages/UI.php',
+
+				]		
+			);
 			$sOriginURL = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
+		} else {
+			\IssueLog::Warning("login_original_page debug", null, [ 'login_original_page' => $sOriginURL ]);
 		}
 		Session::Set('login_original_page', $sOriginURL);
 
