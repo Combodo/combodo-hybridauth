@@ -323,15 +323,35 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	 */
 	public function LogoutAction()
 	{
-		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-'))
-		{
-			$oAuthAdapter = self::ConnectHybridAuth();
-			// Does not redirect...
-			// and actually just clears the session variable,
-			// almost useless we can log again without any further user interaction
-			// At least it disconnects from iTop
-			$oAuthAdapter->disconnect();
-		}
+		$loginMode = Session::Get('login_mode');
+	  if ($loginMode === 'hybridauth-Keycloak')
+	  {
+			// Allow a clean logout with Keycloak 
+	    $oAuthAdapter = self::ConnectHybridAuth();
+	    $providers = Config::Get('providers');
+
+	    $keycloakServer = $providers['Keycloak']['url'];
+	    $realmName = $providers['Keycloak']['realm'];
+	    $clientId = $providers['Keycloak']['keys']['id'];
+
+	    $redirectUri = utils::GetAbsoluteUrlAppRoot().'pages/UI.php';
+	    $logoutUrl = "{$keycloakServer}/realms/{$realmName}/protocol/openid-connect/logout?post_logout_redirect_uri={$redirectUri}&client_id={$clientId}";
+
+	    // Disconnection from iTop
+	    $oAuthAdapter->disconnect();
+
+	    // Redirection to Keycloak
+	    header("Location: $logoutUrl");
+	  }
+	  else if (utils::StartsWith($loginMode, 'hybridauth-'))
+	  {
+	    $oAuthAdapter = self::ConnectHybridAuth();
+	    // Does not redirect...
+	    // and actually just clears the session variable,
+	    // almost useless we can log again without any further user interaction
+	    // At least it disconnects from iTop
+	    $oAuthAdapter->disconnect();
+	  }
 	}
 
 	private function DoUserProvisioning(string $sLoginMode)
