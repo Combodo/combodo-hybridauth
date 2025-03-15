@@ -326,7 +326,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		$loginMode = Session::Get('login_mode');
 	  if ($loginMode === 'hybridauth-Keycloak')
 	  {
-			// Allow a clean logout with Keycloak 
+		  // Allow a clean logout with Keycloak 
 	    $oAuthAdapter = self::ConnectHybridAuth();
 	    $providers = Config::Get('providers');
 
@@ -342,7 +342,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	    // Redirection to Keycloak
 	    header("Location: $logoutUrl");
-	  }
+	  } 
 	  else if (utils::StartsWith($loginMode, 'hybridauth-'))
 	  {
 	    $oAuthAdapter = self::ConnectHybridAuth();
