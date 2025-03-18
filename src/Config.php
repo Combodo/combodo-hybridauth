@@ -28,17 +28,17 @@ class Config
 
 		$aProvidersToFix = ['MicrosoftGraph', 'Google'];
 		$aProviderClassesToFix = [Google::class, MicrosoftGraph::class];
-		foreach ($aConfig['providers'] as $sProvider => $aProviderConf){
-			if (array_key_exists('authorize_url_parameters', $aProviderConf)){
+		foreach ($aConfig['providers'] as $sProvider => $aProviderConf) {
+			if (array_key_exists('authorize_url_parameters', $aProviderConf)) {
 				//itop conf already provides authorize_url_parameters: do not touch it
 				continue;
 			}
 
 			$bFixRequired = false;
-			if (array_key_exists('adapter', $aProviderConf)){
+			if (array_key_exists('adapter', $aProviderConf)) {
 				$sAdapterClass = $aProviderConf['adapter']??'';
-				if (class_exists($sAdapterClass)){
-					foreach ($aProviderClassesToFix as $sClassToCheck){
+				if (class_exists($sAdapterClass)) {
+					foreach ($aProviderClassesToFix as $sClassToCheck) {
 						if ($sAdapterClass === $sClassToCheck){
 							$bFixRequired = true;
 							break;
@@ -46,12 +46,12 @@ class Config
 					}
 				}
 
-				if (!$bFixRequired){
+				if (!$bFixRequired) {
 					continue;
 				}
 			}
 
-			if (!$bFixRequired && ! in_array($sProvider, $aProvidersToFix)){
+			if (!$bFixRequired && ! in_array($sProvider, $aProvidersToFix)) {
 				continue;
 			}
 
