@@ -133,7 +133,7 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals($bExpected, Config::IsLoginModeSupported($sLoginMode));
 	}
 
-	public function testGetProviderConf()
+	public function testGetProviderConfShouldReturnTheCorrespondingValue()
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -141,9 +141,9 @@ class ConfigTest extends ItopDataTestCase
 			]
 		);
 
-		$this->assertEquals(['ga' => 'bu'], Config::GetProviderConf('hybridauth-Google'));
-		$this->assertEquals(null, Config::GetProviderConf('hybridauth-MS'));
-		$this->assertEquals(null, Config::GetProviderConf(null));
+		$this->assertEquals(['ga' => 'bu'], Config::GetProviderConf('hybridauth-Google'), 'Existing provider configuration should be returned');
+		$this->assertEquals(null, Config::GetProviderConf('hybridauth-MS'), 'Non existing provider configuration should return null');
+		$this->assertEquals(null, Config::GetProviderConf(null), 'null provider name should return null');
 	}
 
 	public function IsUserSynchroEnabledProvider()
@@ -153,21 +153,25 @@ class ConfigTest extends ItopDataTestCase
 				'bExpectedRes' => false,
 				'aProviderConf' => [],
 				'bOverallOption' => false,
+				'When synchronize_user is missing in provider configuration, then default configured value should be used',
 			],
 			'synchronize_user disabled in provider' => [
 				'bExpectedRes' => false,
 				'aProviderConf' => ['synchronize_user' => false],
 				'bOverallOption' => false,
+				'When synchronize_user is disabled in provider configuration and the default value is false, the return should be false',
 			],
 			'synchronize_user enabled in provider' => [
 				'bExpectedRes' => true,
 				'aProviderConf' => ['synchronize_user' => true],
 				'bOverallOption' => false,
+				'When synchronize_user is enabled in provider configuration and the default value is false, the return should be true',
 			],
 			'synchronize_user enabled globally' => [
 				'bExpectedRes' => true,
 				'aProviderConf' => ['synchronize_user' => false],
 				'bOverallOption' => true,
+				'When synchronize_user is disabled in provider configuration but the default value is true, the return should be true',
 			],
 		];
 	}
@@ -175,7 +179,7 @@ class ConfigTest extends ItopDataTestCase
 	/**
 	 * @dataProvider IsUserSynchroEnabledProvider
 	 */
-	public function testIsUserSynchroEnabled($bExpectedRes, $aProviderConf, $bOverallOption)
+	public function testThatUserSynchroShouldMatchConfiguration($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -185,31 +189,35 @@ class ConfigTest extends ItopDataTestCase
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', $bOverallOption);
 
-		$this->assertEquals($bExpectedRes, Config::IsUserSynchroEnabled('hybridauth-Google'));
+		$this->assertEquals($bExpectedRes, Config::IsUserSynchroEnabled('hybridauth-Google'), $sMessage);
 	}
 
 	public function IsContactSynchroEnabledProvider()
 	{
 		return [
-			'synchronize_user missing in conf' => [
+			'synchronize_contact missing in conf' => [
 				'bExpectedRes' => false,
 				'aProviderConf' => [],
 				'bOverallOption' => false,
+				'When synchronize_contact is missing in provider configuration, then default configured value should be used',
 			],
-			'synchronize_user disabled in provider' => [
+			'synchronize_contact disabled in provider' => [
 				'bExpectedRes' => false,
 				'aProviderConf' => ['synchronize_contact' => false],
 				'bOverallOption' => false,
+				'When synchronize_contact is disabled in provider configuration and the default value is false, the return should be false',
 			],
-			'synchronize_user enabled in provider' => [
+			'synchronize_contact enabled in provider' => [
 				'bExpectedRes' => true,
 				'aProviderConf' => ['synchronize_contact' => true],
 				'bOverallOption' => false,
+				'When synchronize_contact is enabled in provider configuration and the default value is false, the return should be true',
 			],
-			'synchronize_user enabled globally' => [
+			'synchronize_contact enabled globally' => [
 				'bExpectedRes' => true,
 				'aProviderConf' => ['synchronize_contact' => false],
 				'bOverallOption' => true,
+				'When synchronize_contact is disabled in provider configuration but the default value is true, the return should be true',
 			],
 		];
 	}
@@ -217,7 +225,7 @@ class ConfigTest extends ItopDataTestCase
 	/**
 	 * @dataProvider IsContactSynchroEnabledProvider
 	 */
-	public function testIsContactSynchroEnabled($bExpectedRes, $aProviderConf, $bOverallOption)
+	public function testThatContactSynchroShouldMatchConfiguration($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -227,7 +235,7 @@ class ConfigTest extends ItopDataTestCase
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', $bOverallOption);
 
-		$this->assertEquals($bExpectedRes, Config::IsContactSynchroEnabled('hybridauth-Google'));
+		$this->assertEquals($bExpectedRes, Config::IsContactSynchroEnabled('hybridauth-Google'), $sMessage);
 	}
 
 	public function GetSynchroProfileProvider()
@@ -237,16 +245,19 @@ class ConfigTest extends ItopDataTestCase
 				'bExpectedRes' => 'Portal User',
 				'aProviderConf' => [],
 				'bOverallOption' => null,
+				'When no profile is configured either in provider or in default value then Portal User is used',
 			],
 			'synchronize_user set in provider' => [
 				'bExpectedRes' => 'SuperUser',
 				'aProviderConf' => ['default_profile' => 'SuperUser'],
 				'bOverallOption' => null,
+				'When a profile is configured in provider it should be used',
 			],
 			'synchronize_user set globally' => [
 				'bExpectedRes' => 'SuperUser',
 				'aProviderConf' => [],
 				'bOverallOption' => 'SuperUser',
+				'When a profile is not configured in provider, the default configuration value should be used',
 			],
 		];
 	}
@@ -254,7 +265,7 @@ class ConfigTest extends ItopDataTestCase
 	/**
 	 * @dataProvider GetSynchroProfileProvider
 	 */
-	public function testGetSynchroProfile($bExpectedRes, $aProviderConf, $bOverallOption)
+	public function testGetSynchroProfileShouldMatchTheConfiguredValueForProvider($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage = '')
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -264,7 +275,7 @@ class ConfigTest extends ItopDataTestCase
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $bOverallOption);
 
-		$this->assertEquals($bExpectedRes, Config::GetSynchroProfile('hybridauth-Google'));
+		$this->assertEquals($bExpectedRes, Config::GetSynchroProfile('hybridauth-Google'), $sMessage);
 	}
 
 	public function GetDebugProvider()
@@ -274,21 +285,25 @@ class ConfigTest extends ItopDataTestCase
 				'bExpectedRes' => false,
 				'aProviderConf' => [],
 				'bOverallOption' => false,
+				'When the debug is missing in configuration the default option should be used',
 			],
 			'debug disabled in provider' => [
 				'bExpectedRes' => false,
 				'aProviderConf' => ['debug' => false],
 				'bOverallOption' => false,
+				'When the debug is disabled in configuration the return should be false',
 			],
 			'debug enabled in provider' => [
 				'bExpectedRes' => true,
 				'aProviderConf' => ['debug' => true],
 				'bOverallOption' => false,
+				'When the debug is enabled in configuration the return should be true',
 			],
 			'debug enabled globally' => [
 				'bExpectedRes' => true,
 				'aProviderConf' => ['debug' => false],
 				'bOverallOption' => true,
+				'When the debug is disabled in configuration the return should be false, even if the default is true',
 			],
 		];
 	}
@@ -296,7 +311,7 @@ class ConfigTest extends ItopDataTestCase
 	/**
 	 * @dataProvider GetDebugProvider
 	 */
-	public function testGetDebug($bExpectedRes, $aProviderConf, $bOverallOption)
+	public function testGetDebugShouldMatchTheConfigurationForTheProvider($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -306,11 +321,11 @@ class ConfigTest extends ItopDataTestCase
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'debug', $bOverallOption);
 
-		$this->assertEquals($bExpectedRes, Config::GetDebug('Google'));
+		$this->assertEquals($bExpectedRes, Config::GetDebug('Google'), $sMessage);
 	}
 
 
-	public function testGetDefaultOrg()
+	public function testGetDefaultOrgShouldMatchPerProviderConfiguration()
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -321,9 +336,9 @@ class ConfigTest extends ItopDataTestCase
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', 'overall-org');
 
-		$this->assertEquals('provider-org', Config::GetDefaultOrg('hybridauth-Google'));
-		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-NoDefaultOrg'));
-		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-MissingProvider'));
+		$this->assertEquals('provider-org', Config::GetDefaultOrg('hybridauth-Google'), 'The default organization should be the one configured for the provider');
+		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-NoDefaultOrg'), 'The default organization should be the global default when no organization is configured for the provider');
+		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-MissingProvider'), 'The default organization should be the global default when the provider is not present in the configuration');
 	}
 
 
@@ -400,7 +415,7 @@ class ConfigTest extends ItopDataTestCase
 					],
 				],
 			];
-			$aUseCases["provider $sProvider : consent mode should be disabled"] = [$aProviderConf, $aExpected];
+			$aUseCases["provider $sProvider : consent mode should be disabled when not present in the configuration"] = [$aProviderConf, $aExpected];
 
 			$aProviderConf = [
 				$sProvider => [
@@ -422,7 +437,7 @@ class ConfigTest extends ItopDataTestCase
 					'authorize_url_parameters' => [],
 				],
 			];
-			$aUseCases["provider $sProvider : authorize_url_parameters configured do not touch that part of the conf"] = [$aProviderConf, $aExpected];
+			$aUseCases["provider $sProvider : authorize_url_parameters configured should not touch authorize_url_parameters if present in the configuration"] = [$aProviderConf, $aExpected];
 
 			$aProviderConf = [
 				"My-$sProvider" => [
@@ -448,7 +463,7 @@ class ConfigTest extends ItopDataTestCase
 				],
 			];
 
-			$aUseCases["adapter $sProvider : consent mode should be disabled"] = [$aProviderConf, $aExpected];
+			$aUseCases["adapter $sProvider : consent mode should be disabled when not present in configuration"] = [$aProviderConf, $aExpected];
 			$aProviderConf = [
 				"My-$sProvider" => [
 					'keys' => [
@@ -471,7 +486,7 @@ class ConfigTest extends ItopDataTestCase
 					'authorize_url_parameters' => [],
 				],
 			];
-			$aUseCases["adapter $sProvider : authorize_url_parameters configured do not touch that part of the conf"] = [$aProviderConf, $aExpected];
+			$aUseCases["adapter $sProvider : authorize_url_parameters configured should not touch that part of the conf"] = [$aProviderConf, $aExpected];
 		}
 
 		$aProviderConf = [
@@ -483,16 +498,7 @@ class ConfigTest extends ItopDataTestCase
 				'enabled' => true,
 			],
 		];
-		$aExpected = [
-			"Keycloak" => [
-				'keys' => [
-					'id' => 'ID2',
-					'secret' => 'SECRET2',
-				],
-				'enabled' => true,
-			],
-		];
-		$aUseCases["provider Keycloak : do not touch the conf"] = [$aProviderConf, $aExpected];
+		$aUseCases["provider Keycloak : should not touch the conf"] = [$aProviderConf, $aProviderConf];
 
 		$aProviderConf = [
 			"My-Keycloak" => [
@@ -504,17 +510,7 @@ class ConfigTest extends ItopDataTestCase
 				'adapter' => "Hybridauth\\Provider\\Keycloak",
 			],
 		];
-		$aExpected = [
-			"My-Keycloak" => [
-				'keys' => [
-					'id' => 'ID2',
-					'secret' => 'SECRET2',
-				],
-				'enabled' => true,
-				'adapter' => "Hybridauth\\Provider\\Keycloak",
-			],
-		];
-		$aUseCases["adapter Keycloak : do not touch the conf"] = [$aProviderConf, $aExpected];
+		$aUseCases["adapter Keycloak : should not touch the conf"] = [$aProviderConf, $aProviderConf];
 
 		return $aUseCases;
 	}
