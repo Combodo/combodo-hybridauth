@@ -2,15 +2,16 @@
 
 namespace Combodo\iTop\HybridAuth\Test;
 
-use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
+use Config;
+use DBObjectSet;
+use Exception;
 use MetaModel;
-use utils;
-use \LoginWebPage;
-use UserExternal;
 use Person;
+use URP_UserProfile;
+use UserExternal;
 
 
 /**
@@ -20,7 +21,8 @@ use Person;
  * @backupGlobals disabled
  *
  */
-class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
+class HybridAuthLoginExtensionTest extends ItopDataTestCase
+{
 	//iTop called from outside
 	//users need to be persisted in DB
 	const USE_TRANSACTION = false;
@@ -51,51 +53,52 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$this->sConfigTmpBackupFile = tempnam(sys_get_temp_dir(), "config_");
 		MetaModel::GetConfig()->WriteToFile($this->sConfigTmpBackupFile);
 
-		$this->oiTopConfig = new \Config($sConfigPath);
+		$this->oiTopConfig = new Config($sConfigPath);
 
-		$sPath = __DIR__ . '/Provider/ServiceProviderMock.php';
+		$sPath = __DIR__.'/Provider/ServiceProviderMock.php';
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
 
 		$_SESSION = [];
-		$this->sUniqId = "OpenID" . uniqid();
+		$this->sUniqId = "OpenID".uniqid();
 		$this->oOrg = $this->CreateOrganization($this->sUniqId);
 
 		$oProfile = MetaModel::GetObjectFromOQL("SELECT URP_Profiles WHERE name = :name",
-			array('name' => 'Configuration Manager'), true);
-		$this->sEmail = $this->sUniqId . "@test.fr";
+			['name' => 'Configuration Manager'], true);
+		$this->sEmail = $this->sUniqId."@test.fr";
 
 		/** @var Person $oPerson */
-		$oPerson = $this->createObject('Person', array(
+		$oPerson = $this->createObject('Person', [
 			'name' => $this->sEmail,
 			'first_name' => $this->sEmail,
 			'email' => $this->sEmail,
 			'org_id' => $this->oOrg->GetKey(),
-		));
+		]);
 
-		$oUserProfile = new \URP_UserProfile();
+		$oUserProfile = new URP_UserProfile();
 		$oUserProfile->Set('profileid', $oProfile->GetKey());
 		$oUserProfile->Set('reason', 'UNIT Tests');
-		$oSet = \DBObjectSet::FromObject($oUserProfile);
+		$oSet = DBObjectSet::FromObject($oUserProfile);
 		/** @var \UserExternal $oUser */
-		$this->oUser = $this->createObject(UserExternal::class, array(
+		$this->oUser = $this->createObject(UserExternal::class, [
 			'login' => $this->sEmail,
 			'contactid' => $oPerson->GetKey(),
 			'language' => 'EN US',
 			'profile_list' => $oSet,
-		));
+		]);
 
 		$sSsoMode = 'ServiceProviderMock';
 
 		$aCurrentModuleSettings = $this->oiTopConfig->GetModuleSetting('combodo-hybridauth', 'providers', []);
 		$aServiceProviderConf = array_merge($aCurrentModuleSettings,
-			[ "$sSsoMode" => [
-				'adapter' => 'Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock',
-				'keys' => [
-					'id' => 'ID',
-					'secret' => 'SECRET',
+			[
+				"$sSsoMode" => [
+					'adapter' => 'Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock',
+					'keys' => [
+						'id' => 'ID',
+						'secret' => 'SECRET',
+					],
+					'enabled' => true,
 				],
-				'enabled' => true,
-			],
 			]
 		);
 
@@ -109,60 +112,64 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$this->SaveItopConfFile();
 	}
 
-	private function SaveItopConfFile(){
+	private function SaveItopConfFile()
+	{
 		@chmod($this->oiTopConfig->GetLoadedFile(), 0770);
 		$this->oiTopConfig->WriteToFile();
 		@chmod($this->oiTopConfig->GetLoadedFile(), 0440);
 	}
 
-	protected function tearDown(): void {
-		if (! is_null($this->sProvisionedUserPersonEmail)) {
-			try{
+	protected function tearDown(): void
+	{
+		if (!is_null($this->sProvisionedUserPersonEmail)) {
+			try {
 				$oExpectedUser = MetaModel::GetObjectByColumn("UserExternal", "login", $this->sProvisionedUserPersonEmail);
 				$oExpectedUser->DBDelete();
 				$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 				$oExpectedPerson->DBDelete();
-			} catch(\Exception $e){
+			} catch (Exception $e) {
 				IssueLog($e->getMessage());
 			}
 		}
 
 		parent::tearDown();
 
-		if (! is_null($this->sConfigTmpBackupFile) && is_file($this->sConfigTmpBackupFile)){
+		if (!is_null($this->sConfigTmpBackupFile) && is_file($this->sConfigTmpBackupFile)) {
 			//put config back
 			$sConfigPath = $this->oiTopConfig->GetLoadedFile();
 			@chmod($sConfigPath, 0770);
-			$oConfig = new \Config($this->sConfigTmpBackupFile);
+			$oConfig = new Config($this->sConfigTmpBackupFile);
 			$oConfig->WriteToFile($sConfigPath);
 			@chmod($sConfigPath, 0440);
 		}
 
-		if (is_file(ServiceProviderMock::GetFileConfPath())){
+		if (is_file(ServiceProviderMock::GetFileConfPath())) {
 			@unlink(ServiceProviderMock::GetFileConfPath());
 		}
 
 		$_SESSION = [];
 	}
 
-	protected function InitLoginMode($sLoginMode){
+	protected function InitLoginMode($sLoginMode)
+	{
 		$aAllowedLoginTypes = $this->oiTopConfig->GetAllowedLoginTypes();
-		if (! in_array($sLoginMode, $aAllowedLoginTypes)){
+		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
 			$aAllowedLoginTypes[] = $sLoginMode;
 			$this->oiTopConfig->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 	}
 
-	protected function CallItopUrl($sUri, $bXDebugEnabled=false, ?array $aPostFields=null){
+	protected function CallItopUrl($sUri, $bXDebugEnabled = false, ?array $aPostFields = null)
+	{
 		$ch = curl_init();
-		if ($bXDebugEnabled){
+		if ($bXDebugEnabled) {
 			curl_setopt($ch, CURLOPT_COOKIE, "XDEBUG_SESSION=phpstorm");
 		}
 
-		$sUrl = $this->oiTopConfig->Get('app_root_url') . "/$sUri";
+		$sUrl = $this->oiTopConfig->Get('app_root_url')."/$sUri";
 		curl_setopt($ch, CURLOPT_URL, $sUrl);
 		curl_setopt($ch, CURLOPT_POST, 1);// set post data to true
-		if (! is_array($aPostFields)){
+		if (!is_array($aPostFields)) {
 			$aPostFields = ['login_mode' => $this->sLoginMode];
 			var_dump($aPostFields);
 		}
@@ -170,40 +177,44 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		$sOutput = curl_exec($ch);
 		//\IssueLog::Info("$sUrl error code:", null, ['error' => curl_error($ch)]);
-		curl_close ($ch);
+		curl_close($ch);
 
 		return $sOutput;
 	}
 
-	public function test_SSOConnectedAlready_NoiTopUserProvisioning_OK() {
+	public function test_SSOConnectedAlready_NoiTopUserProvisioning_OK()
+	{
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 
 		$sOutput = $this->CallItopUrl("/pages/UI.php");
-		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:" . $sOutput);
-		$this->assertTrue(false !== strpos($sOutput, $this->sEmail), "user logged (and email) in => his login . " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
+		$this->assertTrue(false !== strpos($sOutput, $this->sEmail), "user logged (and email) in => his login . ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
 
-	public function test_SSOConnectedAlready_NoiTopUserProvisioning_UnknownUser() {
-		$aData = ['email' => 'unknown_' . $this->sUniqId . '@titi.fr'];
+	public function test_SSOConnectedAlready_NoiTopUserProvisioning_UnknownUser()
+	{
+		$aData = ['email' => 'unknown_'.$this->sUniqId.'@titi.fr'];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 
 		$sOutput = $this->CallItopUrl("/pages/UI.php");
-		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
-		$this->assertFalse(strpos($sOutput, $this->sEmail), "user not logged in => name should not appear . " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:".$sOutput);
+		$this->assertFalse(strpos($sOutput, $this->sEmail), "user not logged in => name should not appear . ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
 
-	public function ProfileProvider(){
+	public function ProfileProvider()
+	{
 		return [
-			'portal user' => [ 'sProfile' => "Portal user", 'bPortalPage' => true ],
-			'config manager' => [ 'sProfile' => "Configuration Manager"],
+			'portal user' => ['sProfile' => "Portal user", 'bPortalPage' => true],
+			'config manager' => ['sProfile' => "Configuration Manager"],
 		];
 	}
 
 	/**
 	 * @dataProvider ProfileProvider
 	 */
-	public function test_SSOConnectedAlready_WithiTopUserProvisioning_OK($sProfile, $bPortalPage = false) {
+	public function test_SSOConnectedAlready_WithiTopUserProvisioning_OK($sProfile, $bPortalPage = false)
+	{
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
@@ -211,9 +222,9 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 
 		$this->SaveItopConfFile();
 
-		$this->sProvisionedUserPersonEmail = 'usercontacttoprovision_' .$this->sUniqId. '@test.fr';
-		$sFirstName = $this->sUniqId . "_firstName";
-		$sLatName = $this->sUniqId . "_lastName";
+		$this->sProvisionedUserPersonEmail = 'usercontacttoprovision_'.$this->sUniqId.'@test.fr';
+		$sFirstName = $this->sUniqId."_firstName";
+		$sLatName = $this->sUniqId."_lastName";
 		$sPhone = "123456789";
 		$aData = [
 			'email' => $this->sProvisionedUserPersonEmail,
@@ -224,7 +235,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUrl("/pages/UI.php");
 
-		if (! $bPortalPage) {
+		if (!$bPortalPage) {
 			$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
 			$this->assertTrue(false !== strpos($sOutput, $sFirstName),
 				"user logged in => his firstname . ".$sFirstName." . should appear in the welcome page :".$sOutput);
@@ -235,7 +246,8 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $this->oOrg->GetKey());
 	}
 
-	public function test_SSOConnectedAlready_WithiTopUserProvisioning_UseIdPOrg_OK() {
+	public function test_SSOConnectedAlready_WithiTopUserProvisioning_UseIdPOrg_OK()
+	{
 		$sProfile = "Configuration Manager";
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
@@ -244,9 +256,9 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 
 		$this->SaveItopConfFile();
 
-		$this->sProvisionedUserPersonEmail = 'usercontacttoprovision_' .$this->sUniqId. '@test.fr';
-		$sFirstName = $this->sUniqId . "_firstName";
-		$sLatName = $this->sUniqId . "_lastName";
+		$this->sProvisionedUserPersonEmail = 'usercontacttoprovision_'.$this->sUniqId.'@test.fr';
+		$sFirstName = $this->sUniqId."_firstName";
+		$sLatName = $this->sUniqId."_lastName";
 		$sPhone = "123456789";
 
 		$sIdPOrgName = "IdP_".$this->sUniqId;
@@ -265,7 +277,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $oIdPOrg->GetKey());
 	}
 
-	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId) : void
+	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId): void
 	{
 		$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedPerson);
@@ -284,37 +296,41 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 		}
 	}
 
-	public function testLandingPage(){
+	public function testLandingPage()
+	{
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php?login_mode=" . $this->sLoginMode, false, []);
-		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:" . $sOutput);
-		$this->assertFalse(strpos($sOutput, "An error occurred"), "An error occurred should NOT appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+		$sOutput = $this->CallItopUrl("/env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php?login_mode=".$this->sLoginMode, false, []);
+		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
+		$this->assertFalse(strpos($sOutput, "An error occurred"), "An error occurred should NOT appear in output: ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
 
-	public function testLandingPageFailureNoLoginModeProvided(){
+	public function testLandingPageFailureNoLoginModeProvided()
+	{
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php", false, []);
-		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
-		$this->assertTrue(false !== strpos($sOutput, "No login_mode specified by service provider"), "An error occurred should appear in output: " . $this->sEmail . " . should appear in the welcome page :" . $sOutput);
+		$sOutput = $this->CallItopUrl("/env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php", false, []);
+		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:".$sOutput);
+		$this->assertTrue(false !== strpos($sOutput, "No login_mode specified by service provider"), "An error occurred should appear in output: ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
 
-	public function testLandingPageFailureInvalidSSOLoginMode(){
+	public function testLandingPageFailureInvalidSSOLoginMode()
+	{
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUrl("/env-" . $this->GetTestEnvironment() . "/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured", false, []);
-		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:" . $sOutput);
+		$sOutput = $this->CallItopUrl("/env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured", false, []);
+		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:".$sOutput);
 	}
 
 	public function GetOrganizationForProvisioningProvider()
 	{
 		$sDefaultOrgName = 'IDP_ORG1'.uniqid();
 		$sOrgName2 = 'IDP_ORG2'.uniqid();
+
 		return [
-			'no org returned by IdP' => [ $sDefaultOrgName, $sOrgName2, null, $sDefaultOrgName ],
-			'unknown org returned by IdP' => [ $sDefaultOrgName, $sOrgName2, "unknown_IDP_Org", $sDefaultOrgName ],
-			'use IdP org name' => [ $sDefaultOrgName, $sOrgName2, $sOrgName2, $sOrgName2 ],
+			'no org returned by IdP' => [$sDefaultOrgName, $sOrgName2, null, $sDefaultOrgName],
+			'unknown org returned by IdP' => [$sDefaultOrgName, $sOrgName2, "unknown_IDP_Org", $sDefaultOrgName],
+			'use IdP org name' => [$sDefaultOrgName, $sOrgName2, $sOrgName2, $sOrgName2],
 		];
 	}
 
@@ -335,7 +351,7 @@ class HybridAuthLoginExtensionTest  extends ItopDataTestCase {
 
 		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
 
-		$sOrgName = $this->InvokeNonPublicMethod(HybridAuthLoginExtension::class, 'GetOrganizationForProvisioning', $oHybridAuthLoginExtension, [ $this->sLoginMode, $sIdpOrgName]);
+		$sOrgName = $this->InvokeNonPublicMethod(HybridAuthLoginExtension::class, 'GetOrganizationForProvisioning', $oHybridAuthLoginExtension, [$this->sLoginMode, $sIdpOrgName]);
 		$this->assertEquals($sExpectedOrgReturned, $sOrgName);
 	}
 }
