@@ -66,7 +66,7 @@ class Config
 	 * @return array
 	 * @since 1.2.6: N°8235 - consent form always proposed on Google/MSGraph side even if still connected
 	 */
-	public static function GetAuthenticatedHybridConfig() : array
+	public static function GetAuthenticatedHybridConfig(): array
 	{
 		$aConfig = self::GetHybridConfig();
 
@@ -80,10 +80,10 @@ class Config
 
 			$bFixRequired = false;
 			if (array_key_exists('adapter', $aProviderConf)) {
-				$sAdapterClass = $aProviderConf['adapter']??'';
+				$sAdapterClass = $aProviderConf['adapter'] ?? '';
 				if (class_exists($sAdapterClass)) {
 					foreach ($aProviderClassesToFix as $sClassToCheck) {
-						if ($sAdapterClass === $sClassToCheck){
+						if ($sAdapterClass === $sClassToCheck) {
 							$bFixRequired = true;
 							break;
 						}
@@ -95,12 +95,13 @@ class Config
 				}
 			}
 
-			if (!$bFixRequired && ! in_array($sProvider, $aProvidersToFix)) {
+			if (!$bFixRequired && !in_array($sProvider, $aProvidersToFix)) {
 				continue;
 			}
 
-			$aConfig['providers'][$sProvider]['authorize_url_parameters']=['prompt' => ''];
+			$aConfig['providers'][$sProvider]['authorize_url_parameters'] = ['prompt' => ''];
 		}
+
 		return $aConfig;
 	}
 
