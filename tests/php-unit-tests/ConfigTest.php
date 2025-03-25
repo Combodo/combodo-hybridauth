@@ -10,6 +10,20 @@ use utils;
 
 class ConfigTest extends ItopDataTestCase
 {
+	/** @var string[] */
+	private array $aAllowedLoginTypes;
+
+	protected function setUp(): void
+	{
+		parent::setUp();
+		$this->aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+	}
+
+	protected function tearDown(): void
+	{
+		parent::tearDown();
+		MetaModel::GetConfig()->SetAllowedLoginTypes($this->aAllowedLoginTypes);
+	}
 
 	public function testGetHybridConfig()
 	{
@@ -64,73 +78,94 @@ class ConfigTest extends ItopDataTestCase
 	/**
 	 * @dataProvider GetProvidersProvider
 	 */
-	public function testGetProviders(array $aExpected, array $aProviderConf)
+	public function testListProvidersShouldReturnConfiguredProviders(array $aExpected, array $aProviderConf)
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
 		$this->assertEquals($aExpected, Config::ListProviders());
 	}
 
-	public function IsLoginModeSupportedProvider()
-	{
-		return [
-			'disabled login mode not starting with hybridauth' => [
-				'sLoginMode' => 'disabled-loginmode',
-				'bExpected' => false,
-			],
-			'enabled login mode not starting with hybridauth' => [
-				'sLoginMode' => 'enabled-loginmode',
-				'bExpected' => false,
-			],
-			'disabled login mode' => [
-				'sLoginMode' => 'hybridauth-disabled-loginmode',
-				'bExpected' => false,
-				'bThrowException' => true,
-			],
-			'nominal case: enabled login mode' => [
-				'sLoginMode' => 'hybridauth-enabled-loginmode',
-				'bExpected' => true,
-			],
-			'not configured sLoginMode provider starting with hybridauth' => [
-				'sLoginMode' => 'hybridauth-unconfigured-provider',
-				'bExpected' => false,
-				'bThrowException' => true,
-			],
-			'not allowed sLoginMode provider starting with hybridauth' => [
-				'sLoginMode' => 'hybridauth-unallowed-loginmode',
-				'bExpected' => false,
-				'bThrowException' => false,
-				'bLoginModeAllowed' => false,
-			],
-		];
-	}
-
-	/**
-	 * @dataProvider IsLoginModeSupportedProvider
-	 */
-	public function testIsLoginModeSupported(string $sLoginMode, bool $bExpected, bool $bThrowException = false, bool $bLoginModeAllowed = true)
+	public function testIsLoginModeSupportedShouldReturnTrueWhenProviderIsEnabled()
 	{
 		$aProviderConf = [
-			'disabled-loginmode' => ['enabled' => false],
-			'enabled-loginmode' => ['enabled' => true],
+			'provider' => ['enabled' => true],
 		];
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
-		if ($bLoginModeAllowed) {
-			$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
-			if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
-				$aAllowedLoginTypes[] = $sLoginMode;
-				MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
-			}
+		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$sLoginMode = 'hybridauth-provider';
+		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
+			$aAllowedLoginTypes[] = $sLoginMode;
+			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 
-		if ($bThrowException) {
-			$this->expectException(Exception::class);
-			$this->expectExceptionMessage("Login modes configuration needs to be fixed.");
+		$this->assertEquals(true, Config::IsLoginModeSupported($sLoginMode));
+	}
+
+	public function testIsLoginModeSupportedShouldReturnFalseWhenLoginModeIsNotAllowed()
+	{
+		$aProviderConf = [
+			'provider' => ['enabled' => true],
+		];
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+
+		$this->assertEquals(false, Config::IsLoginModeSupported('hybridauth-provider'));
+	}
+
+	public function testIsLoginModeSupportedShouldThrowExceptionWhenProviderIsDisabledAndLoginModeIsForced()
+	{
+		$aProviderConf = [
+			'provider' => ['enabled' => false],
+		];
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+
+		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$sLoginMode = 'hybridauth-provider';
+		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
+			$aAllowedLoginTypes[] = $sLoginMode;
+			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 
-		$this->assertEquals($bExpected, Config::IsLoginModeSupported($sLoginMode));
+		$this->expectException(Exception::class);
+		$this->expectExceptionMessage('Login modes configuration needs to be fixed.');
+		Config::IsLoginModeSupported($sLoginMode);
+	}
+
+	public function testIsLoginModeSupportedShouldReturnFalseWhenLoginModeNotStartingWithHybridauth()
+	{
+		$aProviderConf = [
+			'provider' => ['enabled' => true],
+		];
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+
+		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$sLoginMode = 'provider';
+		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
+			$aAllowedLoginTypes[] = $sLoginMode;
+			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+		}
+
+		$this->assertEquals(false, Config::IsLoginModeSupported($sLoginMode));
+	}
+
+	public function testIsLoginModeSupportedShouldThrowExceptionWhenProviderIsNotConfigured()
+	{
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', []);
+
+		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$sLoginMode = 'hybridauth-provider';
+		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
+			$aAllowedLoginTypes[] = $sLoginMode;
+			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+		}
+
+		$this->expectException(Exception::class);
+		$this->expectExceptionMessage('Login modes configuration needs to be fixed.');
+		Config::IsLoginModeSupported($sLoginMode);
 	}
 
 	public function testGetProviderConfShouldReturnTheCorrespondingValue()
