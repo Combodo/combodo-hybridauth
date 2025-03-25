@@ -4,10 +4,12 @@ namespace Combodo\iTop\HybridAuth\Test;
 
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
+use Exception;
 use MetaModel;
 use utils;
 
-class ConfigTest extends ItopDataTestCase{
+class ConfigTest extends ItopDataTestCase
+{
 
 	public function testGetHybridConfig()
 	{
@@ -29,7 +31,7 @@ class ConfigTest extends ItopDataTestCase{
 			],
 			'one provider wrongly configured' => [
 				'aExpected' => ['ga' => false],
-				'aProviderConf' => [ 'ga' => []],
+				'aProviderConf' => ['ga' => []],
 			],
 			'all provider disabled' => [
 				'aExpected' => ['ga' => false, 'bu' => false],
@@ -109,8 +111,8 @@ class ConfigTest extends ItopDataTestCase{
 	public function testIsLoginModeSupported(string $sLoginMode, bool $bExpected, bool $bThrowException = false, bool $bLoginModeAllowed = true)
 	{
 		$aProviderConf = [
-			'disabled-loginmode' => ['enabled' => false ],
-			'enabled-loginmode' => ['enabled' => true ],
+			'disabled-loginmode' => ['enabled' => false],
+			'enabled-loginmode' => ['enabled' => true],
 		];
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
@@ -124,7 +126,7 @@ class ConfigTest extends ItopDataTestCase{
 		}
 
 		if ($bThrowException) {
-			$this->expectException(\Exception::class);
+			$this->expectException(Exception::class);
 			$this->expectExceptionMessage("Login modes configuration needs to be fixed.");
 		}
 
@@ -135,11 +137,11 @@ class ConfigTest extends ItopDataTestCase{
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
-				'Google' => [ 'ga' => 'bu'],
+				'Google' => ['ga' => 'bu'],
 			]
 		);
 
-		$this->assertEquals([ 'ga' => 'bu'], Config::GetProviderConf('hybridauth-Google'));
+		$this->assertEquals(['ga' => 'bu'], Config::GetProviderConf('hybridauth-Google'));
 		$this->assertEquals(null, Config::GetProviderConf('hybridauth-MS'));
 		$this->assertEquals(null, Config::GetProviderConf(null));
 	}
@@ -154,17 +156,17 @@ class ConfigTest extends ItopDataTestCase{
 			],
 			'synchronize_user disabled in provider' => [
 				'bExpectedRes' => false,
-				'aProviderConf' => [ 'synchronize_user' => false ],
+				'aProviderConf' => ['synchronize_user' => false],
 				'bOverallOption' => false,
 			],
 			'synchronize_user enabled in provider' => [
 				'bExpectedRes' => true,
-				'aProviderConf' => [ 'synchronize_user' => true ],
+				'aProviderConf' => ['synchronize_user' => true],
 				'bOverallOption' => false,
 			],
 			'synchronize_user enabled globally' => [
 				'bExpectedRes' => true,
-				'aProviderConf' => [ 'synchronize_user' => false ],
+				'aProviderConf' => ['synchronize_user' => false],
 				'bOverallOption' => true,
 			],
 		];
@@ -196,17 +198,17 @@ class ConfigTest extends ItopDataTestCase{
 			],
 			'synchronize_user disabled in provider' => [
 				'bExpectedRes' => false,
-				'aProviderConf' => [ 'synchronize_contact' => false ],
+				'aProviderConf' => ['synchronize_contact' => false],
 				'bOverallOption' => false,
 			],
 			'synchronize_user enabled in provider' => [
 				'bExpectedRes' => true,
-				'aProviderConf' => [ 'synchronize_contact' => true ],
+				'aProviderConf' => ['synchronize_contact' => true],
 				'bOverallOption' => false,
 			],
 			'synchronize_user enabled globally' => [
 				'bExpectedRes' => true,
-				'aProviderConf' => [ 'synchronize_contact' => false ],
+				'aProviderConf' => ['synchronize_contact' => false],
 				'bOverallOption' => true,
 			],
 		];
@@ -238,7 +240,7 @@ class ConfigTest extends ItopDataTestCase{
 			],
 			'synchronize_user set in provider' => [
 				'bExpectedRes' => 'SuperUser',
-				'aProviderConf' => [ 'default_profile' => 'SuperUser' ],
+				'aProviderConf' => ['default_profile' => 'SuperUser'],
 				'bOverallOption' => null,
 			],
 			'synchronize_user set globally' => [
@@ -275,17 +277,17 @@ class ConfigTest extends ItopDataTestCase{
 			],
 			'debug disabled in provider' => [
 				'bExpectedRes' => false,
-				'aProviderConf' => [ 'debug' => false ],
+				'aProviderConf' => ['debug' => false],
 				'bOverallOption' => false,
 			],
 			'debug enabled in provider' => [
 				'bExpectedRes' => true,
-				'aProviderConf' => [ 'debug' => true ],
+				'aProviderConf' => ['debug' => true],
 				'bOverallOption' => false,
 			],
 			'debug enabled globally' => [
 				'bExpectedRes' => true,
-				'aProviderConf' => [ 'debug' => false ],
+				'aProviderConf' => ['debug' => false],
 				'bOverallOption' => true,
 			],
 		];
@@ -330,23 +332,23 @@ class ConfigTest extends ItopDataTestCase{
 		return [
 			'enable + allowed loginmode untouched' => [
 				"bEnabled" => true,
-				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google' ],
-				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google' ],
+				"aAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google'],
+				"aExpectedAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google'],
 			],
 			'enable + shoud add login mode' => [
 				"bEnabled" => true,
-				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
-				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google', 'hybridauth-MicrosoftGraph' ],
+				"aAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-Google'],
+				"aExpectedAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-Google', 'hybridauth-MicrosoftGraph'],
 			],
 			'disabled + allowed loginmode untouched' => [
 				"bEnabled" => false,
-				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
-				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
+				"aAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-Google'],
+				"aExpectedAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-Google'],
 			],
 			'enable + should remove login mode' => [
 				"bEnabled" => false,
-				"aAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google' ],
-				"aExpectedAllowedLoginTypes" => [ 'form', 'external', 'basic', 'hybridauth-Google' ],
+				"aAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-MicrosoftGraph', 'hybridauth-Google'],
+				"aExpectedAllowedLoginTypes" => ['form', 'external', 'basic', 'hybridauth-Google'],
 			],
 		];
 	}
@@ -398,7 +400,7 @@ class ConfigTest extends ItopDataTestCase{
 					],
 				],
 			];
-			$aUseCases["provider $sProvider : consent mode should be disabled"]=[$aProviderConf, $aExpected];
+			$aUseCases["provider $sProvider : consent mode should be disabled"] = [$aProviderConf, $aExpected];
 
 			$aProviderConf = [
 				$sProvider => [
@@ -420,7 +422,7 @@ class ConfigTest extends ItopDataTestCase{
 					'authorize_url_parameters' => [],
 				],
 			];
-			$aUseCases["provider $sProvider : authorize_url_parameters configured do not touch that part of the conf"]=[$aProviderConf, $aExpected];
+			$aUseCases["provider $sProvider : authorize_url_parameters configured do not touch that part of the conf"] = [$aProviderConf, $aExpected];
 
 			$aProviderConf = [
 				"My-$sProvider" => [
@@ -446,7 +448,8 @@ class ConfigTest extends ItopDataTestCase{
 				],
 			];
 
-			$aUseCases["adapter $sProvider : consent mode should be disabled"]=[$aProviderConf, $aExpected];			$aProviderConf = [
+			$aUseCases["adapter $sProvider : consent mode should be disabled"] = [$aProviderConf, $aExpected];
+			$aProviderConf = [
 				"My-$sProvider" => [
 					'keys' => [
 						'id' => 'ID2',
@@ -468,7 +471,7 @@ class ConfigTest extends ItopDataTestCase{
 					'authorize_url_parameters' => [],
 				],
 			];
-			$aUseCases["adapter $sProvider : authorize_url_parameters configured do not touch that part of the conf"]=[$aProviderConf, $aExpected];
+			$aUseCases["adapter $sProvider : authorize_url_parameters configured do not touch that part of the conf"] = [$aProviderConf, $aExpected];
 		}
 
 		$aProviderConf = [
@@ -489,7 +492,7 @@ class ConfigTest extends ItopDataTestCase{
 				'enabled' => true,
 			],
 		];
-		$aUseCases["provider Keycloak : do not touch the conf"]=[$aProviderConf, $aExpected];
+		$aUseCases["provider Keycloak : do not touch the conf"] = [$aProviderConf, $aExpected];
 
 		$aProviderConf = [
 			"My-Keycloak" => [
@@ -511,7 +514,7 @@ class ConfigTest extends ItopDataTestCase{
 				'adapter' => "Hybridauth\\Provider\\Keycloak",
 			],
 		];
-		$aUseCases["adapter Keycloak : do not touch the conf"]=[$aProviderConf, $aExpected];
+		$aUseCases["adapter Keycloak : do not touch the conf"] = [$aProviderConf, $aExpected];
 
 		return $aUseCases;
 	}
