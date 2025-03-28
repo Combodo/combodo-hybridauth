@@ -354,4 +354,34 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$sOrgName = $this->InvokeNonPublicMethod(HybridAuthLoginExtension::class, 'GetOrganizationForProvisioning', $oHybridAuthLoginExtension, [$this->sLoginMode, $sIdpOrgName]);
 		$this->assertEquals($sExpectedOrgReturned, $sOrgName);
 	}
+
+	public function testListSupportedLoginModes()
+	{
+		MetaModel::GetConfig()->SetAllowedLoginTypes(
+			[
+				'form',
+				'hybridauth-allowed-enabled-provider',
+				'hybridauth-allowed-disabled-provider',
+				'hybridauth-allowed-enabled-provider2',
+				'hybridauth-allowed-disabled-provider2',
+				'hybridauth-allowed-notconfigured-provider',
+			]
+		);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'notallowed-enabled-provider' => [ 'enabled' => true ],
+				'allowed-enabled-provider' => [ 'enabled' => true ],
+				'allowed-disabled-provider' => [ 'enabled' => false ],
+				'allowed-enabled-provider2' => [ 'enabled' => true ],
+				'allowed-disabled-provider2' => [ 'enabled' => false ],
+			]
+		);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+		$this->assertEquals(
+			['hybridauth-allowed-enabled-provider', 'hybridauth-allowed-enabled-provider2'],
+			$oHybridAuthLoginExtension->ListSupportedLoginModes()
+		);
+	}
 }

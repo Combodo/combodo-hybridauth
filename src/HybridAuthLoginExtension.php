@@ -55,10 +55,14 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	 */
 	public function ListSupportedLoginModes()
 	{
+		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 		$aLoginModes = [];
 		foreach (Config::ListProviders() as $sProvider => $bEnabled) {
 			if ($bEnabled) {
-				$aLoginModes[] = "hybridauth-$sProvider";
+				$sLoginMode = "hybridauth-$sProvider";
+				if (in_array($sLoginMode, $aAllowedModes)) {
+					$aLoginModes[] = $sLoginMode;
+				}
 			}
 		}
 
@@ -133,15 +137,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		}
 
 		if (!Session::IsSet('login_mode')) {
-			$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 			$aSupportedLoginModes = self::ListSupportedLoginModes();
-			foreach ($aAllowedModes as $sLoginMode) {
-				if (in_array($sLoginMode, $aSupportedLoginModes)) {
-					Session::Set('login_mode', $sLoginMode);
-					break;
-				}
+			$sLoginMode = array_shift($aSupportedLoginModes);
+			if (! is_null($sLoginMode)){
+				Session::Set('login_mode', $sLoginMode);
 			}
 		}
+
 		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
 			if (!Session::IsSet('auth_user')) {
 				try {
@@ -412,7 +414,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		$oLoginContext->AddCSSFile(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/css/hybridauth.css');
 
 		$aData = [];
-		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedModes = $this->ListSupportedLoginModes();
 		foreach (Config::Get('providers') as $sProvider => $aProviderData) {
 			// If provider not allowed -> next
 			if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
