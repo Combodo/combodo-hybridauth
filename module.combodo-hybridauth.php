@@ -58,7 +58,7 @@ SetupWebPage::AddModule(
             'default_profile' => 'Portal User',
 			'providers' => array(
 				'Google' => array(
-					'enabled' => true,
+					'enabled' => false,
 					'keys' => array(
 						'id'     => 'your-google-client-id',
 						'secret' => 'your-google-client-secret'
