@@ -204,7 +204,7 @@ class Config
 	public static function IsUserRefreshEnabled(string $sLoginMode): bool
 	{
 		if (static::Get('refresh_existing_users')) {
-			return false;
+			return true;
 		}
 
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
