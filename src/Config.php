@@ -201,6 +201,20 @@ class Config
 		return $aCurrentProviderConf['synchronize_user'] ?? false;
 	}
 
+	public static function IsUserRefreshEnabled(string $sLoginMode): bool
+	{
+		if (static::Get('refresh_existing_users')) {
+			return false;
+		}
+
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (is_null($aCurrentProviderConf)) {
+			return false;
+		}
+
+		return $aCurrentProviderConf['refresh_existing_users'] ?? false;
+	}
+
 	public static function GetSynchroProfile(string $sLoginMode): string
 	{
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);

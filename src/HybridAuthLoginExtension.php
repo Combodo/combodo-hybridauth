@@ -347,7 +347,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				return; // No automatic User provisioning
 			}
 			$sEmail = Session::Get('auth_user');
-			if (LoginWebPage::FindUser($sEmail, false)) {
+			if (!Config::IsUserRefreshEnabled($sLoginMode) && LoginWebPage::FindUser($sEmail, false)) {
 				return; // User already present
 			}
 			$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
