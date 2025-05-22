@@ -382,8 +382,20 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				);
 				$oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
 			}
-			$sProfile = Config::GetSynchroProfile($sLoginMode);
-			$aProfiles = [$sProfile];
+			if (array_key_exists('groups', $oUserProfile->data)) {
+				$aProviderConf = Config::GetProviderConf($sLoginMode);
+				$aGroupsToProfiles = $aProviderConf['groups_to_profiles'];
+
+				$aProfiles = array();
+				foreach ($oUserProfile->data['groups'] as $groupName) {
+					if (array_key_exists($groupName, $aGroupsToProfiles))
+						foreach ($aGroupsToProfiles[$groupName] as $profileName)
+							$aProfiles[] = $profileName;
+				}
+			} else {
+				$sProfile = Config::GetSynchroProfile($sLoginMode);
+				$aProfiles = [$sProfile];
+			}
 			IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
 			LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
 		} catch (Exception $e) {
