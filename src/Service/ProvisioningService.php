@@ -14,7 +14,7 @@ use Person;
 use Session;
 use UserExternal;
 
-public class ProvisioningService {
+class ProvisioningService {
 	private static ProvisioningService $oInstance;
 
 	protected function __construct()
