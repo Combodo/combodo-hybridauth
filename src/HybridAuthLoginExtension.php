@@ -10,6 +10,9 @@ namespace Combodo\iTop\HybridAuth;
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
+use Combodo\iTop\HybridAuth\Service\ProvisioningService;
+use DBObjectSearch;
+use DBObjectSet;
 use Dict;
 use Exception;
 use iLoginUIExtension;
@@ -350,6 +353,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			if (!Config::IsUserRefreshEnabled($sLoginMode) && LoginWebPage::FindUser($sEmail, false)) {
 				return; // User already present
 			}
+
 			$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 			$oUserProfile = $oAuthAdapter->getUserProfile();
 			IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
@@ -357,66 +361,18 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 					'oUserProfile' => $oUserProfile,
 				]
 			);
+
 			if ($oUserProfile == null) {
 				return; // No data available for this user
 			}
-			$oPerson = LoginWebPage::FindPerson($sEmail);
-			if ($oPerson == null) {
-				if (!Config::IsContactSynchroEnabled($sLoginMode)) {
-					return; // No automatic Contact provisioning
-				}
 
-				// Create the person
-				$sFirstName = $oUserProfile->firstName ?? $sEmail;
-				$sLastName = $oUserProfile->lastName ?? $sEmail;
-				$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $oUserProfile->data["organization"] ?? null);
-				$aAdditionalParams = ['phone' => $oUserProfile->phone];
-				IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
-					[
-						'first_name' => $sFirstName,
-						'last_name' => $sLastName,
-						'email' => $sEmail,
-						'org' => $sOrganization,
-						'addition_params' => $aAdditionalParams,
-					]
-				);
-				$oPerson = LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
-			}
-			if (array_key_exists('groups', $oUserProfile->data)) {
-				$aProviderConf = Config::GetProviderConf($sLoginMode);
-				$aGroupsToProfiles = $aProviderConf['groups_to_profiles'];
-
-				$aProfiles = array();
-				foreach ($oUserProfile->data['groups'] as $groupName) {
-					if (array_key_exists($groupName, $aGroupsToProfiles))
-						foreach ($aGroupsToProfiles[$groupName] as $profileName)
-							$aProfiles[] = $profileName;
-				}
-			} else {
-				$sProfile = Config::GetSynchroProfile($sLoginMode);
-				$aProfiles = [$sProfile];
-			}
-			IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aProfiles, 'contact_id' => $oPerson->GetKey()]);
-			LoginWebPage::ProvisionUser($sEmail, $oPerson, $aProfiles);
+			$oPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($sLoginMode, $sEmail, $oUserProfile);
+			ProvisioningService::GetInstance()->DoUserProvisioning($sLoginMode, $sEmail, $oPerson, $oUserProfile);
+		} catch (HybridProvisioningAuthException $e) {
+			IssueLog::Error($e->getMessage(), null, $e->aContext);
 		} catch (Exception $e) {
 			IssueLog::Error($e->getMessage());
 		}
-	}
-
-	private function GetOrganizationForProvisioning(string $sLoginMode, ?string $sIdPOrgName): string
-	{
-		if (is_null($sIdPOrgName)) {
-			return Config::GetDefaultOrg($sLoginMode);
-		}
-
-		$oOrg = MetaModel::GetObjectByName('Organization', $sIdPOrgName, false);
-		if (!is_null($oOrg)) {
-			return $sIdPOrgName;
-		}
-
-		IssueLog::Error(Dict::S('UI:Login:Error:WrongOrganizationName', null, ['idp_organization' => $sIdPOrgName]));
-
-		return Config::GetDefaultOrg($sLoginMode);
 	}
 
 	public function GetTwigContext()
