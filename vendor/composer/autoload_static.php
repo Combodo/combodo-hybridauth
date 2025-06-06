@@ -23,7 +23,9 @@ class ComposerStaticInitbcbb6806945b489fa9dfd0fa0f90e751
     public static $classMap = array (
         'Combodo\\iTop\\HybridAuth\\Config' => __DIR__ . '/../..' . '/src/Config.php',
         'Combodo\\iTop\\HybridAuth\\HybridAuthLoginExtension' => __DIR__ . '/../..' . '/src/HybridAuthLoginExtension.php',
+        'Combodo\\iTop\\HybridAuth\\HybridProvisioningAuthException' => __DIR__ . '/../..' . '/src/HybridProvisioningAuthException.php',
         'Combodo\\iTop\\HybridAuth\\Service\\HybridauthService' => __DIR__ . '/../..' . '/src/Service/HybridauthService.php',
+        'Combodo\\iTop\\HybridAuth\\Service\\ProvisioningService' => __DIR__ . '/../..' . '/src/Service/ProvisioningService.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 
