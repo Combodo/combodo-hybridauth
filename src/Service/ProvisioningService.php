@@ -8,6 +8,7 @@ use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 use Dict;
 use Hybridauth\User\Profile;
+use IssueLog;
 use LoginWebPage;
 use MetaModel;
 use Person;
@@ -143,6 +144,7 @@ class ProvisioningService {
 		}
 
 		$oProfilesSet = DBObjectSet::FromScratch('URP_UserProfile');
+		$iCount=0;
 		foreach ($aRequestedProfileNames as $sRequestedProfileName)
 		{
 			$sRequestedProfileName = mb_strtolower($sRequestedProfileName);
@@ -153,9 +155,15 @@ class ProvisioningService {
 				$oLink->Set('profileid', $iProfileId);
 				$oLink->Set('reason', $sInfo);
 				$oProfilesSet->AddObject($oLink);
+				$iCount++;
 			} else {
-				\IssueLog::Warning("Cannot add profile to user", null, ['requested_profile_from_service_provider' => $sRequestedProfileName, 'login' => $sEmail]);
+				IssueLog::Warning("Cannot add profile to user", null, ['requested_profile_from_service_provider' => $sRequestedProfileName, 'login' => $sEmail]);
 			}
+		}
+
+		if ($iCount==0) {
+			throw new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
+				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
 		}
 
 		$oUser->Set('profile_list', $oProfilesSet);
