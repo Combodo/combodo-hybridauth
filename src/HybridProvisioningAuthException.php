@@ -17,8 +17,11 @@ class HybridProvisioningAuthException extends Exception {
 			$sStack = $this->getTraceAsString();
 		}
 
-		$this->aContext['error'] = $this->sError;
-		$this->aContext['stack'] = $sStack;
+		$this->aContext = array_merge(
+			[ 'stack' => $sStack, 'error' => $code ],
+			$aContext
+		);
+
 		parent::__construct($message, $code, $previous);
 	}
 }

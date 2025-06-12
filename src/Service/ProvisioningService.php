@@ -6,6 +6,8 @@ use CMDBObject;
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
+use DBObjectSearch;
+use DBObjectSet;
 use Dict;
 use Hybridauth\User\Profile;
 use IssueLog;
@@ -13,6 +15,7 @@ use LoginWebPage;
 use MetaModel;
 use Person;
 use Session;
+use URP_UserProfile;
 use UserExternal;
 
 class ProvisioningService {
@@ -43,8 +46,8 @@ class ProvisioningService {
 			return $oPerson;
 		}
 
-		if (!Config::IsContactSynchroEnabled($sLoginMode)) {
-			throw new HybridProvisioningAuthException("Cannot find Person and no automatic Contact provisioning", 0, null,
+		if (! Config::IsContactSynchroEnabled($sLoginMode)) {
+			throw new HybridProvisioningAuthException("Cannot find Person and no automatic Contact provisioning (synchronize_contact)", 0, null,
 				['login_mode' => $sLoginMode, 'email' => $sEmail]); // No automatic Contact provisioning
 		}
 
@@ -84,8 +87,7 @@ class ProvisioningService {
 
 	public function DoUserProvisioning(string $sLoginMode, string $sEmail, Person $oPerson, Profile $oUserProfile) : UserExternal
 	{
-		if (!MetaModel::IsValidClass('URP_Profiles'))
-		{
+		if (!MetaModel::IsValidClass('URP_Profiles')) {
 			throw new HybridProvisioningAuthException("URP_Profiles is not a valid class. Automatic creation of Users is not supported in this context, sorry.", 0, null,
 				['login_mode' => $sLoginMode, 'email' => $sEmail]);
 		}
@@ -96,15 +98,20 @@ class ProvisioningService {
 
 		/** @var UserExternal $oUser */
 		$oUser = MetaModel::GetObjectByName('UserExternal', $sEmail, false);
-		if (is_null($oUser))
-		{
-			$oUser = MetaModel::NewObject('UserExternal');
-			$oUser->Set('login', $sEmail);
-			$oUser->Set('contactid', $oPerson->GetKey());
-			$oUser->Set('language', MetaModel::GetConfig()->GetDefaultLanguage());
+
+		if (! is_null($oUser) && ! Config::IsUserRefreshEnabled($sLoginMode)) {
+			return $oUser;
 		}
 
-		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oPerson, $oUserProfile, $sInfo);
+		if (is_null($oUser)) {
+			$oUser = MetaModel::NewObject('UserExternal');
+			$oUser->Set('login', $sEmail);
+		}
+
+		$oUser->Set('contactid', $oPerson->GetKey());
+		$oUser->Set('language', MetaModel::GetConfig()->GetDefaultLanguage());
+
+		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oUserProfile, $sInfo);
 
 		if ($oUser->IsModified())
 		{
@@ -113,25 +120,50 @@ class ProvisioningService {
 		return $oUser;
 	}
 
-	private function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Person $oPerson, Profile $oUserProfile, string $sInfo)
+	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, string $sInfo)
 	{
-		if (array_key_exists('groups', $oUserProfile->data)) {
-			$aProviderConf = Config::GetProviderConf($sLoginMode);
-			$aGroupsToProfiles = $aProviderConf['groups_to_profiles'];
+		$aProviderConf = Config::GetProviderConf($sLoginMode);
+		$aGroupsToProfiles = $aProviderConf['groups_to_profiles'] ?? null;
+		$sDefaultProfile = Config::GetSynchroProfile($sLoginMode);
 
-			$aRequestedProfileNames = [];
-			foreach ($oUserProfile->data['groups'] as $groupName) {
-				if (array_key_exists($groupName, $aGroupsToProfiles)) {
-					foreach ($aGroupsToProfiles[$groupName] as $profileName)
-						$aRequestedProfileNames[] = $profileName;
+		\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, ['groups_to_profiles' => $aGroupsToProfiles]);
+		$aRequestedProfileNames = [$sDefaultProfile];
+		if (is_array($aGroupsToProfiles)) {
+			$aCurrentProfilesName=[];
+			$aSpGroupsIds = $oUserProfile->data['groups'] ?? null;
+			if (is_array($aSpGroupsIds)) {
+				\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, ['groups' => $aSpGroupsIds]);
+				foreach ($aSpGroupsIds as $sSpGroupId) {
+					$sProfileName = $aGroupsToProfiles[$sSpGroupId] ?? null;
+					if (is_null($sProfileName)) {
+						\IssueLog::Warning("Service provider group id does not match any configured iTop profile", HybridAuthLoginExtension::LOG_CHANNEL, ['sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]);
+						continue;
+					}
+
+					$aCurrentProfilesName[] = $sProfileName;
 				}
+
+				if (count($aCurrentProfilesName) == 0) {
+					\IssueLog::Error("No sp group/profile matching found. User profiles not updated", HybridAuthLoginExtension::LOG_CHANNEL, ['sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]);
+
+					if ($oUser->GetKey() != -1) {
+						//no profiles update. we let user connect with previous profiles
+						return;
+					}
+
+					throw new HybridProvisioningAuthException("No sp group/profile matching found. User creation failed at profile synchronization step", 0, null,
+						['login_mode' => $sLoginMode, 'email' => $sEmail, ['sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]]);
+				}
+
+				$aRequestedProfileNames = $aCurrentProfilesName;
+		} else {
+				\IssueLog::Warning("Service provider groups not an array", null, ['groups' => $aSpGroupsIds]);
 			}
 		} else {
-			$sProfile = Config::GetSynchroProfile($sLoginMode);
-			$aRequestedProfileNames = [$sProfile];
+			\IssueLog::Warning("Configuration issue with groups_to_profiles section", null, ['groups_to_profiles' => $aGroupsToProfiles]);
 		}
 
-		IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aRequestedProfileNames, 'contact_id' => $oPerson->GetKey()]);
+		IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aRequestedProfileNames]);
 
 		// read all the existing profiles
 		$oProfilesSearch = new DBObjectSearch('URP_Profiles');
@@ -145,6 +177,7 @@ class ProvisioningService {
 
 		$oProfilesSet = DBObjectSet::FromScratch('URP_UserProfile');
 		$iCount=0;
+
 		foreach ($aRequestedProfileNames as $sRequestedProfileName)
 		{
 			$sRequestedProfileName = mb_strtolower($sRequestedProfileName);
@@ -162,6 +195,13 @@ class ProvisioningService {
 		}
 
 		if ($iCount==0) {
+			\IssueLog::Error("no valid URP_Profile to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
+
+			if ($oUser->GetKey() != -1) {
+				//no profiles update. we let user connect with previous profiles
+				return;
+			}
+
 			throw new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
 				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
 		}
