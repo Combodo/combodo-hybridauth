@@ -231,7 +231,6 @@ class Config
 	public static function IsContactSynchroEnabled(string $sLoginMode): bool
 	{
 		if (static::Get('synchronize_contact')) {
-			echo "synchronize_contact1 \n";
 			return true;
 		}
 
@@ -239,7 +238,6 @@ class Config
 		if (is_null($aCurrentProviderConf)) {
 			return false;
 		}
-		echo "synchronize_contact2 ".var_export($aCurrentProviderConf, true)."\n";
 
 		return $aCurrentProviderConf['synchronize_contact'] ?? false;
 	}

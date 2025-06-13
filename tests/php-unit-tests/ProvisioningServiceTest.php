@@ -432,11 +432,11 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 	public function testSynchronizeProfiles_UserCreationOK() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
-		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => "Portal user"]);
+		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal user"]]);
 
 		$oUserProfile = new Profile();
 		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, ["Configuration Manager", "Portal user"]);
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, ["Administrator", "Configuration Manager", "Portal user"]);
 	}
 
 	public function testSynchronizeProfiles_NoExistingProfileToUpdate_NoProfileModificationAndNoExceptionToLetUserLogInWithPreviousProfiles() {
