@@ -172,17 +172,23 @@ class ProvisioningService {
 		$aRequestedProfileNames = [$sDefaultProfile];
 		if (is_array($aGroupsToProfiles)) {
 			$aCurrentProfilesName=[];
-			$aSpGroupsIds = $oUserProfile->data['groups'] ?? null;
+			$aSpGroupsIds = $oUserProfile->data[$sServiceProviderGroupToProfileKey] ?? null;
 			if (is_array($aSpGroupsIds)) {
-				\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, ['groups' => $aSpGroupsIds]);
+				\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, [$sServiceProviderGroupToProfileKey => $aSpGroupsIds]);
 				foreach ($aSpGroupsIds as $sSpGroupId) {
-					$sProfileName = $aGroupsToProfiles[$sSpGroupId] ?? null;
-					if (is_null($sProfileName)) {
+					$profileName = $aGroupsToProfiles[$sSpGroupId] ?? null;
+					if (is_null($profileName)) {
 						\IssueLog::Warning("Service provider group id does not match any configured iTop profile", HybridAuthLoginExtension::LOG_CHANNEL, ['sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]);
 						continue;
 					}
 
-					$aCurrentProfilesName[] = $sProfileName;
+					if (is_array($profileName)){
+						foreach ($profileName as $sProfileName){
+							$aCurrentProfilesName[] = $sProfileName;
+						}
+					} else {
+						$aCurrentProfilesName[] = $profileName;
+					}
 				}
 
 				if (count($aCurrentProfilesName) == 0) {
@@ -199,7 +205,7 @@ class ProvisioningService {
 
 				$aRequestedProfileNames = $aCurrentProfilesName;
 		} else {
-				\IssueLog::Warning("Service provider groups not an array", null, ['groups' => $aSpGroupsIds]);
+				\IssueLog::Warning("Service provider $sServiceProviderGroupToProfileKey not an array", null, [$sServiceProviderGroupToProfileKey => $aSpGroupsIds]);
 			}
 		} else {
 			\IssueLog::Warning("Configuration issue with groups_to_profiles section", null, ['groups_to_profiles' => $aGroupsToProfiles]);

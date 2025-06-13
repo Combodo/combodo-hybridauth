@@ -10,7 +10,6 @@ namespace Combodo\iTop\HybridAuth;
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
-use Combodo\iTop\HybridAuth\Service\ProvisioningService;
 use DBObjectSearch;
 use DBObjectSet;
 use Dict;
