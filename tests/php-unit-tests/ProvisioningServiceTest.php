@@ -163,6 +163,45 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		self::assertEquals('', $oFoundPerson->Get('phone'));
 	}
 
+	public function testDoProvisioning_CreationOK(){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+
+		$sDefaultOrgName = $this->sUniqId;
+		$oOrg = $this->CreateOrganization($sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+
+		$sEmail = $this->sUniqId."@test.fr";
+		self::assertNull(LoginWebPage::FindPerson($sEmail));
+		self::assertNull(LoginWebPage::FindUser($sEmail));
+
+		$oProfileWithMostFields = new Profile();
+		$oProfileWithMostFields->email = $this->sUniqId."@test.fr";
+		$oProfileWithMostFields->firstName = 'firstNameA';
+		$oProfileWithMostFields->lastName = 'lastNameA';
+		$oProfileWithMostFields->phone = '456978';
+		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
+		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
+		self::assertNotNull($oFoundPerson);
+		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
+
+		self::assertEquals($oProfileWithMostFields->firstName, $oFoundPerson->Get('first_name'));
+		self::assertEquals($oProfileWithMostFields->lastName, $oFoundPerson->Get('name'));
+		self::assertEquals($sEmail, $oFoundPerson->Get('email'));
+		self::assertEquals($oOrg->GetKey(), $oFoundPerson->Get('org_id'));
+		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
+
+		$oFoundUser = LoginWebPage::FindUser($sEmail);
+		self::assertNotNull($oFoundUser);
+		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");
+
+		self::assertEquals($sEmail, $oFoundUser->Get('login'));
+		self::assertEquals($oFoundPerson->GetKey(), $oFoundUser->Get('contactid'));
+		self::assertEquals('EN US', $oFoundUser->Get('language'));
+		$this->assertUserProfiles($oFoundUser, ['Portal user']);
+	}
+
+
 	public function testDoPersonProvisioning_CreationOK(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
@@ -247,7 +286,6 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
 		$sEmail = $this->sUniqId."@test.fr";
 		ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
