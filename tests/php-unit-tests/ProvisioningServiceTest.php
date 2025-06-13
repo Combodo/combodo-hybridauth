@@ -286,6 +286,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
+		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
 		$sEmail = $this->sUniqId."@test.fr";
 		ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
