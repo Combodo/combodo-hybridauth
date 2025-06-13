@@ -39,6 +39,28 @@ class ProvisioningService {
 		static::$oInstance = $oInstance;
 	}
 
+	/**
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 *
+	 * @return array
+	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 */
+	public function DoProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile) : array {
+		$oPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($sLoginMode, $sEmail, $oUserProfile);
+		$oUser = ProvisioningService::GetInstance()->DoUserProvisioning($sLoginMode, $sEmail, $oPerson, $oUserProfile);
+		return [$oPerson, $oUser];
+	}
+
+	/**
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 *
+	 * @return \Person
+	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 */
 	public function DoPersonProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile) : Person
 	{
 		$oPerson = LoginWebPage::FindPerson($sEmail);
@@ -85,6 +107,15 @@ class ProvisioningService {
 		return Config::GetDefaultOrg($sLoginMode);
 	}
 
+	/**
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param \Person $oPerson : Person object to attach
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 *
+	 * @return \UserExternal
+	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 */
 	public function DoUserProvisioning(string $sLoginMode, string $sEmail, Person $oPerson, Profile $oUserProfile) : UserExternal
 	{
 		if (!MetaModel::IsValidClass('URP_Profiles')) {
@@ -120,7 +151,18 @@ class ProvisioningService {
 		return $oUser;
 	}
 
-	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, string $sInfo)
+	/**
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail : login/email of user to provision (create/update)
+	 * @param \UserExternal $oUser : current user being created
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 * @param string $sInfo : metadata added in the history of any iTop object being created/updated (profiles here)
+	 * @param string $sServiceProviderGroupToProfileKey : use another key than "groups" if data is coming from some other part of JSON provider response
+	 *
+	 * @return void
+	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 */
+	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, string $sInfo, string $sServiceProviderGroupToProfileKey="groups")
 	{
 		$aProviderConf = Config::GetProviderConf($sLoginMode);
 		$aGroupsToProfiles = $aProviderConf['groups_to_profiles'] ?? null;

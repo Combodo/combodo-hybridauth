@@ -15,6 +15,7 @@ use DBObjectSearch;
 use DBObjectSet;
 use Dict;
 use Exception;
+use HybridAuthProvisioning;
 use iLoginUIExtension;
 use iLogoutExtension;
 use IssueLog;
@@ -366,8 +367,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				return; // No data available for this user
 			}
 
-			$oPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($sLoginMode, $sEmail, $oUserProfile);
-			ProvisioningService::GetInstance()->DoUserProvisioning($sLoginMode, $sEmail, $oPerson, $oUserProfile);
+			//HybridAuthProvisioning class comes from datamodel
+			//By default it calls ProvisioningService
+			//if someone wants to extend provisioning it can be done via DM...
+			$oHybridAuthProvisioning = new HybridAuthProvisioning();
+			$oHybridAuthProvisioning->DoProvisioning($sLoginMode, $sEmail, $oUserProfile);
 		} catch (HybridProvisioningAuthException $e) {
 			IssueLog::Error($e->getMessage(), null, $e->aContext);
 		} catch (Exception $e) {

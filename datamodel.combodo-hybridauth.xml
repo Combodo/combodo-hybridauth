@@ -3,6 +3,45 @@
   <constants>
   </constants>
   <classes>
+    <class id="HybridAuthProvisioning" _delta="define">
+      <parent>DBObject</parent>
+      <properties>
+        <category>bizmodel</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>priv_hybridauth_provisioning</db_table>
+        <db_key_field>id</db_key_field>
+        <naming>
+          <format/>
+          <attributes/>
+        </naming>
+        <display_template/>
+        <icon/>
+        <reconciliation/>
+      </properties>
+      <fields/>
+      <methods>
+        <method id="DoProvisioning">
+          <comment>	/**
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 *
+	 * @return array: array includes the 2 provisioned objects [Person, UserExternal]
+	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 */
+          </comment>
+          <static>false</static>
+          <access>public</access>
+          <type>EventListener</type>
+          <code><![CDATA[	public function DoProvisioning(string $sLoginMode, string $sEmail, Hybridauth\User\Profile $oUserProfile) : array
+          {
+		return Combodo\iTop\HybridAuth\Service\ProvisioningService::GetInstance()->DoProvisioning($sLoginMode, $sEmail, $oUserProfile);
+	}]]></code>
+        </method>
+      </methods>
+      <presentation/>
+    </class>
   </classes>
   <menus>
   </menus>
