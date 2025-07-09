@@ -7,11 +7,13 @@ use Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
 use Config;
 use DBObjectSet;
+use Dict;
 use Exception;
 use MetaModel;
 use Person;
 use URP_UserProfile;
 use UserExternal;
+use utils;
 
 
 /**
@@ -383,5 +385,115 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			['hybridauth-allowed-enabled-provider', 'hybridauth-allowed-enabled-provider2'],
 			$oHybridAuthLoginExtension->ListSupportedLoginModes()
 		);
+	}
+
+	public function testGetTwigContext_BasicConf() {
+		$sMode = 'basic-buttons';
+
+		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[ "$sMode" => [ 'enabled' => true ]]
+		);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+		$aExpected = [
+			[
+				'sLoginMode' => "hybridauth-$sMode",
+				'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sMode),
+				'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sMode),
+				'sFaImage' => "fa-$sMode",
+				'sIconUrl' => null,
+			],
+		];
+		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
+	}
+
+	public function testGetTwigContext_MSGraph() {
+		$sMode = 'MicrosoftGraph';
+
+		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[ "$sMode" => [ 'enabled' => true ]]
+		);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+		$aExpected = [
+			[
+				'sLoginMode' => "hybridauth-$sMode",
+				'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sMode),
+				'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sMode),
+				'sFaImage' => "fa-microsoft",
+				'sIconUrl' => null,
+			],
+		];
+		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
+	}
+
+	public function testGetTwigContext_Icon() {
+		$sMode = 'basic-buttons';
+
+		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[ "$sMode" => [ 'enabled' => true, 'icon_url' => 'toto.png' ]]
+		);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+		$aExpected = [
+			[
+				'sLoginMode' => "hybridauth-$sMode",
+				'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sMode),
+				'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sMode),
+				'sFaImage' => null,
+				'sIconUrl' => utils::GetAbsoluteUrlAppRoot() . 'toto.png',
+			],
+		];
+		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
+	}
+
+	public function testGetTwigContext_ImageUrl() {
+		$sMode = 'basic-buttons';
+
+		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[ "$sMode" => [ 'enabled' => true, 'icon_url' => 'http://titi/toto.png' ]]
+		);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+		$aExpected = [
+			[
+				'sLoginMode' => "hybridauth-$sMode",
+				'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sMode),
+				'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sMode),
+				'sFaImage' => 'http://titi/toto.png',
+				'sIconUrl' => 'http://titi/toto.png',
+			],
+		];
+		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
+	}
+
+	public function testGetTwigContext_Labels() {
+		$sMode = 'basic-buttons';
+
+		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[ "$sMode" => [ 'enabled' => true, 'label' => "My Label", 'tooltip' => "My Tooltip" ]]
+		);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+		$aExpected = [
+			[
+				'sLoginMode' => "hybridauth-$sMode",
+				'sLabel' => 'My Label',
+				'sTooltip' => 'My Tooltip',
+				'sFaImage' => "fa-$sMode",
+				'sIconUrl' => null,
+			],
+		];
+		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
 	}
 }

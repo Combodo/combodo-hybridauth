@@ -455,8 +455,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				]
 			);
 
-			$sLabel = isset($aProviderData['label']) ? Dict::Format($aProviderData['label'], $sProvider) : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
-			$sTooltip = isset($aProviderData['tooltip']) ? Dict::Format($aProviderData['tooltip'], $sProvider) : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
+			$sLabel = isset($aProviderData['label']) ? $aProviderData['label'] : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
+			$sTooltip = isset($aProviderData['tooltip']) ? $aProviderData['tooltip'] : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
 			$aData[] = [
 				'sLoginMode' => "hybridauth-$sProvider",
 				'sLabel' => $sLabel,
