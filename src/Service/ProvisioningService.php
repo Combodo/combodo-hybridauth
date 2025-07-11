@@ -166,10 +166,9 @@ class ProvisioningService {
 	{
 		$aProviderConf = Config::GetProviderConf($sLoginMode);
 		$aGroupsToProfiles = $aProviderConf['groups_to_profiles'] ?? null;
-		$sDefaultProfile = Config::GetSynchroProfile($sLoginMode);
+		$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 
 		\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, ['groups_to_profiles' => $aGroupsToProfiles]);
-		$aRequestedProfileNames = [$sDefaultProfile];
 		if (is_array($aGroupsToProfiles)) {
 			$aCurrentProfilesName=[];
 			$aSpGroupsIds = $oUserProfile->data[$sServiceProviderGroupToProfileKey] ?? null;

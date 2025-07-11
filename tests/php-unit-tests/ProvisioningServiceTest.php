@@ -170,6 +170,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		self::assertNull(LoginWebPage::FindPerson($sEmail));
