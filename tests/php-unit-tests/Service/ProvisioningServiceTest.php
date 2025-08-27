@@ -36,7 +36,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 		$this->RequireOnceItopFile('env-production/combodo-hybridauth/vendor/autoload.php');
 		$this->RequireOnceItopFile('env-production/combodo-oauth2-client/vendor/autoload.php');
-		$this->RequireOnceUnitTestFile('Provider/ServiceProviderMock.php');
+		$this->RequireOnceUnitTestFile('../Provider/ServiceProviderMock.php');
 
 		$sConfigPath = MetaModel::GetConfig()->GetLoadedFile();
 
