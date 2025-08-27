@@ -137,10 +137,10 @@ class ProvisioningService {
 		if (is_null($oUser)) {
 			$oUser = MetaModel::NewObject('UserExternal');
 			$oUser->Set('login', $sEmail);
+			$oUser->Set('language', MetaModel::GetConfig()->GetDefaultLanguage());
 		}
 
 		$oUser->Set('contactid', $oPerson->GetKey());
-		$oUser->Set('language', MetaModel::GetConfig()->GetDefaultLanguage());
 
 		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oUserProfile, $sInfo);
 

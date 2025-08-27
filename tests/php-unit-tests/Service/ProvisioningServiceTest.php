@@ -296,7 +296,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 		self::assertEquals($sEmail, $oFoundUser->Get('login'));
 		self::assertEquals($oPerson->GetKey(), $oFoundUser->Get('contactid'));
-		self::assertEquals('EN US', $oFoundUser->Get('language'));
+		self::assertEquals('FR FR', $oFoundUser->Get('language'));
 		$this->assertUserProfiles($oFoundUser, ['Configuration Manager']);
 	}
 
