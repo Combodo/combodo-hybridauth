@@ -23,6 +23,7 @@ class ConfigTest extends ItopDataTestCase
 	{
 		parent::tearDown();
 		MetaModel::GetConfig()->SetAllowedLoginTypes($this->aAllowedLoginTypes);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 	}
 
 	public function testGetHybridConfig()
@@ -227,6 +228,52 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals($bExpectedRes, Config::IsUserSynchroEnabled('hybridauth-Google'), $sMessage);
 	}
 
+	public function IsUserRefreshEnabledProvider()
+	{
+		return [
+			'refresh_existing_users missing in conf' => [
+				'bExpectedRes' => false,
+				'aProviderConf' => [],
+				'bOverallOption' => false,
+				'When refresh_existing_users is missing in provider configuration, then default configured value should be used',
+			],
+			'refresh_existing_users disabled in provider' => [
+				'bExpectedRes' => false,
+				'aProviderConf' => ['refresh_existing_users' => false],
+				'bOverallOption' => false,
+				'When refresh_existing_users is disabled in provider configuration and the default value is false, the return should be false',
+			],
+			'refresh_existing_users enabled in provider' => [
+				'bExpectedRes' => true,
+				'aProviderConf' => ['refresh_existing_users' => true],
+				'bOverallOption' => false,
+				'When refresh_existing_users is enabled in provider configuration and the default value is false, the return should be true',
+			],
+			'refresh_existing_users enabled globally' => [
+				'bExpectedRes' => true,
+				'aProviderConf' => ['refresh_existing_users' => false],
+				'bOverallOption' => true,
+				'When refresh_existing_users is disabled in provider configuration but the default value is true, the return should be true',
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider IsUserRefreshEnabledProvider
+	 */
+	public function testThatUserRefreshEnabledShouldMatchConfiguration($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
+	{
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[
+				'Google' => $aProviderConf,
+			]
+		);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', $bOverallOption);
+
+		$this->assertEquals($bExpectedRes, Config::IsUserRefreshEnabled('hybridauth-Google'), $sMessage);
+	}
+
 	public function IsContactSynchroEnabledProvider()
 	{
 		return [
@@ -276,23 +323,41 @@ class ConfigTest extends ItopDataTestCase
 	public function GetSynchroProfileProvider()
 	{
 		return [
-			'default_profile missing in conf' => [
-				'bExpectedRes' => 'Portal User',
+			'no default_profile at all' => [
+				'bExpectedRes' => ['Portal User'],
 				'aProviderConf' => [],
-				'bOverallOption' => null,
+				'overallOption' => null,
 				'When no profile is configured either in provider or in default value then Portal User is used',
 			],
-			'synchronize_user set in provider' => [
-				'bExpectedRes' => 'SuperUser',
-				'aProviderConf' => ['default_profile' => 'SuperUser'],
-				'bOverallOption' => null,
-				'When a profile is configured in provider it should be used',
+			'single empty default_profile at provider level' => [
+				'bExpectedRes' => ['Configuration Manager'],
+				'aProviderConf' => ['default_profile' => ''],
+				'overallOption' => 'Configuration Manager',
+				'When a single empty profile is configured at provider level, it should use global setting',
 			],
-			'synchronize_user set globally' => [
-				'bExpectedRes' => 'SuperUser',
+			'single default_profile set at provider level' => [
+				'bExpectedRes' => ['SuperUser'],
+				'aProviderConf' => ['default_profile' => 'SuperUser'],
+				'overallOption' => 'Configuration Manager',
+				'When a single profile is configured at provider level, it should be used',
+			],
+			'multi profile set at provider level' => [
+				'bExpectedRes' => ['SuperUser', 'Administrator'],
+				'aProviderConf' => ['default_profile' => ['SuperUser', 'Administrator']],
+				'overallOption' => 'Configuration Manager',
+				'When multi profiles are configured at provider level, all profiles should be used',
+			],
+			'single default_profile set globally' => [
+				'bExpectedRes' => ['SuperUser'],
 				'aProviderConf' => [],
-				'bOverallOption' => 'SuperUser',
-				'When a profile is not configured in provider, the default configuration value should be used',
+				'overallOption' => 'SuperUser',
+				'When no profile at provider level, global single profile should be used',
+			],
+			'multi default_profile set globally' => [
+				'bExpectedRes' => ['SuperUser', 'Administrator'],
+				'aProviderConf' => [],
+				'overallOption' => ['SuperUser', 'Administrator'],
+				'When no profile at provider level, global multi profile should be used',
 			],
 		];
 	}
@@ -300,7 +365,7 @@ class ConfigTest extends ItopDataTestCase
 	/**
 	 * @dataProvider GetSynchroProfileProvider
 	 */
-	public function testGetSynchroProfileShouldMatchTheConfiguredValueForProvider($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage = '')
+	public function testGetSynchroProfileShouldMatchTheConfiguredValueForProvider($bExpectedRes, $aProviderConf, $overallOption, $sMessage = '')
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
@@ -308,9 +373,9 @@ class ConfigTest extends ItopDataTestCase
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $bOverallOption);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $overallOption);
 
-		$this->assertEquals($bExpectedRes, Config::GetSynchroProfile('hybridauth-Google'), $sMessage);
+		$this->assertEquals($bExpectedRes, Config::GetSynchroProfiles('hybridauth-Google'), $sMessage);
 	}
 
 	public function GetDebugProvider()

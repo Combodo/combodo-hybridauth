@@ -201,17 +201,42 @@ class Config
 		return $aCurrentProviderConf['synchronize_user'] ?? false;
 	}
 
-	public static function GetSynchroProfile(string $sLoginMode): string
+	public static function IsUserRefreshEnabled(string $sLoginMode): bool
+	{
+		if (static::Get('refresh_existing_users')) {
+			return true;
+		}
+
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (is_null($aCurrentProviderConf)) {
+			return false;
+		}
+
+		return $aCurrentProviderConf['refresh_existing_users'] ?? false;
+	}
+
+	public static function GetSynchroProfiles(string $sLoginMode): array
 	{
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf) {
-			$sDefaultProfile = $aCurrentProviderConf['default_profile'] ?? null;
-			if (utils::IsNotNullOrEmptyString($sDefaultProfile)) {
-				return $sDefaultProfile;
+			$aDefaultProfiles = $aCurrentProviderConf['default_profile'] ?? null;
+			if (is_string($aDefaultProfiles) && \utils::IsNullOrEmptyString($aDefaultProfiles)) {
+				$aDefaultProfiles = null;
 			}
 		}
 
-		return static::Get('default_profile', 'Portal User');
+		if (is_null($aDefaultProfiles)){
+			$aDefaultProfiles = static::Get('default_profile', null);
+			if (is_null($aDefaultProfiles) || is_string($aDefaultProfiles) && \utils::IsNullOrEmptyString($aDefaultProfiles)){
+				$aDefaultProfiles = ['Portal User'];
+			}
+		}
+
+		if (is_array($aDefaultProfiles)){
+			return $aDefaultProfiles;
+		}
+
+		return [$aDefaultProfiles];
 	}
 
 	public static function IsContactSynchroEnabled(string $sLoginMode): bool
