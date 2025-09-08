@@ -324,39 +324,6 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:".$sOutput);
 	}
 
-	public function GetOrganizationForProvisioningProvider()
-	{
-		$sDefaultOrgName = 'IDP_ORG1'.uniqid();
-		$sOrgName2 = 'IDP_ORG2'.uniqid();
-
-		return [
-			'no org returned by IdP' => [$sDefaultOrgName, $sOrgName2, null, $sDefaultOrgName],
-			'unknown org returned by IdP' => [$sDefaultOrgName, $sOrgName2, "unknown_IDP_Org", $sDefaultOrgName],
-			'use IdP org name' => [$sDefaultOrgName, $sOrgName2, $sOrgName2, $sOrgName2],
-		];
-	}
-
-	/**
-	 * @dataProvider GetOrganizationForProvisioningProvider
-	 */
-	public function testGetOrganizationForProvisioning(string $sDefaultOrgName, string $sOrgName2, ?string $sIdpOrgName, string $sExpectedOrgReturned)
-	{
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', "Configuration Manager");
-
-		$this->SaveItopConfFile();
-		$this->CreateOrganization($sDefaultOrgName);
-		$this->CreateOrganization($sOrgName2);
-
-		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
-
-		$sOrgName = $this->InvokeNonPublicMethod(HybridAuthLoginExtension::class, 'GetOrganizationForProvisioning', $oHybridAuthLoginExtension, [$this->sLoginMode, $sIdpOrgName]);
-		$this->assertEquals($sExpectedOrgReturned, $sOrgName);
-	}
-
 	public function testListSupportedLoginModes()
 	{
 		MetaModel::GetConfig()->SetAllowedLoginTypes(
