@@ -56,9 +56,9 @@ class ProvisioningService {
 	/**
 	 * @param string $sLoginMode: SSO login mode
 	 * @param string $sEmail: login/email of user being currently provisioned
-	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
-	 * @return \Person
+	 * @return \Person|null
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
 	public function DoPersonProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile) : Person
@@ -78,6 +78,7 @@ class ProvisioningService {
 		$sLastName = $oUserProfile->lastName ?? $sEmail;
 		$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $oUserProfile->data["organization"] ?? null);
 		$aAdditionalParams = ['phone' => $oUserProfile->phone];
+
 		IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'first_name' => $sFirstName,
@@ -110,8 +111,8 @@ class ProvisioningService {
 	/**
 	 * @param string $sLoginMode: SSO login mode
 	 * @param string $sEmail: login/email of user being currently provisioned
-	 * @param \Person $oPerson : Person object to attach
-	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 * @param \Person $oPerson : Person object attached to user
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
 	 * @return \UserExternal
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
@@ -166,7 +167,8 @@ class ProvisioningService {
 	{
 		$aProviderConf = Config::GetProviderConf($sLoginMode);
 		$aGroupsToProfiles = $aProviderConf['groups_to_profiles'] ?? null;
-		$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
+		$aDefaultProfileNames = Config::GetSynchroProfiles($sLoginMode);
+		$aRequestedProfileNames = $aDefaultProfileNames;
 
 		\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, ['groups_to_profiles' => $aGroupsToProfiles]);
 		if (is_array($aGroupsToProfiles)) {
@@ -191,26 +193,18 @@ class ProvisioningService {
 				}
 
 				if (count($aCurrentProfilesName) == 0) {
-					\IssueLog::Error("No sp group/profile matching found. User profiles not updated", HybridAuthLoginExtension::LOG_CHANNEL, ['sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]);
-
-					if ($oUser->GetKey() != -1) {
-						//no profiles update. we let user connect with previous profiles
-						return;
+					\IssueLog::Error("No sp group/profile matching found. User profiles updated with default profiles", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]);
+				} else {
+					$aRequestedProfileNames = $aCurrentProfilesName;
 					}
-
-					throw new HybridProvisioningAuthException("No sp group/profile matching found. User creation failed at profile synchronization step", 0, null,
-						['login_mode' => $sLoginMode, 'email' => $sEmail, ['sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]]);
-				}
-
-				$aRequestedProfileNames = $aCurrentProfilesName;
 		} else {
 				\IssueLog::Warning("Service provider $sServiceProviderGroupToProfileKey not an array", null, [$sServiceProviderGroupToProfileKey => $aSpGroupsIds]);
 			}
 		} else {
-			\IssueLog::Warning("Configuration issue with groups_to_profiles section", null, ['groups_to_profiles' => $aGroupsToProfiles]);
+			\IssueLog::Warning("Configuration issue with groups_to_profiles section", null, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'groups_to_profiles' => $aGroupsToProfiles]);
 		}
 
-		IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login' => $sEmail, 'profiles' => $aRequestedProfileNames]);
+		IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
 
 		// read all the existing profiles
 		$oProfilesSearch = new DBObjectSearch('URP_Profiles');
@@ -255,4 +249,6 @@ class ProvisioningService {
 
 		$oUser->Set('profile_list', $oProfilesSet);
 	}
+
+
 }

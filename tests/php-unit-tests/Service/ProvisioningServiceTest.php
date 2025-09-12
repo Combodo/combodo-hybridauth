@@ -395,9 +395,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		$oUserProfile = new Profile();
 		$oUserProfile->data['groups']= ['sp_id1'];
 
-		$this->expectExceptionMessage("No sp group/profile matching found. User creation failed at profile synchronization step");
-		$this->expectException(HybridProvisioningAuthException::class);
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, null, true);
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
 	}
 
 	public function testSynchronizeProfiles_OnlyUnexistingiTopProfilesToProvision_UserCreationError() {
