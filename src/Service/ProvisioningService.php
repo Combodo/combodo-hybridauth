@@ -8,6 +8,7 @@ use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 use DBObjectSearch;
 use DBObjectSet;
+use HybridAuthProvisioning;
 use Dict;
 use Hybridauth\User\Profile;
 use IssueLog;
@@ -63,7 +64,11 @@ class ProvisioningService {
 	 */
 	public function DoPersonProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile) : Person
 	{
-		$oPerson = LoginWebPage::FindPerson($sEmail);
+		//HybridAuthProvisioning class comes from datamodel
+		//By default Person is found based on email search (\LoginWebPage::FindPerson)
+		//For tricky reconciliations please extend datamodel
+		$oHybridAuthProvisioning = new HybridAuthProvisioning();
+		$oPerson = $oHybridAuthProvisioning->FindPerson($sLoginMode, $sEmail, $oUserProfile);
 		if (! is_null($oPerson)) {
 			return $oPerson;
 		}
@@ -128,8 +133,12 @@ class ProvisioningService {
 		$sInfo = "External User provisioning ($sLoginMode)";
 		CMDBObject::SetTrackInfo($sInfo);
 
+		//HybridAuthProvisioning class comes from datamodel
+		//By default UserExternal is found based on email===login
+		//For tricky reconciliations please extend datamodel
+		$oHybridAuthProvisioning = new HybridAuthProvisioning();
 		/** @var UserExternal $oUser */
-		$oUser = MetaModel::GetObjectByName('UserExternal', $sEmail, false);
+		$oUser = $oHybridAuthProvisioning->FindUserExternal($sLoginMode, $sEmail, $oUserProfile);
 
 		if (! is_null($oUser) && ! Config::IsUserRefreshEnabled($sLoginMode)) {
 			return $oUser;
@@ -144,6 +153,12 @@ class ProvisioningService {
 		$oUser->Set('contactid', $oPerson->GetKey());
 
 		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oUserProfile, $sInfo);
+
+		//HybridAuthProvisioning class comes from datamodel
+		//By default CompleteUserProvisioningBeforeDbWrite is doing nothing
+		//if someone wants to extend user provisioning it can be done via DM...
+		$oHybridAuthProvisioning = new HybridAuthProvisioning();
+		$oHybridAuthProvisioning->CompleteUserProvisioningBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUser, $oUserProfile, $sInfo);
 
 		if ($oUser->IsModified())
 		{
