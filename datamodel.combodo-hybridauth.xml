@@ -75,14 +75,34 @@
 		return \MetaModel::GetObjectByName('UserExternal', $sEmail, false);
 	}]]></code>
         </method>
-        <method id="CompletePersonProvisioningBeforeDbWrite">
+        <method id="CompletePersonAdditionalParamsBeforeDbWrite">
           <comment>/**
-	 * Current method is called at the end of person provisioning, just after attaching organization and allowed_orgs. and before DBWrite call.
+	 * Current method is called at the end of person provisioning, just after attaching organization and allowed_orgs. and before LoginWebPage::ProvisionPerson call.
+	 * @param string $sLoginMode
+	 * @param string $sEmail
+	 * @param \Person|null $oPerson: null in case of creation
+	 * @param \Hybridauth\User\Profile $oUserProfile
+	 * @param array $aAdditionalParams: additional parameters passed by reference.
+	 *
+	 * @return void
+	 */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function CompletePersonAdditionalParamsBeforeDbWrite(string $sLoginMode, string $sEmail, ?\Person $oPerson, \Hybridauth\User\Profile $oUserProfile, array &$aAdditionalParams) : void
+	{
+	  //Custom Code...
+	}]]></code>
+        </method>
+        <method id="CompleteUserProvisioningBeforeDbWrite">
+          <comment>/**
+	 * Current method is called at the end of user provisioning, just after attaching profiles and allowed_orgs. and before DBWrite call.
 	 * @param string $sLoginMode
 	 * @param string $sEmail
 	 * @param \Person $oPerson
+	 * @param \UserExternal $oUser
 	 * @param \Hybridauth\User\Profile $oUserProfile
-	 * @param array $aAdditionalParams: reference to additional user fields to update
+	 * @param string $sInfo: cmdb change track info
 	 *
 	 * @return void
 	 */</comment>

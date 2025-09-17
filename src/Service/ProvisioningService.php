@@ -8,6 +8,7 @@ use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 use DBObjectSearch;
 use DBObjectSet;
+use Exception;
 use HybridAuthProvisioning;
 use Dict;
 use Hybridauth\User\Profile;
@@ -15,7 +16,7 @@ use IssueLog;
 use LoginWebPage;
 use MetaModel;
 use Person;
-use Session;
+use Combodo\iTop\Application\Helper\Session;
 use URP_UserProfile;
 use UserExternal;
 
@@ -94,25 +95,60 @@ class ProvisioningService {
 
 		$sServiceProviderOrganizationKey = Config::GetIdpKey($sLoginMode, 'profiles', 'organization');
 		$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $oUserProfile->data[$sServiceProviderOrganizationKey] ?? null);
-		$aAdditionalParams = ['phone' => $oUserProfile->phone];
+		$aPersonParams = [
+			'first_name' => $sFirstName,
+			'name' => $sLastName,
+			'email' => $sEmail,
+			'phone' => $oUserProfile->phone
+		];
 
 		//HybridAuthProvisioning class comes from datamodel
 		//By default CompletePersonAdditionalParamsBeforeDbWrite is doing nothing
 		//if someone wants to extend person provisioning it can be done via DM...
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
-		$oHybridAuthProvisioning->CompletePersonAdditionalParamsBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUserProfile, $aAdditionalParams);
+		$oHybridAuthProvisioning->CompletePersonAdditionalParamsBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUserProfile, $aPersonParams);
 
-		IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL,
-			[
-				'first_name' => $sFirstName,
-				'last_name' => $sLastName,
-				'email' => $sEmail,
-				'org' => $sOrganization,
-				'addition_params' => $aAdditionalParams,
-			]
-		);
+		IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL, $aPersonParams);
+		return self::SavePerson($oPerson, $sOrganization, $aPersonParams);
+	}
 
-		return LoginWebPage::ProvisionPerson($sFirstName, $sLastName, $sEmail, $sOrganization, $aAdditionalParams);
+	/**
+	 * Provisioning API: Create a person
+	 *
+	 * @api
+	 *
+	 * @param Person|null $oPerson
+	 * @param string $sOrganization
+	 * @param array $aPersonParams
+	 *
+	 * @return \Person
+	 */
+	public static function SavePerson(?Person $oPerson, $sOrganization, array $aPersonParams)
+	{
+		CMDBObject::SetTrackOrigin('custom-extension');
+		$sInfo = 'External User provisioning';
+		if (Session::IsSet('login_mode'))
+		{
+			$sInfo .= " (".Session::Get('login_mode').")";
+		}
+		CMDBObject::SetTrackInfo($sInfo);
+
+		if (is_null($oPerson)){
+			$oPerson = MetaModel::NewObject('Person');
+		}
+		$oOrg = MetaModel::GetObjectByName('Organization', $sOrganization, false);
+		if (is_null($oOrg))
+		{
+			throw new Exception(Dict::S('UI:Login:Error:WrongOrganizationName'));
+		}
+		$oPerson->Set('org_id', $oOrg->GetKey());
+		foreach ($aPersonParams as $sAttCode => $sValue)
+		{
+			$oPerson->Set($sAttCode, $sValue);
+		}
+
+		$oPerson->DBWrite();
+		return $oPerson;
 	}
 
 	private function GetOrganizationForProvisioning(string $sLoginMode, ?string $sIdPOrgName): string
