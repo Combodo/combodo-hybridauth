@@ -265,4 +265,15 @@ class Config
 
 		return static::Get('default_organization');
 	}
+
+	public static function GetIdpKey(string $sLoginMode, string $sFieldType, string $sDefaultValue) : ?string
+	{
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (null !== $aCurrentProviderConf) {
+			$aKeys = $aCurrentProviderConf['idp_to_itop_matching_keys'] ?? [];
+			return $aKeys[$sFieldType] ?? $sDefaultValue;
+		}
+
+		return $sDefaultValue;
+	}
 }

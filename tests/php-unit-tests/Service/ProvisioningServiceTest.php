@@ -20,7 +20,6 @@ use Hybridauth\User\Profile;
 use LoginWebPage;
 use MetaModel;
 use Person;
-use URP_UserProfile;
 use UserExternal;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 
@@ -110,20 +109,6 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		$_SESSION = [];
 	}
 
-	private function CreatePersonByEmail($sEmail) : Person {
-		$oOrg = $this->CreateOrganization($this->sUniqId);
-
-		/** @var Person $oPerson */
-		$oPerson = $this->createObject('Person', [
-			'name' => $sEmail,
-			'first_name' => $sEmail,
-			'email' => $sEmail,
-			'org_id' => $oOrg->GetKey(),
-		]);
-
-		return $oPerson;
-	}
-
 	public function testDoPersonProvisioning_PersonAlreadyExists(){
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
@@ -163,6 +148,33 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		self::assertEquals('', $oFoundPerson->Get('phone'));
 	}
 
+	public function testDoPersonProvisioning_CreationOKWithAllFieldsProvidedByIdp(){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+
+		$sDefaultOrgName = $this->sUniqId;
+		$oOrg = $this->CreateOrganization($sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+
+		$sEmail = $this->sUniqId."@test.fr";
+		self::assertNull(LoginWebPage::FindPerson($sEmail));
+
+		$oProfileWithMostFields = new Profile();
+		$oProfileWithMostFields->email = $this->sUniqId."@test.fr";
+		$oProfileWithMostFields->firstName = 'firstNameA';
+		$oProfileWithMostFields->lastName = 'lastNameA';
+		$oProfileWithMostFields->phone = '456978';
+		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
+		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
+		self::assertNotNull($oFoundPerson);
+		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
+
+		self::assertEquals($oProfileWithMostFields->firstName, $oFoundPerson->Get('first_name'));
+		self::assertEquals($oProfileWithMostFields->lastName, $oFoundPerson->Get('name'));
+		self::assertEquals($sEmail, $oFoundPerson->Get('email'));
+		self::assertEquals($oOrg->GetKey(), $oFoundPerson->Get('org_id'));
+		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
+	}
+
 	public function testDoProvisioning_CreationOK(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
@@ -192,6 +204,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		self::assertEquals($oOrg->GetKey(), $oFoundPerson->Get('org_id'));
 		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 
+		/** @var UserExternal $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");
@@ -200,34 +213,6 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		self::assertEquals($oFoundPerson->GetKey(), $oFoundUser->Get('contactid'));
 		self::assertEquals('EN US', $oFoundUser->Get('language'));
 		$this->assertUserProfiles($oFoundUser, ['Portal user']);
-	}
-
-
-	public function testDoPersonProvisioning_CreationOK(){
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-
-		$sDefaultOrgName = $this->sUniqId;
-		$oOrg = $this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-
-		$sEmail = $this->sUniqId."@test.fr";
-		self::assertNull(LoginWebPage::FindPerson($sEmail));
-
-		$oProfileWithMostFields = new Profile();
-		$oProfileWithMostFields->email = $this->sUniqId."@test.fr";
-		$oProfileWithMostFields->firstName = 'firstNameA';
-		$oProfileWithMostFields->lastName = 'lastNameA';
-		$oProfileWithMostFields->phone = '456978';
-		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
-		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
-		self::assertNotNull($oFoundPerson);
-		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
-
-		self::assertEquals($oProfileWithMostFields->firstName, $oFoundPerson->Get('first_name'));
-		self::assertEquals($oProfileWithMostFields->lastName, $oFoundPerson->Get('name'));
-		self::assertEquals($sEmail, $oFoundPerson->Get('email'));
-		self::assertEquals($oOrg->GetKey(), $oFoundPerson->Get('org_id'));
-		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 	}
 
 	public function GetOrganizationForProvisioningProvider()
@@ -263,7 +248,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 	public function testDoUserProvisioning_UserCreationOK() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
-		MetaModel::GetConfig()->SetDefaultLanguage('FR FR');
+		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
@@ -271,29 +256,34 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		self::assertNull(LoginWebPage::FindUser($sEmail));
 
 		$oReturnedCreatedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
+
+		/** @var UserExternal $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");
 
 		self::assertEquals($sEmail, $oFoundUser->Get('login'));
 		self::assertEquals($oPerson->GetKey(), $oFoundUser->Get('contactid'));
-		self::assertEquals('FR FR', $oFoundUser->Get('language'));
+		self::assertEquals('EN US', $oFoundUser->Get('language'));
 		$this->assertUserProfiles($oFoundUser, ['Portal user']);
-		return $oPerson;
 	}
 
-	public function testDoUserProvisioning_UserUpdateOK() {
-		$oPerson = $this->testDoUserProvisioning_UserCreationOK();
+	public function testDoUserProvisioning_UserUpdateOKWithAnotherProfile() {
+		$sEmail = $this->sUniqId."@test.fr";
+		$oPerson = $this->CreatePersonByEmail($sEmail);
+		$oFoundUser = $this->CreateExternalUserWithProfiles($sEmail, ['Portal user']);
+		self::assertEquals('FR FR', $oFoundUser->Get('language'));
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
-		$sEmail = $this->sUniqId."@test.fr";
+		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 		ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
+
+		/** @var UserExternal $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
-
 		self::assertEquals($sEmail, $oFoundUser->Get('login'));
 		self::assertEquals($oPerson->GetKey(), $oFoundUser->Get('contactid'));
 		self::assertEquals('FR FR', $oFoundUser->Get('language'));
@@ -304,18 +294,182 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
 
 		$sEmail = $this->sUniqId."@test.fr";
+		$oPerson = $this->CreatePersonByEmail($sEmail);
+		$this->CreateExternalUserWithProfiles($sEmail, ['Portal user']);
 
-		$oSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
-		$oSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => self::$aURP_Profiles['Portal user'], 'reason' => 'UNIT Tests')));
-
-		$this->createObject('UserExternal', [
-			'login' => $sEmail,
-			'profile_list' => $oSet,
-		]);
-
-		$oReturnedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $this->CreatePersonByEmail($sEmail), new Profile());
+		$oReturnedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
 		$this->assertUserProfiles($oReturnedUser, ['Portal user']);
 		self::assertEquals(0, $oReturnedUser->Get('contactid'));
+	}
+
+	public function testSynchronizeProfiles_NoGroupReturnedBySP_UseDefaultProfile() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ['A' => 'B']);
+
+		//field 'groups' not found in IdP response
+		//use fallback
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse(new Profile());
+	}
+
+	public function testSynchronizeProfiles_NoGroupMatchingConfigured_UserCreationWithDefaultProfileAndWarnings() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['A' => 'B'];
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
+	}
+
+	public function testSynchronizeProfiles_GroupMatchingBadlyConfigured_UserCreationWithDefaultProfileAndWarnings() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
+		$this->InitializeGroupsToProfile($this->sLoginMode, "groups_to_profiles set as string instead of array");
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['sp_id1'];
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
+	}
+
+	public function testSynchronizeProfiles_NoProfilesReturnedByIdp_UserCreationError() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id2" => "itop_profile2"]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= [];
+
+		$this->expectExceptionMessage("No sp group/profile matching found and no valid URP_Profile to attach to user");
+		$this->expectException(HybridProvisioningAuthException::class);
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
+	}
+
+	public function testSynchronizeProfiles_NoProfilesFoundViaGroupMatchingConfiguration_UserCreationError() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id2" => "itop_profile2"]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['sp_id1'];
+
+		$this->expectExceptionMessage("No sp group/profile matching found and no valid URP_Profile to attach to user");
+		$this->expectException(HybridProvisioningAuthException::class);
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
+	}
+
+	public function testSynchronizeProfiles_OnlyUnexistingiTopProfilesToProvision_UserCreationError() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting_itop_profile1"]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
+
+		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
+		$this->expectException(HybridProvisioningAuthException::class);
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, null, true);
+	}
+
+	public function testSynchronizeProfiles_SomeUnexistingProfileToProvision_UserCreationWithFallbackProfileAndWarning() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting_itop_profile1", "sp_id2" => "Portal user"]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
+
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
+	}
+
+	public function testSynchronizeProfiles_UnexistingDefaultProfile_UserCreationError() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Wrong iTop Profile');
+
+		$oUserProfile = new Profile();
+		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
+		$this->expectException(HybridProvisioningAuthException::class);
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, null, true);
+	}
+
+	public function testSynchronizeProfiles_UserCreationOK() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal user"]]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, ["Administrator", "Configuration Manager", "Portal user"]);
+	}
+
+	public function testSynchronizeProfiles_NoExistingProfileToUpdate_NoProfileModificationAndNoExceptionToLetUserLogInWithPreviousProfiles() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting itop profile"]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['sp_id1'];
+		$sEmail = $this->sUniqId."@test.fr";
+
+		$aInitialProfileNames=[
+			"Configuration Manager", //to remove after provisioning update
+			"Change Approver", //to keep
+		];
+		$oUser = $this->CreateExternalUserWithProfiles($sEmail, $aInitialProfileNames);
+
+		$this->expectException(HybridProvisioningAuthException::class);
+		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
+		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
+	}
+
+	public function testSynchronizeProfiles_UserUpdateOK() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => "Portal user"]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
+		$sEmail = $this->sUniqId."@test.fr";
+
+		$aInitialProfileNames=[
+			"Configuration Manager", //to remove after provisioning update
+			"Change Approver", //to keep
+		];
+		$oUser = $this->CreateExternalUserWithProfiles($sEmail, $aInitialProfileNames);
+
+		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
+		$this->assertUserProfiles($oUser, ['Portal user', "Change Approver"]);
+	}
+
+	private function CreatePersonByEmail($sEmail) : Person {
+		$oOrg = $this->CreateOrganization($this->sUniqId);
+
+		/** @var Person $oPerson */
+		$oPerson = $this->createObject('Person', [
+			'name' => $sEmail,
+			'first_name' => $sEmail,
+			'email' => $sEmail,
+			'org_id' => $oOrg->GetKey(),
+		]);
+
+		return $oPerson;
+	}
+
+	public function InitializeGroupsToProfile(string $sLoginMode, $groupToProfilesValue) {
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
+		$aProviderConf['groups_to_profiles'] = $groupToProfilesValue;
+
+		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
+		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
+	}
+
+	private function CreateExternalUserWithProfiles(string $sEmail, array $aProfileNames) : \UserExternal
+	{
+		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
+		foreach ($aProfileNames as $sProfileName){
+			$oLink = MetaModel::NewObject('URP_UserProfile', array('profileid' => self::$aURP_Profiles[$sProfileName], 'reason' => 'UNIT Tests'));
+			$oProfilesSet->AddItem($oLink);
+		}
+
+		/** @var \UserExternal $oUser */
+		$oUser = $this->createObject(UserExternal::class, [
+			'login'        => $sEmail,
+			'profile_list' => $oProfilesSet,
+			'language' => 'FR FR',
+
+		]);
+
+		return $oUser;
 	}
 
 	private function assertUserProfiles(UserExternal $oUser, $aExpectedProfiles)
@@ -341,158 +495,14 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		$this->assertEquals($aExpectedProfiles, $aFoundProfileNames);
 	}
 
-	public function SetGroupsToProfile(string $sLoginMode, $groupToProfilesValue) {
-		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
-		$aProviderConf['groups_to_profiles'] = $groupToProfilesValue;
-
-		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
-		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
-
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
-	}
-
-	public function ValidateSynchronizeProfiles_FallbackToDefaultProfileUse(Profile $oUserProfile, $aExpectedProfile=['Portal user'], $bExpectException=false) {
+	public function ValidateSynchronizeProfiles_FallbackToDefaultProfileUse(Profile $oUserProfile, $aExpectedProfile=['Portal user']) {
 		$sEmail = $this->sUniqId."@test.fr";
+		/** @var UserExternal $oUser */
 		$oUser = MetaModel::NewObject('UserExternal');
 		$oUser->Set('login', $sEmail);
 
 		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
-		if (! $bExpectException){
-			$this->assertUserProfiles($oUser, $aExpectedProfile);
-		}
-	}
-
-	public function testSynchronizeProfiles_NoGroupReturnedBySP_UseDefaultProfile() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
-		$this->SetGroupsToProfile($this->sLoginMode, ['A' => 'B']);
-
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse(new Profile());
-	}
-
-	public function testSynchronizeProfiles_NoGroupMatchingConfigured_UserCreationWithDefaultProfileAndWarnings() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['A' => 'B'];
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
-	}
-
-	public function testSynchronizeProfiles_GroupMatchingBadlyConfigured_UserCreationWithDefaultProfileAndWarnings() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
-		$this->SetGroupsToProfile($this->sLoginMode, "groups_to_profiles set as string instead of array");
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['sp_id1'];
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
-	}
-
-	public function testSynchronizeProfiles_NoProfilesFoundViaGroupMatchingConfiguration_UserCreationError() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
-		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id2" => "itop_profile2"]);
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['sp_id1'];
-
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
-	}
-
-	public function testSynchronizeProfiles_OnlyUnexistingiTopProfilesToProvision_UserCreationError() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
-		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting_itop_profile1"]);
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
-
-		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
-		$this->expectException(HybridProvisioningAuthException::class);
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, null, true);
-	}
-
-	public function testSynchronizeProfiles_SomeUnexistingProfileToProvision_UserCreationWithFallbackProfileAndWarning() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
-		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting_itop_profile1", "sp_id2" => "Portal user"]);
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
-
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile);
-	}
-
-	public function testSynchronizeProfiles_UnexistingDefaultProfile_UserCreationError() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Wrong iTop Profile');
-
-		$oUserProfile = new Profile();
-		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
-		$this->expectException(HybridProvisioningAuthException::class);
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, null, true);
-	}
-
-	public function testSynchronizeProfiles_UserCreationOK() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
-		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal user"]]);
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, ["Administrator", "Configuration Manager", "Portal user"]);
-	}
-
-	public function testSynchronizeProfiles_NoExistingProfileToUpdate_NoProfileModificationAndNoExceptionToLetUserLogInWithPreviousProfiles() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
-		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting itop profile"]);
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['sp_id1'];
-		$sEmail = $this->sUniqId."@test.fr";
-
-		$aInitialProfileNames=[
-			"Configuration Manager", //to remove after provisioning update
-			"Change Approver", //to keep
-		];
-
-		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
-		foreach ($aInitialProfileNames as $sProfileName){
-			$this->AddProfileToLnk($oProfilesSet, $sProfileName);
-		}
-
-		$oUser = $this->createObject(UserExternal::class, [
-			'login' => $sEmail,
-			'profile_list' => $oProfilesSet
-		]);
-		$this->assertUserProfiles($oUser, $aInitialProfileNames);
-		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
-		$this->assertUserProfiles($oUser, $aInitialProfileNames);
-	}
-
-	public function testSynchronizeProfiles_UserUpdateOK() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
-		$this->SetGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => "Portal user"]);
-
-		$oUserProfile = new Profile();
-		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
-		$sEmail = $this->sUniqId."@test.fr";
-
-		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
-		$aInitialProfileNames=[
-			"Configuration Manager", //to remove after provisioning update
-			"Change Approver", //to keep
-		];
-		foreach ($aInitialProfileNames as $sProfileName){
-			$this->AddProfileToLnk($oProfilesSet, $sProfileName);
-		}
-
-		$oUser= $this->createObject(UserExternal::class, [
-			'login' => $sEmail,
-			'profile_list' => $oProfilesSet
-		]);
-		$this->assertUserProfiles($oUser, $aInitialProfileNames);
-
-		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
-		$this->assertUserProfiles($oUser, ['Portal user', "Change Approver"]);
-	}
-
-	private function AddProfileToLnk($oProfilesSet, $sProfileName)
-	{
-		$oProfilesSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => self::$aURP_Profiles[$sProfileName], 'reason' => 'UNIT Tests')));
+		$this->assertUserProfiles($oUser, $aExpectedProfile);
 	}
 }
 

@@ -109,7 +109,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 		$bLoginDebug = MetaModel::GetConfig()->Get('login_debug');
 		if ($bLoginDebug) {
-			\IssueLog::Info(__METHOD__, null,
+			IssueLog::Info(__METHOD__, null,
 				[
 					'REQUEST_SCHEME' => $_SERVER['REQUEST_SCHEME'],
 					'HTTP_HOST' => $_SERVER['HTTP_HOST'],
@@ -262,13 +262,21 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (Config::IsLoginModeSupported($sLoginMode)) {
 			if (!Session::IsSet('auth_user')) {
 				$iErrorCode = LoginWebPage::EXIT_CODE_WRONGCREDENTIALS;
-
 				return LoginWebPage::LOGIN_FSM_ERROR;
 			}
-			self::DoUserProvisioning($sLoginMode);
-		}
 
-		return LoginWebPage::LOGIN_FSM_CONTINUE;
+			try{
+				self::DoUserProvisioning($sLoginMode);
+				return LoginWebPage::LOGIN_FSM_CONTINUE;
+			} catch (HybridProvisioningAuthException $e) {
+				IssueLog::Error($e->getMessage(), null, $e->aContext);
+			} catch (Exception $e) {
+				IssueLog::Error($e->getMessage());
+			}
+
+			$iErrorCode = LoginWebPage::EXIT_CODE_NOTAUTHORIZED;
+			return LoginWebPage::LOGIN_FSM_ERROR;
+		}
 	}
 
 	protected function OnCredentialsOK(&$iErrorCode)
@@ -321,7 +329,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		$sLoginMode = Session::Get('login_mode', '');
 		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		if (false === $sProviderName) {
-			\IssueLog::Error("login_mode provided not OpenID compliant", HybridAuthLoginExtension::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
+			IssueLog::Error("login_mode provided not OpenID compliant", HybridAuthLoginExtension::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
 			throw new \Exception("login_mode provided not OpenID compliant");
 		}
 
@@ -345,37 +353,31 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	private function DoUserProvisioning(string $sLoginMode)
 	{
-		try {
-			if (!Config::IsUserSynchroEnabled($sLoginMode)) {
-				return; // No automatic User provisioning
-			}
-			$sEmail = Session::Get('auth_user');
-			if (!Config::IsUserRefreshEnabled($sLoginMode) && LoginWebPage::FindUser($sEmail, false)) {
-				return; // User already present
-			}
-
-			$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
-			$oUserProfile = $oAuthAdapter->getUserProfile();
-			IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
-				[
-					'oUserProfile' => $oUserProfile,
-				]
-			);
-
-			if ($oUserProfile == null) {
-				return; // No data available for this user
-			}
-
-			//HybridAuthProvisioning class comes from datamodel
-			//By default it calls ProvisioningService
-			//if someone wants to extend provisioning it can be done via DM...
-			$oHybridAuthProvisioning = new HybridAuthProvisioning();
-			$oHybridAuthProvisioning->DoProvisioning($sLoginMode, $sEmail, $oUserProfile);
-		} catch (HybridProvisioningAuthException $e) {
-			IssueLog::Error($e->getMessage(), null, $e->aContext);
-		} catch (Exception $e) {
-			IssueLog::Error($e->getMessage());
+		if (!Config::IsUserSynchroEnabled($sLoginMode)) {
+			return; // No automatic User provisioning
 		}
+		$sEmail = Session::Get('auth_user');
+		if (!Config::IsUserRefreshEnabled($sLoginMode) && LoginWebPage::FindUser($sEmail, false)) {
+			return; // User already present
+		}
+
+		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
+		$oUserProfile = $oAuthAdapter->getUserProfile();
+		IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
+			[
+				'oUserProfile' => $oUserProfile,
+			]
+		);
+
+		if ($oUserProfile == null) {
+			return; // No data available for this user
+		}
+
+		//HybridAuthProvisioning class comes from datamodel
+		//By default it calls ProvisioningService
+		//if someone wants to extend provisioning it can be done via DM...
+		$oHybridAuthProvisioning = new HybridAuthProvisioning();
+		$oHybridAuthProvisioning->DoProvisioning($sLoginMode, $sEmail, $oUserProfile);
 	}
 
 	public function GetTwigContext()
@@ -411,14 +413,14 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 						$oReflection = new \ReflectionClass($sAdapterClass);
 						$sAdapterClass = $oReflection->getShortName();
 					} catch (\ReflectionException $e) {
-						\IssueLog::Warning("Unknown SSO adapter class $sProvider", null, [$sAdapterClass]);
+						IssueLog::Warning("Unknown SSO adapter class $sProvider", null, [$sAdapterClass]);
 					}
 				}
 
 				$sFaImage = utils::StartsWith($sAdapterClass, "Microsoft") ? "fa-microsoft" : "fa-$sAdapterClass";
 			}
 
-			\IssueLog::Debug("login button settings", null,
+			IssueLog::Debug("login button settings", null,
 				[
 					'sProvider' => $sProvider,
 					'sFaImage' => $sFaImage,
@@ -460,7 +462,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		try {
 			return self::GetHybridauthService()->authenticate($sName);
 		} catch (\Exception $e) {
-			\IssueLog::Error("Fail to authenticate with provider name '$sName'", HybridAuthLoginExtension::LOG_CHANNEL, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
+			IssueLog::Error("Fail to authenticate with provider name '$sName'", HybridAuthLoginExtension::LOG_CHANNEL, ['exception' => $e->getMessage(), 'provider_name' => $sName]);
 			throw $e;
 		}
 	}
