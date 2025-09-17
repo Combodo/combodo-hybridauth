@@ -211,8 +211,8 @@ class ProvisioningService {
 					\IssueLog::Error("No sp group/profile matching found. User profiles updated with default profiles", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]);
 				} else {
 					$aRequestedProfileNames = $aCurrentProfilesName;
-					}
-		} else {
+				}
+			} else {
 				\IssueLog::Warning("Service provider $sServiceProviderGroupToProfileKey not an array", null, [$sServiceProviderGroupToProfileKey => $aSpGroupsIds]);
 			}
 		} else {
@@ -231,7 +231,7 @@ class ProvisioningService {
 			$aAllProfilIDs[mb_strtolower($oProfile->GetName())] = $oProfile->GetKey();
 		}
 
-		$oProfilesSet = DBObjectSet::FromScratch('URP_UserProfile');
+		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
 		$iCount=0;
 
 		foreach ($aRequestedProfileNames as $sRequestedProfileName)
@@ -240,10 +240,7 @@ class ProvisioningService {
 			if (isset($aAllProfilIDs[$sRequestedProfileName]))
 			{
 				$iProfileId = $aAllProfilIDs[$sRequestedProfileName];
-				$oLink = new URP_UserProfile();
-				$oLink->Set('profileid', $iProfileId);
-				$oLink->Set('reason', $sInfo);
-				$oProfilesSet->AddObject($oLink);
+				$oProfilesSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => $iProfileId, 'reason' => $sInfo)));
 				$iCount++;
 			} else {
 				IssueLog::Warning("Cannot add profile to user", null, ['requested_profile_from_service_provider' => $sRequestedProfileName, 'login' => $sEmail]);

@@ -76,10 +76,9 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			'org_id' => $this->oOrg->GetKey(),
 		]);
 
-		$oUserProfile = new URP_UserProfile();
-		$oUserProfile->Set('profileid', $oProfile->GetKey());
-		$oUserProfile->Set('reason', 'UNIT Tests');
-		$oSet = DBObjectSet::FromObject($oUserProfile);
+		$oSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
+		$oSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => $oProfile->GetKey(), 'reason' => 'UNIT Tests')));
+
 		/** @var \UserExternal $oUser */
 		$this->oUser = $this->createObject(UserExternal::class, [
 			'login' => $this->sEmail,

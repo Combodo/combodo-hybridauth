@@ -305,10 +305,8 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 		$sEmail = $this->sUniqId."@test.fr";
 
-		$oUserProfile = new URP_UserProfile();
-		$oUserProfile->Set('profileid', self::$aURP_Profiles['Portal user']);
-		$oUserProfile->Set('reason', 'UNIT Tests');
-		$oSet = DBObjectSet::FromObject($oUserProfile);
+		$oSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
+		$oSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => self::$aURP_Profiles['Portal user'], 'reason' => 'UNIT Tests')));
 
 		$this->createObject('UserExternal', [
 			'login' => $sEmail,
@@ -446,12 +444,12 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		$oUserProfile->data['groups']= ['sp_id1'];
 		$sEmail = $this->sUniqId."@test.fr";
 
-		$oProfilesSet = DBObjectSet::FromScratch('URP_UserProfile');
 		$aInitialProfileNames=[
 			"Configuration Manager", //to remove after provisioning update
 			"Change Approver", //to keep
 		];
 
+		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
 		foreach ($aInitialProfileNames as $sProfileName){
 			$this->AddProfileToLnk($oProfilesSet, $sProfileName);
 		}
@@ -473,7 +471,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 		$oUserProfile->data['groups']= ['sp_id1', 'sp_id2'];
 		$sEmail = $this->sUniqId."@test.fr";
 
-		$oProfilesSet = DBObjectSet::FromScratch('URP_UserProfile');
+		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
 		$aInitialProfileNames=[
 			"Configuration Manager", //to remove after provisioning update
 			"Change Approver", //to keep
@@ -494,10 +492,7 @@ class ProvisioningServiceTest extends ItopDataTestCase
 
 	private function AddProfileToLnk($oProfilesSet, $sProfileName)
 	{
-		$oLink = new URP_UserProfile();
-		$oLink->Set('profileid', self::$aURP_Profiles[$sProfileName]);
-		$oLink->Set('reason', 'test');
-		$oProfilesSet->AddObject($oLink);
+		$oProfilesSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => self::$aURP_Profiles[$sProfileName], 'reason' => 'UNIT Tests')));
 	}
 }
 
