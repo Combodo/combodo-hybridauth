@@ -85,7 +85,7 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 
 		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
 		$this->expectException(HybridProvisioningAuthException::class);
-		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, null, true);
+		$this->ValidateSynchronizeProfiles_FallbackToDefaultProfileUse($oUserProfile, null);
 	}
 
 	public function testSynchronizeProfiles_SomeUnexistingProfileToProvision_UserCreationWithFallbackProfileAndWarning() {
@@ -132,7 +132,8 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 
 		$this->expectException(HybridProvisioningAuthException::class);
 		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
-		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
 	}
 
 	public function testSynchronizeProfiles_UserUpdateOK() {
@@ -149,7 +150,8 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 		];
 		$oUser = $this->CreateExternalUserWithProfiles($sEmail, $aInitialProfileNames);
 
-		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
 		$this->assertUserProfiles($oUser, ['Portal user', "Change Approver"]);
 	}
 }

@@ -206,7 +206,9 @@ class ProvisioningService {
 
 		$oUser->Set('contactid', $oPerson->GetKey());
 
-		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oUserProfile, $sInfo);
+		$aProviderConf = Config::GetProviderConf($sLoginMode);
+		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, $sInfo);
+		$this->SynchronizeAllowedOrgs($sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, $sInfo);
 
 		//HybridAuthProvisioning class comes from datamodel
 		//By default CompleteUserProvisioningBeforeDbWrite is doing nothing
@@ -226,18 +228,24 @@ class ProvisioningService {
 	 * @param string $sEmail : login/email of user to provision (create/update)
 	 * @param \UserExternal $oUser : current user being created
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 * @param array $aProviderConf : itop provider configuration
 	 * @param string $sInfo : metadata added in the history of any iTop object being created/updated (profiles here)
 	 *
 	 * @return void
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, string $sInfo)
+	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
 	{
-		$aProviderConf = Config::GetProviderConf($sLoginMode);
-		$aDefaultProfileNames = Config::GetSynchroProfiles($sLoginMode);
-		$aRequestedProfileNames = $this->GetProfileNamesFromIdpResponse($sLoginMode, $sEmail, $oUserProfile, $aProviderConf, $aDefaultProfileNames);
+		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'profiles', 'groups');
+		$aMatchingTable = $aProviderConf['groups_to_profiles'] ?? null;
+		$aRequestedProfileNames = $this->GetObjectNamesFromIdpMatchingTable($sLoginMode, $sEmail, $oUserProfile, $aMatchingTable, 'groups_to_profiles', $sServiceProviderProfileKey);
+		if (is_null($aRequestedProfileNames)){
+			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
+		} else if (count($aRequestedProfileNames)==0){
+			throw new HybridProvisioningAuthException("No sp group/profile matching found and no valid URP_Profile to attach to user");
+		}
 
-		IssueLog::Info("OpenID User provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
+		IssueLog::Info("OpenID Profile provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
 
 		// read all the existing profiles
 		$oProfilesSearch = new DBObjectSearch('URP_Profiles');
@@ -274,29 +282,104 @@ class ProvisioningService {
 		$oUser->Set('profile_list', $oProfilesSet);
 	}
 
-	public function GetProfileNamesFromIdpResponse(string $sLoginMode, string $sEmail, Profile $oUserProfile, array $aProviderConf, array $aDefaultProfileNames) : array {
-		$aGroupsToProfiles = $aProviderConf['groups_to_profiles'] ?? null;
-		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'profiles', 'groups');
+	/**
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail : login/email of user to provision (create/update)
+	 * @param \UserExternal $oUser : current user being created
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 * @param array $aProviderConf : itop provider configuration
+	 * @param string $sInfo : metadata added in the history of any iTop object being created/updated (profiles here)
+	 *
+	 * @return void
+	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 */
+	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
+	{
+		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'allowed_orgs', 'allowed_orgs');
+		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
+		$aRequestedOrgNames = $this->GetObjectNamesFromIdpMatchingTable($sLoginMode, $sEmail, $oUserProfile, $aMatchingTable, 'groups_to_orgs', $sServiceProviderProfileKey);
+		if (is_null($aRequestedOrgNames)){
+			$aRequestedOrgNames = Config::GetDefaultAllowedOrgs($sLoginMode);
+		} else if (count($aRequestedOrgNames)==0){
+			//do nothing
+			return;
+		}
 
-		\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, ['groups_to_profiles' => $aGroupsToProfiles]);
-		if (! is_array($aGroupsToProfiles)) {
-			\IssueLog::Warning("Configuration issue with groups_to_profiles section", null, ['login_mode' => $sLoginMode, 'groups_to_profiles' => $aGroupsToProfiles]);
-			return $aDefaultProfileNames;
+		IssueLog::Info("OpenID AllowedOrgs provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'orgs' => $aRequestedOrgNames]);
+
+		// read all the existing profiles
+		$oProfilesSearch = new DBObjectSearch('Organization');
+		$oProfilesSearch->AllowAllData();
+		$oProfilesSet = new DBObjectSet($oProfilesSearch);
+		$aIdByNamesTable = [];
+		while ($oProfile = $oProfilesSet->Fetch())
+		{
+			$aIdByNamesTable[mb_strtolower($oProfile->GetName())] = $oProfile->GetKey();
+		}
+
+		$oAllowedOrgSet = new \ormLinkSet(\User::class, 'allowed_org_list', \DBObjectSet::FromScratch(\URP_UserOrg::class));
+		$iCount=0;
+
+		foreach ($aRequestedOrgNames as $sRequestedName)
+		{
+			$sNameToFind = mb_strtolower($sRequestedName);
+			if (isset($aIdByNamesTable[$sNameToFind]))
+			{
+				$iOrgId = $aIdByNamesTable[$sNameToFind];
+				$oLink = MetaModel::NewObject('URP_UserOrg', ['allowed_org_id' => $iOrgId, 'reason' => $sInfo]);
+				$oAllowedOrgSet->AddItem($oLink);
+				$iCount++;
+			} else {
+				IssueLog::Warning("Cannot add allowed_org to user", null, ['requested_org_from_service_provider' => $sRequestedName, 'login' => $sEmail]);
+			}
+		}
+
+		if ($iCount==0) {
+			\IssueLog::Warning("no valid URP_UserOrg to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'sp_org_names' => $aRequestedOrgNames]);
+		}
+
+		$oUser->Set('allowed_org_list', $oAllowedOrgSet);
+	}
+
+	/**
+	 * Use IdP response to compute matching table and return a list of names
+	 *
+	 * @param string $sLoginMode
+	 * @param string $sEmail
+	 * @param \Hybridauth\User\Profile $oUserProfile
+	 * @param mixed $aMatchingTable: matching definition between idp response and itop object names. should be an array or no matching applied
+	 * @param string $sMatchingTableConfigurationKey: used here only for supportability (logging/exception messages)
+	 * @param string $sServiceProviderProfileKey: key to fetch in IdP response
+	 *
+	 * @return array|null: return null when matching is not possible somehow. either it is not configured either IdP response does not fit
+	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 */
+	public function GetObjectNamesFromIdpMatchingTable(string $sLoginMode, string $sEmail, Profile $oUserProfile, mixed $aMatchingTable, string $sMatchingTableConfigurationKey, string $sServiceProviderProfileKey) : ?array {
+		if (is_null($aMatchingTable)) {
+			return null;
+		}
+
+		\IssueLog::Debug(__METHOD__ . ": use matching table", HybridAuthLoginExtension::LOG_CHANNEL, [$sMatchingTableConfigurationKey => $aMatchingTable]);
+
+		if (! is_array($aMatchingTable)) {
+			\IssueLog::Warning("Configuration issue with $sMatchingTableConfigurationKey section", null, ['login_mode' => $sLoginMode, $sMatchingTableConfigurationKey => $aMatchingTable]);
+			return null;
 		}
 
 		$aCurrentProfilesName=[];
 		$aSpGroupsIds = $oUserProfile->data[$sServiceProviderProfileKey] ?? null;
 		if (!is_array($aSpGroupsIds)) {
 			\IssueLog::Warning("Service provider $sServiceProviderProfileKey not an array", null, [$sServiceProviderProfileKey => $aSpGroupsIds]);
-			return $aDefaultProfileNames;
+			return null;
 		}
 
-		\IssueLog::Debug(__METHOD__, HybridAuthLoginExtension::LOG_CHANNEL, [$sServiceProviderProfileKey => $aSpGroupsIds]);
+		\IssueLog::Debug("Service provider contains proper $sServiceProviderProfileKey value", null, [$sServiceProviderProfileKey => $aSpGroupsIds]);
+
 		foreach ($aSpGroupsIds as $sSpGroupId) {
-			$profileName = $aGroupsToProfiles[$sSpGroupId] ?? null;
+			$profileName = $aMatchingTable[$sSpGroupId] ?? null;
 			if (is_null($profileName)) {
-				\IssueLog::Warning("Service provider group id does not match any configured iTop profile",
-					HybridAuthLoginExtension::LOG_CHANNEL, ['sp_group_id' => $sSpGroupId, 'groups_to_profile' => $aGroupsToProfiles]);
+				\IssueLog::Warning("Service provider ID does not match any configured iTop name",
+					HybridAuthLoginExtension::LOG_CHANNEL, ['sp_id' => $sSpGroupId, $sMatchingTableConfigurationKey => $aMatchingTable]);
 				continue;
 			}
 
@@ -313,14 +396,13 @@ class ProvisioningService {
 			$aContext = [
 				'login_mode' => $sLoginMode,
 				'email' => $sEmail,
-				'sp_group_id' => $aSpGroupsIds,
-				'groups_to_profile' => $aGroupsToProfiles
+				'idp_key' => $sServiceProviderProfileKey,
+				'sp_ids' => $aSpGroupsIds,
+				$sMatchingTableConfigurationKey => $aMatchingTable,
 			];
 
-			\IssueLog::Error("No sp group/profile matching found",
+			\IssueLog::Error("No matching between IdP $sServiceProviderProfileKey response and configured table ($sMatchingTableConfigurationKey)",
 				HybridAuthLoginExtension::LOG_CHANNEL, $aContext);
-
-			throw new HybridProvisioningAuthException("No sp group/profile matching found and no valid URP_Profile to attach to user", 0, null, $aContext);
 		}
 
 		return $aCurrentProfilesName;

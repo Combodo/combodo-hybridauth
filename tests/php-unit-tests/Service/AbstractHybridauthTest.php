@@ -179,7 +179,8 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		$oUser = MetaModel::NewObject('UserExternal');
 		$oUser->Set('login', $sEmail);
 
-		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, "");
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
 		$this->assertUserProfiles($oUser, $aExpectedProfile);
 	}
 }

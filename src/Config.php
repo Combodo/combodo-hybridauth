@@ -266,6 +266,25 @@ class Config
 		return static::Get('default_organization');
 	}
 
+	public static function GetDefaultAllowedOrgs(string $sLoginMode) : array
+	{
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (null !== $aCurrentProviderConf) {
+			$aDefaulAllowedOrgs = $aCurrentProviderConf['default_allowed_orgs'] ?? null;
+			if (is_array($aDefaulAllowedOrgs)) {
+				return $aDefaulAllowedOrgs;
+			}
+		}
+
+		$aDefaulAllowedOrgs = static::Get('default_allowed_orgs');
+		if (is_array($aDefaulAllowedOrgs)) {
+			return $aDefaulAllowedOrgs;
+		}
+
+		return [];
+	}
+
+
 	public static function GetIdpKey(string $sLoginMode, string $sFieldType, string $sDefaultValue) : ?string
 	{
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
