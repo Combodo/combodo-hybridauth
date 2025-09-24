@@ -236,8 +236,11 @@ class ProvisioningService {
 	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
 	{
 		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'profiles', 'groups');
+		$sSeparator = Config::GetIdpKey($sLoginMode, 'profiles_separator', null);
 		$aMatchingTable = $aProviderConf['groups_to_profiles'] ?? null;
-		$aRequestedProfileNames = $this->GetObjectNamesFromIdpMatchingTable($sLoginMode, $sEmail, $oUserProfile, $aMatchingTable, 'groups_to_profiles', $sServiceProviderProfileKey);
+
+		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_profiles', $sServiceProviderProfileKey, $sSeparator);
+		$aRequestedProfileNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
 		if (is_null($aRequestedProfileNames)){
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 		}
@@ -300,12 +303,14 @@ class ProvisioningService {
 	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId=null)
 	{
 		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'allowed_orgs', 'allowed_orgs');
+		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_separator', null);
 		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
-		$aRequestedOrgNames = $this->GetObjectNamesFromIdpMatchingTable($sLoginMode, $sEmail, $oUserProfile, $aMatchingTable, 'groups_to_orgs', $sServiceProviderProfileKey);
+
+		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $sServiceProviderProfileKey, $sSeparator);
+		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
 		if (is_null($aRequestedOrgNames)){
 			$aRequestedOrgNames = Config::GetDefaultAllowedOrgs($sLoginMode);
 		}
-		var_dump($aRequestedOrgNames);
 
 		IssueLog::Info("OpenID AllowedOrgs provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'orgs' => $aRequestedOrgNames]);
 
@@ -349,72 +354,5 @@ class ProvisioningService {
 		}
 
 		$oUser->Set('allowed_org_list', $oAllowedOrgSet);
-	}
-
-	/**
-	 * Use IdP response to compute matching table and return a list of names
-	 *
-	 * @param string $sLoginMode
-	 * @param string $sEmail
-	 * @param \Hybridauth\User\Profile $oUserProfile
-	 * @param mixed $aMatchingTable: matching definition between idp response and itop object names. should be an array or no matching applied
-	 * @param string $sMatchingTableConfigurationKey: used here only for supportability (logging/exception messages)
-	 * @param string $sServiceProviderProfileKey: key to fetch in IdP response
-	 *
-	 * @return array|null: return null when matching is not possible somehow. either it is not configured either IdP response does not fit
-	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
-	 */
-	public function GetObjectNamesFromIdpMatchingTable(string $sLoginMode, string $sEmail, Profile $oUserProfile, mixed $aMatchingTable, string $sMatchingTableConfigurationKey, string $sServiceProviderProfileKey) : ?array {
-		if (is_null($aMatchingTable)) {
-			return null;
-		}
-
-		\IssueLog::Debug(__METHOD__ . ": use matching table", HybridAuthLoginExtension::LOG_CHANNEL, [$sMatchingTableConfigurationKey => $aMatchingTable]);
-
-		if (! is_array($aMatchingTable)) {
-			\IssueLog::Warning("Configuration issue with $sMatchingTableConfigurationKey section", null, ['login_mode' => $sLoginMode, $sMatchingTableConfigurationKey => $aMatchingTable]);
-			return null;
-		}
-
-		$aCurrentProfilesName=[];
-		$aSpGroupsIds = $oUserProfile->data[$sServiceProviderProfileKey] ?? null;
-		if (!is_array($aSpGroupsIds)) {
-			\IssueLog::Warning("Service provider $sServiceProviderProfileKey not an array", null, [$sServiceProviderProfileKey => $aSpGroupsIds]);
-			return null;
-		}
-
-		\IssueLog::Debug("Service provider contains proper $sServiceProviderProfileKey value", null, [$sServiceProviderProfileKey => $aSpGroupsIds]);
-
-		foreach ($aSpGroupsIds as $sSpGroupId) {
-			$profileName = $aMatchingTable[$sSpGroupId] ?? null;
-			if (is_null($profileName)) {
-				\IssueLog::Warning("Service provider ID does not match any configured iTop name",
-					HybridAuthLoginExtension::LOG_CHANNEL, ['sp_id' => $sSpGroupId, $sMatchingTableConfigurationKey => $aMatchingTable]);
-				continue;
-			}
-
-			if (is_array($profileName)) {
-				foreach ($profileName as $sProfileName) {
-					$aCurrentProfilesName[] = $sProfileName;
-				}
-			} else {
-				$aCurrentProfilesName[] = $profileName;
-			}
-		}
-
-		if (count($aCurrentProfilesName) == 0) {
-			$aContext = [
-				'login_mode' => $sLoginMode,
-				'email' => $sEmail,
-				'idp_key' => $sServiceProviderProfileKey,
-				'sp_ids' => $aSpGroupsIds,
-				$sMatchingTableConfigurationKey => $aMatchingTable,
-			];
-
-			\IssueLog::Error("No matching between IdP $sServiceProviderProfileKey response and configured table ($sMatchingTableConfigurationKey)",
-				HybridAuthLoginExtension::LOG_CHANNEL, $aContext);
-		}
-
-		return $aCurrentProfilesName;
 	}
 }

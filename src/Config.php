@@ -285,7 +285,7 @@ class Config
 	}
 
 
-	public static function GetIdpKey(string $sLoginMode, string $sFieldType, string $sDefaultValue) : ?string
+	public static function GetIdpKey(string $sLoginMode, string $sFieldType, ?string $sDefaultValue) : ?string
 	{
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf) {

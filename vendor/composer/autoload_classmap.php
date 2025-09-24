@@ -10,6 +10,7 @@ return array(
     'Combodo\\iTop\\HybridAuth\\HybridAuthLoginExtension' => $baseDir . '/src/HybridAuthLoginExtension.php',
     'Combodo\\iTop\\HybridAuth\\HybridProvisioningAuthException' => $baseDir . '/src/HybridProvisioningAuthException.php',
     'Combodo\\iTop\\HybridAuth\\Service\\HybridauthService' => $baseDir . '/src/Service/HybridauthService.php',
+    'Combodo\\iTop\\HybridAuth\\Service\\IdpMatchingTable' => $baseDir . '/src/Service/IdpMatchingTable.php',
     'Combodo\\iTop\\HybridAuth\\Service\\ProvisioningService' => $baseDir . '/src/Service/ProvisioningService.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
 );

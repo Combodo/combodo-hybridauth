@@ -116,6 +116,16 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile($oUserProfile, ["Administrator", "Configuration Manager", "Portal power user"]);
 	}
 
+	public function testSynchronizeProfiles_UserCreationOK_ConfiguredExplodeOnProfileIdpResponse() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
+		$this->ChangeIdpKey($this->sLoginMode, 'profiles_separator', ',');
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal power user"]]);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= 'sp_id1, sp_id2';
+		$this->CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile($oUserProfile, ["Administrator", "Configuration Manager", "Portal power user"]);
+	}
+
 	public function testSynchronizeProfiles_UserCreationOK_WithProfileNamesConfiguredInLowerCase() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["administrator", "portal power user"]]);

@@ -97,14 +97,15 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1, $sOrgName2]);
 	}
 
-	public function testSynchronizeAllowedOrgs_UserCreationOK() {
+	public function testSynchronizeAllowedOrgs_UserCreationOK_ConfiguredExplodeOnAllowedOrgIdpResponse() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$sOrgName3 = $this->CreateOrgAndGetName();
+		$this->ChangeIdpKey($this->sLoginMode, 'allowed_orgs_separator', ',');
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => [$sOrgName2, $sOrgName3]]);
 
 		$oUserProfile = new Profile();
-		$oUserProfile->data['allowed_orgs']= ['sp_id1', 'sp_id2'];
+		$oUserProfile->data['allowed_orgs']= 'sp_id1, sp_id2';
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
