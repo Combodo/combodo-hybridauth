@@ -141,6 +141,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			$oConfig = new Config($this->sConfigTmpBackupFile);
 			$oConfig->WriteToFile($sConfigPath);
 			@chmod($sConfigPath, 0440);
+			@unlink($this->sConfigTmpBackupFile);
 		}
 
 		if (is_file(ServiceProviderMock::GetFileConfPath())) {

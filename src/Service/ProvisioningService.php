@@ -93,7 +93,7 @@ class ProvisioningService {
 			$sLastName = $oUserProfile->lastName ?? $sEmail;
 		}
 
-		$sServiceProviderOrganizationKey = Config::GetIdpKey($sLoginMode, 'profiles', 'organization');
+		$sServiceProviderOrganizationKey = Config::GetIdpKey($sLoginMode, 'organization', 'organization');
 		$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $oUserProfile->data[$sServiceProviderOrganizationKey] ?? null);
 		$aPersonParams = [
 			'first_name' => $sFirstName,
@@ -208,7 +208,7 @@ class ProvisioningService {
 
 		$aProviderConf = Config::GetProviderConf($sLoginMode);
 		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, $sInfo);
-		$this->SynchronizeAllowedOrgs($sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, $sInfo);
+		$this->SynchronizeAllowedOrgs($sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, $sInfo, $oPerson->Get('org_id'), );
 
 		//HybridAuthProvisioning class comes from datamodel
 		//By default CompleteUserProvisioningBeforeDbWrite is doing nothing
@@ -216,8 +216,7 @@ class ProvisioningService {
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
 		$oHybridAuthProvisioning->CompleteUserProvisioningBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUser, $oUserProfile, $sInfo);
 
-		if ($oUser->IsModified())
-		{
+		if ($oUser->IsModified()){
 			$oUser->DBWrite();
 		}
 		return $oUser;
@@ -241,42 +240,46 @@ class ProvisioningService {
 		$aRequestedProfileNames = $this->GetObjectNamesFromIdpMatchingTable($sLoginMode, $sEmail, $oUserProfile, $aMatchingTable, 'groups_to_profiles', $sServiceProviderProfileKey);
 		if (is_null($aRequestedProfileNames)){
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
-		} else if (count($aRequestedProfileNames)==0){
+		}
+
+		if (count($aRequestedProfileNames)==0){
 			throw new HybridProvisioningAuthException("No sp group/profile matching found and no valid URP_Profile to attach to user");
 		}
 
 		IssueLog::Info("OpenID Profile provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
 
-		// read all the existing profiles
-		$oProfilesSearch = new DBObjectSearch('URP_Profiles');
-		$oProfilesSearch->AllowAllData();
-		$oProfilesSet = new DBObjectSet($oProfilesSearch);
-		$aAllProfilIDs = [];
-		while ($oProfile = $oProfilesSet->Fetch())
-		{
-			$aAllProfilIDs[mb_strtolower($oProfile->GetName())] = $oProfile->GetKey();
+		// read all the matching profiles
+		$sInSubquery = '"'.implode('","', $aRequestedProfileNames).'"';
+		$oSearch = DBObjectSearch::FromOQL("SELECT URP_Profiles WHERE name IN ($sInSubquery)");
+		$oSearch->AllowAllData();
+
+		$oSet = new DBObjectSet($oSearch);
+		$oSet->OptimizeColumnLoad(['URP_Profiles' => ['name']]);
+
+		$aIdsToAttach = [];
+		$aNamesToAttach = [];
+		while ($oCurrentProfile = $oSet->Fetch()) {
+			$aIdsToAttach []= $oCurrentProfile->GetKey();
+			$aNamesToAttach []= $oCurrentProfile->Get('name');
 		}
 
-		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
-		$iCount=0;
-
-		foreach ($aRequestedProfileNames as $sRequestedProfileName)
-		{
-			$sRequestedProfileName = mb_strtolower($sRequestedProfileName);
-			if (isset($aAllProfilIDs[$sRequestedProfileName]))
-			{
-				$iProfileId = $aAllProfilIDs[$sRequestedProfileName];
-				$oProfilesSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => $iProfileId, 'reason' => $sInfo)));
-				$iCount++;
-			} else {
-				IssueLog::Warning("Cannot add profile to user", null, ['requested_profile_from_service_provider' => $sRequestedProfileName, 'login' => $sEmail]);
-			}
+		$aUnfoundNames = array_intersect($aRequestedProfileNames, $aNamesToAttach);
+		if (count($aUnfoundNames) > 0) {
+			\IssueLog::Warning("Cannot add some unfound profiles", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound_allowed_orgs' => $aUnfoundNames]);
 		}
 
-		if ($iCount==0) {
+		if (count($aIdsToAttach)==0) {
 			\IssueLog::Error("no valid URP_Profile to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
 			throw new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
 				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
+		}
+
+		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
+
+		foreach ($aIdsToAttach as $iProfileId)
+		{
+			$oLink = MetaModel::NewObject('URP_UserProfile', ['profileid' => $iProfileId, 'reason' => $sInfo]);
+			$oProfilesSet->AddItem($oLink);
 		}
 
 		$oUser->Set('profile_list', $oProfilesSet);
@@ -289,52 +292,59 @@ class ProvisioningService {
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
 	 * @param array $aProviderConf : itop provider configuration
 	 * @param string $sInfo : metadata added in the history of any iTop object being created/updated (profiles here)
+	 * @param string|null $sPersonOrgId : org_id of attached contact. null when no person linked to user
 	 *
 	 * @return void
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
+	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId=null)
 	{
 		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'allowed_orgs', 'allowed_orgs');
 		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
 		$aRequestedOrgNames = $this->GetObjectNamesFromIdpMatchingTable($sLoginMode, $sEmail, $oUserProfile, $aMatchingTable, 'groups_to_orgs', $sServiceProviderProfileKey);
 		if (is_null($aRequestedOrgNames)){
 			$aRequestedOrgNames = Config::GetDefaultAllowedOrgs($sLoginMode);
-		} else if (count($aRequestedOrgNames)==0){
-			//do nothing
-			return;
 		}
+		var_dump($aRequestedOrgNames);
 
 		IssueLog::Info("OpenID AllowedOrgs provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'orgs' => $aRequestedOrgNames]);
 
-		// read all the existing profiles
-		$oProfilesSearch = new DBObjectSearch('Organization');
-		$oProfilesSearch->AllowAllData();
-		$oProfilesSet = new DBObjectSet($oProfilesSearch);
-		$aIdByNamesTable = [];
-		while ($oProfile = $oProfilesSet->Fetch())
-		{
-			$aIdByNamesTable[mb_strtolower($oProfile->GetName())] = $oProfile->GetKey();
-		}
+		$iCount = 0;
+		if (count($aRequestedOrgNames) > 0) {
+			// read all the matching orgs
+			$sInSubquery = '"'.implode('","', $aRequestedOrgNames).'"';
+			$oSearch = DBObjectSearch::FromOQL("SELECT Organization WHERE name IN ($sInSubquery)");
+			$oSearch->AllowAllData();
 
-		$oAllowedOrgSet = new \ormLinkSet(\User::class, 'allowed_org_list', \DBObjectSet::FromScratch(\URP_UserOrg::class));
-		$iCount=0;
+			$oOrgSet = new DBObjectSet($oSearch);
+			$oOrgSet->OptimizeColumnLoad(['Organization' => ['name']]);
 
-		foreach ($aRequestedOrgNames as $sRequestedName)
-		{
-			$sNameToFind = mb_strtolower($sRequestedName);
-			if (isset($aIdByNamesTable[$sNameToFind]))
-			{
-				$iOrgId = $aIdByNamesTable[$sNameToFind];
-				$oLink = MetaModel::NewObject('URP_UserOrg', ['allowed_org_id' => $iOrgId, 'reason' => $sInfo]);
-				$oAllowedOrgSet->AddItem($oLink);
+			$aOrgsIdsToAttach = [];
+			$aOrgsNamesToAttach = [];
+			while ($oCurrenOrg = $oOrgSet->Fetch()) {
+				$aOrgsIdsToAttach []= $oCurrenOrg->GetKey();
+				$aOrgsNamesToAttach []= $oCurrenOrg->Get('name');
 				$iCount++;
-			} else {
-				IssueLog::Warning("Cannot add allowed_org to user", null, ['requested_org_from_service_provider' => $sRequestedName, 'login' => $sEmail]);
+			}
+
+			$aUnfoundOrgNames = array_intersect($aRequestedOrgNames, $aOrgsNamesToAttach);
+			if (count($aUnfoundOrgNames) > 0) {
+				\IssueLog::Warning("Cannot add some unfound allowed organization", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound_allowed_orgs' => $aUnfoundOrgNames]);
 			}
 		}
 
-		if ($iCount==0) {
+		$oAllowedOrgSet = new \ormLinkSet(\UserExternal::class, 'allowed_org_list', \DBObjectSet::FromScratch(\URP_UserOrg::class));
+		if ($iCount > 0) {
+			if (! is_null($sPersonOrgId) && ! in_array($sPersonOrgId, $aOrgsIdsToAttach)) {
+				//put person organization first to make provisioning work without below check issue: Class:User/Error:AllowedOrgsMustContainUserOrg
+				array_unshift($aOrgsIdsToAttach, $sPersonOrgId);
+			}
+
+			foreach ($aOrgsIdsToAttach as $iOrgId){
+				$oLink = MetaModel::NewObject('URP_UserOrg', ['allowed_org_id' => $iOrgId, 'reason' => $sInfo]);
+				$oAllowedOrgSet->AddItem($oLink);
+			}
+		} else {
 			\IssueLog::Warning("no valid URP_UserOrg to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'sp_org_names' => $aRequestedOrgNames]);
 		}
 

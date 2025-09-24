@@ -51,7 +51,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 	public function testDoUserProvisioning_UserUpdateOKWithAnotherProfile() {
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
-		$oFoundUser = $this->CreateExternalUserWithProfiles($sEmail, ['Portal user']);
+		$oFoundUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Portal user']);
 		self::assertEquals('FR FR', $oFoundUser->Get('language'));
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
@@ -75,7 +75,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
-		$this->CreateExternalUserWithProfiles($sEmail, ['Portal user']);
+		$this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Portal user']);
 
 		$oReturnedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
 		$this->assertUserProfiles($oReturnedUser, ['Portal user']);

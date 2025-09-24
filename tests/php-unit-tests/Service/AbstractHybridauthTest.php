@@ -99,6 +99,7 @@ class AbstractHybridauthTest extends ItopDataTestCase
 			$oConfig = new Config($this->sConfigTmpBackupFile);
 			$oConfig->WriteToFile($sConfigPath);
 			@chmod($sConfigPath, 0440);
+			@unlink($this->sConfigTmpBackupFile);
 		}
 
 		if (is_file(ServiceProviderMock::GetFileConfPath())) {
@@ -106,6 +107,17 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		}
 
 		$_SESSION = [];
+	}
+
+	protected function CreateOrgAndGetName() : string {
+		$sOrgName = $this->sUniqId . '_' . microtime();
+
+		/** @var \Organization $oObj */
+		$this->createObject('Organization', array(
+			'name'      => $sOrgName,
+		));
+
+		return $sOrgName;
 	}
 
 	protected function CreatePersonByEmail($sEmail) : Person {
@@ -122,9 +134,9 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		return $oPerson;
 	}
 
-	protected function InitializeGroupsToProfile(string $sLoginMode, $groupToProfilesValue) {
+	protected function InitializeGroupsToProfile(string $sLoginMode, $value) {
 		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
-		$aProviderConf['groups_to_profiles'] = $groupToProfilesValue;
+		$aProviderConf['groups_to_profiles'] = $value;
 
 		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
 		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
@@ -132,7 +144,28 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
 	}
 
-	protected function CreateExternalUserWithProfiles(string $sEmail, array $aProfileNames) : \UserExternal
+	protected function InitializeGroupsToOrgs(string $sLoginMode, $value) {
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
+		$aProviderConf['groups_to_orgs'] = $value;
+
+		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
+		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
+	}
+
+	protected function ChangeIdpKey(string $sLoginMode, string $sType, string $sNewIdpKey) {
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
+		$aKeys = $aProviderConf['idp_to_itop_matching_keys'] ?? [];
+		$aProviderConf['idp_to_itop_matching_keys'] = array_merge($aKeys, [$sType => $sNewIdpKey]);
+
+		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
+		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
+	}
+
+	protected function CreateExternalUserWithProfilesAndAllowedOrgs(string $sEmail, array $aProfileNames, array $aAllowedOrgIds=[]) : \UserExternal
 	{
 		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
 		foreach ($aProfileNames as $sProfileName){
@@ -140,12 +173,31 @@ class AbstractHybridauthTest extends ItopDataTestCase
 			$oProfilesSet->AddItem($oLink);
 		}
 
-		/** @var \UserExternal $oUser */
-		$oUser = $this->createObject(UserExternal::class, [
-			'login'        => $sEmail,
-			'profile_list' => $oProfilesSet,
-			'language' => 'FR FR',
-		]);
+
+		if (count($aAllowedOrgIds) > 0){
+			$oAllowedOrgSet = new \ormLinkSet(UserExternal::class, 'allowed_org_list', \DBObjectSet::FromScratch(\URP_UserOrg::class));
+
+			foreach ($aAllowedOrgIds as $iOrgId)
+			{
+				$oLink = MetaModel::NewObject('URP_UserOrg', ['allowed_org_id' => $iOrgId, 'reason' => "WhateverReason"]);
+				$oAllowedOrgSet->AddItem($oLink);
+			}
+
+			/** @var \UserExternal $oUser */
+			$oUser = $this->createObject(UserExternal::class, [
+				'login'        => $sEmail,
+				'profile_list' => $oProfilesSet,
+				'language' => 'FR FR',
+				'allowed_org_list' => $oAllowedOrgSet
+			]);
+		} else {
+			/** @var \UserExternal $oUser */
+			$oUser = $this->createObject(UserExternal::class, [
+				'login'        => $sEmail,
+				'profile_list' => $oProfilesSet,
+				'language' => 'FR FR',
+			]);
+		}
 
 		return $oUser;
 	}
@@ -173,15 +225,41 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		$this->assertEquals($aExpectedProfiles, $aFoundProfileNames);
 	}
 
-	protected function ValidateSynchronizeProfiles_FallbackToDefaultProfileUse(Profile $oUserProfile, $aExpectedProfile=['Portal user']) {
+	protected function CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile(Profile $oUserProfile, $aExpectedProfile=['Portal user']) {
 		$sEmail = $this->sUniqId."@test.fr";
-		/** @var UserExternal $oUser */
-		$oUser = MetaModel::NewObject('UserExternal');
-		$oUser->Set('login', $sEmail);
+		$oUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Service Desk Agent']);
 
 		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
 		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
+		$oUser->DBWrite();
 		$this->assertUserProfiles($oUser, $aExpectedProfile);
+	}
+
+	protected function CallAllowedOrgSynchronizationAndValidateAfterwhile(Profile $oUserProfile, $aExpectedOrgNames=[], $sPersonOrgId='-1') {
+		$sEmail = $this->sUniqId."@test.fr";
+		$oUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Service Desk Agent']);
+
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeAllowedOrgs($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
+		$oUser->DBWrite();
+		$this->assertAllowedOrg($oUser, $aExpectedOrgNames);
+	}
+
+	protected function assertAllowedOrg(UserExternal $oUser, $aExpectedAllowedOrgs)
+	{
+		$oOrgSet = $oUser->Get('allowed_org_list');
+
+		$aFoundOrgNames=[];
+		while ($oOrg = $oOrgSet->Fetch())
+		{
+			$iOrgId = $oOrg->Get('allowed_org_id');
+			$oOrg = MetaModel::GetObject(\Organization::class, $iOrgId);
+			$aFoundOrgNames[]= $oOrg->Get('name');
+		}
+
+		sort($aFoundOrgNames);
+		sort($aExpectedAllowedOrgs);
+		$this->assertEquals($aExpectedAllowedOrgs, $aFoundOrgNames);
 	}
 }
 
