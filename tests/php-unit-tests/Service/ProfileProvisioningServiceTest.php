@@ -118,7 +118,7 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 
 	public function testSynchronizeProfiles_UserCreationOK_ConfiguredExplodeOnProfileIdpResponse() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
-		$this->ChangeIdpKey($this->sLoginMode, 'profiles_separator', ',');
+		$this->Configure($this->sLoginMode, 'profiles_idp_separator', ',');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal power user"]]);
 
 		$oUserProfile = new Profile();
@@ -138,7 +138,7 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 	public function testSynchronizeProfiles_UserCreationOK_UseOfAnotherIdpKey() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal power user"]]);
-		$this->ChangeIdpKey($this->sLoginMode, 'profiles', 'groups2');
+		$this->Configure($this->sLoginMode, 'profiles_idp_key', 'groups2');
 		$oUserProfile = new Profile();
 		$oUserProfile->data['groups2']= ['sp_id1', 'sp_id2'];
 		$this->CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile($oUserProfile, ["Administrator", "Configuration Manager", "Portal power user"]);
@@ -186,7 +186,7 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 	public function testSynchronizeProfiles_UserUpdateOK_UseOfAnotherIdpKey() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Administrator');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => "Portal user"]);
-		$this->ChangeIdpKey($this->sLoginMode,'profiles', 'groups2');
+		$this->Configure($this->sLoginMode, 'profiles_idp_key', 'groups2');
 
 		$oUserProfile = new Profile();
 		$oUserProfile->data['groups2']= ['sp_id1', 'sp_id2'];

@@ -101,7 +101,8 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$sOrgName3 = $this->CreateOrgAndGetName();
-		$this->ChangeIdpKey($this->sLoginMode, 'allowed_orgs_separator', ',');
+
+		$this->Configure($this->sLoginMode, 'allowed_orgs_idp_separator', ',');
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => [$sOrgName2, $sOrgName3]]);
 
 		$oUserProfile = new Profile();
@@ -114,7 +115,8 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$sOrgName3 = $this->CreateOrgAndGetName();
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => [$sOrgName2, $sOrgName3]]);
-		$this->ChangeIdpKey($this->sLoginMode, 'allowed_orgs', 'groups2');
+
+		$this->Configure($this->sLoginMode, 'allowed_orgs_idp_key', 'groups2');
 		$oUserProfile = new Profile();
 		$oUserProfile->data['groups2']= ['sp_id1', 'sp_id2'];
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1, $sOrgName2, $sOrgName3]);
@@ -158,7 +160,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => $sOrgName2]);
-		$this->ChangeIdpKey($this->sLoginMode,'allowed_orgs', 'groups2');
+		$this->Configure($this->sLoginMode, 'allowed_orgs_idp_key', 'groups2');
 
 		$oUserProfile = new Profile();
 		$oUserProfile->data['groups2']= ['sp_id1', 'sp_id2'];

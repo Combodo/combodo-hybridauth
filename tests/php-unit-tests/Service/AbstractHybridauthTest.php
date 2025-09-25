@@ -134,35 +134,22 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		return $oPerson;
 	}
 
-	protected function InitializeGroupsToProfile(string $sLoginMode, $value) {
+	protected function Configure(string $sLoginMode, string $sKey, $value) {
 		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
-		$aProviderConf['groups_to_profiles'] = $value;
+		$aProviderConf[$sKey] = $value;
 
 		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
 		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
+	}
+
+	protected function InitializeGroupsToProfile(string $sLoginMode, $value) {
+		$this->Configure($sLoginMode, 'groups_to_profiles', $value);
 	}
 
 	protected function InitializeGroupsToOrgs(string $sLoginMode, $value) {
-		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
-		$aProviderConf['groups_to_orgs'] = $value;
-
-		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
-		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
-
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
-	}
-
-	protected function ChangeIdpKey(string $sLoginMode, string $sType, string $sNewIdpKey) {
-		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($sLoginMode);
-		$aKeys = $aProviderConf['idp_to_itop_matching_keys'] ?? [];
-		$aProviderConf['idp_to_itop_matching_keys'] = array_merge($aKeys, [$sType => $sNewIdpKey]);
-
-		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
-		$aProviders[str_replace("hybridauth-", "", $sLoginMode)]=$aProviderConf;
-
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
+		$this->Configure($sLoginMode, 'groups_to_orgs', $value);
 	}
 
 	protected function CreateExternalUserWithProfilesAndAllowedOrgs(string $sEmail, array $aProfileNames, array $aAllowedOrgIds=[]) : \UserExternal

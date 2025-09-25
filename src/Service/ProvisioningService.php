@@ -93,7 +93,7 @@ class ProvisioningService {
 			$sLastName = $oUserProfile->lastName ?? $sEmail;
 		}
 
-		$sServiceProviderOrganizationKey = Config::GetIdpKey($sLoginMode, 'organization', 'organization');
+		$sServiceProviderOrganizationKey = Config::GetIdpKey($sLoginMode, 'org_idp_key', 'organization');
 		$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $oUserProfile->data[$sServiceProviderOrganizationKey] ?? null);
 		$aPersonParams = [
 			'first_name' => $sFirstName,
@@ -235,8 +235,8 @@ class ProvisioningService {
 	 */
 	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
 	{
-		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'profiles', 'groups');
-		$sSeparator = Config::GetIdpKey($sLoginMode, 'profiles_separator', null);
+		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'profiles_idp_key', 'groups');
+		$sSeparator = Config::GetIdpKey($sLoginMode, 'profiles_idp_separator', null);
 		$aMatchingTable = $aProviderConf['groups_to_profiles'] ?? null;
 
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_profiles', $sServiceProviderProfileKey, $sSeparator);
@@ -302,8 +302,8 @@ class ProvisioningService {
 	 */
 	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId=null)
 	{
-		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'allowed_orgs', 'allowed_orgs');
-		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_separator', null);
+		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_key', 'allowed_orgs');
+		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_separator', null);
 		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
 
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $sServiceProviderProfileKey, $sSeparator);
