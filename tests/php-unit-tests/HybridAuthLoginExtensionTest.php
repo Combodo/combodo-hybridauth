@@ -219,7 +219,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sProfile);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', [$sProfile]);
 
 		$this->SaveItopConfFile();
 
@@ -253,7 +253,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sProfile);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', [$sProfile]);
 
 		$this->SaveItopConfFile();
 

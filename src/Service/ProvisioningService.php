@@ -30,7 +30,7 @@ class ProvisioningService {
 	final public static function GetInstance(): ProvisioningService
 	{
 		if (!isset(static::$oInstance)) {
-			static::$oInstance = new static();
+			static::$oInstance = new ProvisioningService();
 		}
 
 		return static::$oInstance;
@@ -315,6 +315,7 @@ class ProvisioningService {
 		IssueLog::Info("OpenID AllowedOrgs provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'orgs' => $aRequestedOrgNames]);
 
 		$iCount = 0;
+		$aOrgsIdsToAttach = [];
 		if (count($aRequestedOrgNames) > 0) {
 			// read all the matching orgs
 			$sInSubquery = '"'.implode('","', $aRequestedOrgNames).'"';
@@ -324,7 +325,6 @@ class ProvisioningService {
 			$oOrgSet = new DBObjectSet($oSearch);
 			$oOrgSet->OptimizeColumnLoad(['Organization' => ['name']]);
 
-			$aOrgsIdsToAttach = [];
 			$aOrgsNamesToAttach = [];
 			while ($oCurrenOrg = $oOrgSet->Fetch()) {
 				$aOrgsIdsToAttach []= $oCurrenOrg->GetKey();

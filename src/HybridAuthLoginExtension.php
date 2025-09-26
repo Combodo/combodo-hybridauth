@@ -277,6 +277,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			$iErrorCode = LoginWebPage::EXIT_CODE_NOTAUTHORIZED;
 			return LoginWebPage::LOGIN_FSM_ERROR;
 		}
+
+		return LoginWebPage::LOGIN_FSM_ERROR;
 	}
 
 	protected function OnCredentialsOK(&$iErrorCode)

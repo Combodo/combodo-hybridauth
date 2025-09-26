@@ -30,6 +30,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 
 		$sEmail = $this->sUniqId."@test.fr";
@@ -76,6 +77,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 
 		$sEmail = $this->sUniqId."@test.fr";
@@ -121,7 +123,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', ['Portal user']);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , new Profile());
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
@@ -129,7 +131,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$sDefaultOrgName2 = "anotherorg_" . $this->sUniqId;
 		$oOrg2 = $this->CreateOrganization($sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', ['Configuration Manager']);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 
 		$oProfileWithMostFields = new Profile();
 		$oProfileWithMostFields->email = $sEmail;
@@ -168,7 +170,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', ['Portal user']);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , new Profile());
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
@@ -176,7 +178,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$sDefaultOrgName2 = "anotherorg_" . $this->sUniqId;
 		$oOrg2 = $this->CreateOrganization($sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', ['Configuration Manager']);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => ["Administrator", "Configuration Manager"]]);
 
 		$sOrgName1 = $this->CreateOrgAndGetName();

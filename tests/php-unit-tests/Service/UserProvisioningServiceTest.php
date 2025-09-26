@@ -27,7 +27,7 @@ require_once __DIR__ . "/AbstractHybridauthTest.php";
 class UserProvisioningServiceTest extends AbstractHybridauthTest
 {
 	public function testDoUserProvisioning_UserCreationOK() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Portal user');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
 		$sEmail = $this->sUniqId."@test.fr";
@@ -55,7 +55,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals('FR FR', $oFoundUser->Get('language'));
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
@@ -71,7 +71,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 	}
 
 	public function testDoUserProvisioning_UserAlreadyExistAndNoUpdateConfigured() {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', 'Configuration Manager');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);

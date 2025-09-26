@@ -23,6 +23,7 @@ class ConfigTest extends ItopDataTestCase
 	{
 		parent::tearDown();
 		MetaModel::GetConfig()->SetAllowedLoginTypes($this->aAllowedLoginTypes);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 	}
 
@@ -320,62 +321,58 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals($bExpectedRes, Config::IsContactSynchroEnabled('hybridauth-Google'), $sMessage);
 	}
 
-	public function GetSynchroProfileProvider()
-	{
-		return [
-			'no default_profile at all' => [
-				'bExpectedRes' => ['Portal User'],
-				'aProviderConf' => [],
-				'overallOption' => null,
-				'When no profile is configured either in provider or in default value then Portal User is used',
-			],
-			'single empty default_profile at provider level' => [
-				'bExpectedRes' => ['Configuration Manager'],
-				'aProviderConf' => ['default_profile' => ''],
-				'overallOption' => 'Configuration Manager',
-				'When a single empty profile is configured at provider level, it should use global setting',
-			],
-			'single default_profile set at provider level' => [
-				'bExpectedRes' => ['SuperUser'],
-				'aProviderConf' => ['default_profile' => 'SuperUser'],
-				'overallOption' => 'Configuration Manager',
-				'When a single profile is configured at provider level, it should be used',
-			],
-			'multi profile set at provider level' => [
-				'bExpectedRes' => ['SuperUser', 'Administrator'],
-				'aProviderConf' => ['default_profile' => ['SuperUser', 'Administrator']],
-				'overallOption' => 'Configuration Manager',
-				'When multi profiles are configured at provider level, all profiles should be used',
-			],
-			'single default_profile set globally' => [
-				'bExpectedRes' => ['SuperUser'],
-				'aProviderConf' => [],
-				'overallOption' => 'SuperUser',
-				'When no profile at provider level, global single profile should be used',
-			],
-			'multi default_profile set globally' => [
-				'bExpectedRes' => ['SuperUser', 'Administrator'],
-				'aProviderConf' => [],
-				'overallOption' => ['SuperUser', 'Administrator'],
-				'When no profile at provider level, global multi profile should be used',
-			],
-		];
-	}
-
-	/**
-	 * @dataProvider GetSynchroProfileProvider
-	 */
-	public function testGetSynchroProfileShouldMatchTheConfiguredValueForProvider($bExpectedRes, $aProviderConf, $overallOption, $sMessage = '')
-	{
+	public function PrepareSynchroProfileConfiguration($aProviderProfiles, $sProviderProfile, $aGlobalProfiles, $sGlobalProviderProfile) {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
 			[
-				'Google' => $aProviderConf,
+				'Google' => ['default_profiles' => $aProviderProfiles, 'default_profile' => $sProviderProfile],
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $overallOption);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', $aGlobalProfiles);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $sGlobalProviderProfile);
+	}
 
-		$this->assertEquals($bExpectedRes, Config::GetSynchroProfiles('hybridauth-Google'), $sMessage);
+	public function testGetSynchroProfileProvider_FurtherProfilesFromProviderLevel() {
+		$this->PrepareSynchroProfileConfiguration(['SuperUser', 'Administrator'], null, null, null);
+		$this->assertEquals(['SuperUser', 'Administrator'], Config::GetSynchroProfiles('hybridauth-Google'));
+	}
+
+	public function testGetSynchroProfileProvider_EmptyProfileListFromProviderLevel() {
+		$this->PrepareSynchroProfileConfiguration([], null, null, null);
+		$this->assertEquals([], Config::GetSynchroProfiles('hybridauth-Google'));
+	}
+
+	public function testGetSynchroProfileProvider_FurtherProfilesFromGlobalLevel() {
+		$this->PrepareSynchroProfileConfiguration(null, null, ['SuperUser', 'Administrator'], null);
+		$this->assertEquals(['SuperUser', 'Administrator'], Config::GetSynchroProfiles('hybridauth-Google'));
+	}
+
+	public function testGetSynchroProfileProvider_EmptyProfileListFromGlobalLevel() {
+		$this->PrepareSynchroProfileConfiguration(null, null, [], null);
+		$this->assertEquals([], Config::GetSynchroProfiles('hybridauth-Google'));
+	}
+
+	public function testGetSynchroProfileProvider_OneSingleProfileAtProviderLevel() {
+		$this->PrepareSynchroProfileConfiguration(null, 'SuperUser', null, null);
+		$this->assertEquals(['SuperUser'], Config::GetSynchroProfiles('hybridauth-Google'));
+	}
+
+	public function testGetSynchroProfileProvider_OneSingleProfileAtGlobalLevel() {
+		$this->PrepareSynchroProfileConfiguration(null, null, null, 'SuperUser');
+		$this->assertEquals(['SuperUser'], Config::GetSynchroProfiles('hybridauth-Google'));
+	}
+
+	public function testGetSynchroProfileProvider_NoDefaultProfileConfigured() {
+		$this->PrepareSynchroProfileConfiguration(null, null, null, null);
+		$this->assertEquals(['Portal User'], Config::GetSynchroProfiles('hybridauth-Google'));
+	}
+
+	public function testGetSynchroProfileProvider_NoDefaultProfileConfigured_EmptyStringValue() {
+		$this->PrepareSynchroProfileConfiguration(null, '', null, null);
+		$this->assertEquals(['Portal User'], Config::GetSynchroProfiles('hybridauth-Google'));
+
+		$this->PrepareSynchroProfileConfiguration(null, null, null, '');
+		$this->assertEquals(['Portal User'], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
 	public function GetDebugProvider()

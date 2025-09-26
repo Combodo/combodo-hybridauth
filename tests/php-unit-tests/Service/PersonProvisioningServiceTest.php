@@ -112,7 +112,7 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', "Configuration Manager");
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ["Configuration Manager"]);
 
 		$this->CreateOrganization($sDefaultOrgName);
 		$this->CreateOrganization($sOrgName2);
