@@ -173,4 +173,24 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		ProvisioningService::GetInstance()->SynchronizeAllowedOrgs($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
 		$this->assertAllowedOrg($oUser, [$sOrgName1, $sOrgName2]);
 	}
+
+	public function testSynchronizeAllowedOrgs_UserUpdateOK_SearchOrgByCodeInsteadOfName() {
+		$sCode1 = "code1".uniqid();
+		$sOrgName1 = $this->CreateOrgAndGetName($sCode1);
+		$sCode2 = "code2".uniqid();
+		$sOrgName2 = $this->CreateOrgAndGetName($sCode2);
+		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sCode1, "sp_id2" => $sCode2]);
+		$this->Configure($this->sLoginMode, 'allowed_orgs_oql_search_field', 'code');
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['allowed_orgs']= ['sp_id1', 'sp_id2'];
+		$sEmail = $this->sUniqId."@test.fr";
+
+		$oUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ["Configuration Manager"]);
+		$this->assertAllowedOrg($oUser, []);
+
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeAllowedOrgs($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
+		$this->assertAllowedOrg($oUser, [$sOrgName1, $sOrgName2]);
+	}
 }

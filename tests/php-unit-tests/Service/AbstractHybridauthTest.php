@@ -109,13 +109,21 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		$_SESSION = [];
 	}
 
-	protected function CreateOrgAndGetName() : string {
+	protected function CreateOrgAndGetName(?string $sCode=null) : string {
 		$sOrgName = $this->sUniqId . '_' . microtime();
 
-		/** @var \Organization $oObj */
-		$this->createObject('Organization', array(
-			'name'      => $sOrgName,
-		));
+		if (is_null($sCode)) {
+			/** @var \Organization $oObj */
+			$this->createObject('Organization', array(
+				'name' => $sOrgName,
+			));
+		} else {
+			/** @var \Organization $oObj */
+			$this->createObject('Organization', array(
+				'name' => $sOrgName,
+				'code' => $sCode,
+			));
+		}
 
 		return $sOrgName;
 	}

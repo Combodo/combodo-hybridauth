@@ -121,4 +121,26 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		$sOrgName = $this->InvokeNonPublicMethod(ProvisioningService::class, 'GetOrganizationForProvisioning', ProvisioningService::GetInstance(), [$this->sLoginMode, $sIdpOrgName]);
 		$this->assertEquals($sExpectedOrgReturned, $sOrgName);
 	}
+
+	public function testGetOrganizationForProvisioning_OqlSearchOrgFromIdpByAnotherFieldThanName()
+	{
+		$sDefaultOrgName = 'IDP_ORG1'.uniqid();
+		$this->CreateOrganization($sDefaultOrgName);
+
+		$sOrgName2 = 'IDP_ORG2'.uniqid();
+		$oOrg = $this->CreateOrganization($sOrgName2);
+		$sCode = "MYCODE".uniqid();
+		$oOrg->Set('code', $sCode);
+		$oOrg->DBWrite();
+
+		$this->Configure($this->sLoginMode, 'org_oql_search_field', 'code');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ["Configuration Manager"]);
+
+		$sOrgName = $this->InvokeNonPublicMethod(ProvisioningService::class, 'GetOrganizationForProvisioning', ProvisioningService::GetInstance(), [$this->sLoginMode, $sCode]);
+		$this->assertEquals($sOrgName2, $sOrgName);
+	}
 }

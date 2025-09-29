@@ -157,9 +157,10 @@ class ProvisioningService {
 			return Config::GetDefaultOrg($sLoginMode);
 		}
 
-		$oOrg = MetaModel::GetObjectByName('Organization', $sIdPOrgName, false);
+		$sOrgOqlSearchField = Config::GetIdpKey($sLoginMode, 'org_oql_search_field', 'name');
+		$oOrg = MetaModel::GetObjectByColumn('Organization', $sOrgOqlSearchField, $sIdPOrgName, false, true);
 		if (!is_null($oOrg)) {
-			return $sIdPOrgName;
+			return $oOrg->Get('name');
 		}
 
 		IssueLog::Error(Dict::S('UI:Login:Error:WrongOrganizationName', null, ['idp_organization' => $sIdPOrgName]));
@@ -304,6 +305,7 @@ class ProvisioningService {
 	{
 		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_key', 'allowed_orgs');
 		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_separator', null);
+		$sOrgOqlSearchField = Config::GetIdpKey($sLoginMode, 'allowed_orgs_oql_search_field', 'name');
 		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
 
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $sServiceProviderProfileKey, $sSeparator);
@@ -319,16 +321,16 @@ class ProvisioningService {
 		if (count($aRequestedOrgNames) > 0) {
 			// read all the matching orgs
 			$sInSubquery = '"'.implode('","', $aRequestedOrgNames).'"';
-			$oSearch = DBObjectSearch::FromOQL("SELECT Organization WHERE name IN ($sInSubquery)");
+			$oSearch = DBObjectSearch::FromOQL("SELECT Organization WHERE $sOrgOqlSearchField IN ($sInSubquery)");
 			$oSearch->AllowAllData();
 
 			$oOrgSet = new DBObjectSet($oSearch);
-			$oOrgSet->OptimizeColumnLoad(['Organization' => ['name']]);
+			$oOrgSet->OptimizeColumnLoad(['Organization' => [$sOrgOqlSearchField]]);
 
 			$aOrgsNamesToAttach = [];
 			while ($oCurrenOrg = $oOrgSet->Fetch()) {
 				$aOrgsIdsToAttach []= $oCurrenOrg->GetKey();
-				$aOrgsNamesToAttach []= $oCurrenOrg->Get('name');
+				$aOrgsNamesToAttach []= $oCurrenOrg->Get($sOrgOqlSearchField);
 				$iCount++;
 			}
 
