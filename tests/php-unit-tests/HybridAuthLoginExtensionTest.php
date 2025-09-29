@@ -128,7 +128,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 				$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 				$oExpectedPerson->DBDelete();
 			} catch (Exception $e) {
-				IssueLog($e->getMessage());
+				var_dump($e->getMessage());
 			}
 		}
 
