@@ -355,11 +355,12 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 	private function DoUserProvisioning(string $sLoginMode)
 	{
-		if (!Config::IsUserSynchroEnabled($sLoginMode)) {
+		if (!Config::IsOptionEnabled($sLoginMode, 'synchronize_user')) {
 			return; // No automatic User provisioning
 		}
 		$sEmail = Session::Get('auth_user');
-		if (!Config::IsUserRefreshEnabled($sLoginMode) && LoginWebPage::FindUser($sEmail, false)) {
+		$bRefreshRequired = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_users') || Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
+		if (!$bRefreshRequired && LoginWebPage::FindUser($sEmail, false)) {
 			return; // User already present
 		}
 

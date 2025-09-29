@@ -118,6 +118,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$sDefaultOrgName = $this->sUniqId;
@@ -165,6 +166,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$sDefaultOrgName = $this->sUniqId;

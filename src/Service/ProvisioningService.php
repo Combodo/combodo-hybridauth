@@ -72,14 +72,14 @@ class ProvisioningService {
 		$oPerson = $oHybridAuthProvisioning->FindPerson($sLoginMode, $sEmail, $oUserProfile);
 		$bRefresh = false;
 		if (! is_null($oPerson)){
-			if (! Config::IsUserRefreshEnabled($sLoginMode)) {
+			if (! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact')) {
 				return $oPerson;
 			}
 
 			$bRefresh = true;
 		}
 
-		if (! Config::IsContactSynchroEnabled($sLoginMode)) {
+		if (! Config::IsOptionEnabled($sLoginMode, 'synchronize_contact')) {
 			throw new HybridProvisioningAuthException("Cannot find Person and no automatic Contact provisioning (synchronize_contact)", 0, null,
 				['login_mode' => $sLoginMode, 'email' => $sEmail]); // No automatic Contact provisioning
 		}
@@ -195,7 +195,7 @@ class ProvisioningService {
 		/** @var UserExternal $oUser */
 		$oUser = $oHybridAuthProvisioning->FindUserExternal($sLoginMode, $sEmail, $oUserProfile);
 
-		if (! is_null($oUser) && ! Config::IsUserRefreshEnabled($sLoginMode)) {
+		if (! is_null($oUser) && ! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_users')) {
 			return $oUser;
 		}
 

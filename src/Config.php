@@ -187,9 +187,9 @@ class Config
 		return $aCurrentProviderConf['debug'] ?? false;
 	}
 
-	public static function IsUserSynchroEnabled(string $sLoginMode): bool
+	public static function IsOptionEnabled(string $sLoginMode, string $sOption): bool
 	{
-		if (static::Get('synchronize_user')) {
+		if (static::Get($sOption)) {
 			return true;
 		}
 
@@ -198,21 +198,7 @@ class Config
 			return false;
 		}
 
-		return $aCurrentProviderConf['synchronize_user'] ?? false;
-	}
-
-	public static function IsUserRefreshEnabled(string $sLoginMode): bool
-	{
-		if (static::Get('refresh_existing_users')) {
-			return true;
-		}
-
-		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
-		if (is_null($aCurrentProviderConf)) {
-			return false;
-		}
-
-		return $aCurrentProviderConf['refresh_existing_users'] ?? false;
+		return $aCurrentProviderConf[$sOption] ?? false;
 	}
 
 	public static function GetSynchroProfiles(string $sLoginMode): array
@@ -252,20 +238,6 @@ class Config
 		}
 
 		return 'Portal User';
-	}
-
-	public static function IsContactSynchroEnabled(string $sLoginMode): bool
-	{
-		if (static::Get('synchronize_contact')) {
-			return true;
-		}
-
-		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
-		if (is_null($aCurrentProviderConf)) {
-			return false;
-		}
-
-		return $aCurrentProviderConf['synchronize_contact'] ?? false;
 	}
 
 	public static function GetDefaultOrg(string $sLoginMode)
