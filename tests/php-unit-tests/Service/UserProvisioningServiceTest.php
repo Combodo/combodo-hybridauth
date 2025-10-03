@@ -70,7 +70,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Configuration Manager']);
 	}
 
-	public function testDoUserProvisioningShouldNotRefreshAsFeatureIsDisabled() {
+	public function testDoUserProvisioningShouldNotRefreshIfFeatureIsDisabled() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 
 		$sEmail = $this->sUniqId."@test.fr";

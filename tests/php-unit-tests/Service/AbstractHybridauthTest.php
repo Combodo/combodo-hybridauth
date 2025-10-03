@@ -197,7 +197,7 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		return $oUser;
 	}
 
-	protected function assertUserProfiles(UserExternal $oUser, $aExpectedProfiles)
+	protected function assertUserProfiles(UserExternal $oUser, $aExpectedProfiles, $sMsg="")
 	{
 		$oProfilesSearch = new DBObjectSearch('URP_Profiles');
 		$oProfilesSearch->AllowAllData();
@@ -217,7 +217,7 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		}
 		sort($aExpectedProfiles);
 		sort($aFoundProfileNames);
-		$this->assertEquals($aExpectedProfiles, $aFoundProfileNames);
+		$this->assertEquals($aExpectedProfiles, $aFoundProfileNames, $sMsg);
 	}
 
 	protected function CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile(Profile $oUserProfile, $aExpectedProfile=['Portal user']) {

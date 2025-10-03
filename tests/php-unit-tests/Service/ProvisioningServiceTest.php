@@ -10,6 +10,7 @@ namespace Combodo\iTop\HybridAuth\Test;
  *
  */
 
+use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
 use Hybridauth\User\Profile;
 use LoginWebPage;
@@ -26,6 +27,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 	//nominal usecase
 	public function testDoProvisioningCreationOKUsingDefaultConfiguredOrgAndProfiles(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
 		$sDefaultOrgName = $this->sUniqId;
@@ -67,6 +69,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 
 	public function testDoProvisioningCreationOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => ["Administrator", "Configuration Manager"]]);
 
@@ -117,6 +120,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 
 	public function testDoProvisioning_RefreshOKFromConfiguredDefaultOrgProfiles(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
@@ -165,6 +169,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 
 	public function testDoProvisioningRefreshOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
@@ -218,5 +223,42 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals('EN US', $oFoundUser->Get('language'));
 		$this->assertUserProfiles($oFoundUser, ['Change Approver', 'Administrator', 'Configuration Manager']);
 		$this->assertAllowedOrg($oFoundUser, [$sDefaultOrgName2, $sOrgName1, $sOrgName2, $sOrgName3]);
+	}
+
+	public function testDoProvisioningRefreshFailsSSoConnectionForbiddenAndUserEndsUpWithDefaultProfilesAfterwhile(){
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
+
+		$sEmail = $this->sUniqId."@test.fr";
+		$sDefaultOrgName = $this->sUniqId;
+		$this->CreateOrganization($sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , new Profile());
+		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
+		self::assertNotNull(LoginWebPage::FindUser($sEmail));
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Change Approver', 'Configuration Manager']);
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => ["Administrator"]]);
+
+		$oProfileWithEmptyProfileGroups = new Profile();
+		$oProfileWithEmptyProfileGroups->email = $sEmail;
+		//no profile associated to user
+		$oProfileWithEmptyProfileGroups->data['groups']= [];
+
+		try{
+			ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , $oProfileWithEmptyProfileGroups);
+			$this->fail("SSO should have failed with HybridProvisioningAuthException");
+		} catch(HybridProvisioningAuthException $e){
+			$this->assertEquals("No sp group/profile matching found and no valid URP_Profile to attach to user", $e->getMessage());
+
+			/** @var UserExternal $oFoundUser */
+			$oFoundUser = LoginWebPage::FindUser($sEmail);
+			self::assertNotNull($oFoundUser);
+			$this->assertUserProfiles($oFoundUser, ['Change Approver', 'Configuration Manager'], "When no profile found SSO should raise an exception and user end up with default profiles afterwhile");
+		}
 	}
 }

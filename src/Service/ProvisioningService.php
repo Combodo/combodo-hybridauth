@@ -87,7 +87,7 @@ class ProvisioningService {
 		// Create the person
 		if ($bRefresh){
 			$sFirstName = $oUserProfile->firstName ?? $oPerson->Get('first_name');
-			$sLastName = $oUserProfile->lastName ?? $oPerson->Get('last_name');
+			$sLastName = $oUserProfile->lastName ?? $oPerson->Get('name');
 		} else {
 			$sFirstName = $oUserProfile->firstName ?? $sEmail;
 			$sLastName = $oUserProfile->lastName ?? $sEmail;
@@ -99,7 +99,7 @@ class ProvisioningService {
 			'first_name' => $sFirstName,
 			'name' => $sLastName,
 			'email' => $sEmail,
-			'phone' => $oUserProfile->phone
+			'phone' => $oUserProfile->phone,
 		];
 
 		//HybridAuthProvisioning class comes from datamodel
@@ -246,20 +246,20 @@ class ProvisioningService {
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 		}
 
+		$exceptionToRaise = null;
 		if (count($aRequestedProfileNames)==0){
-			throw new HybridProvisioningAuthException("No sp group/profile matching found and no valid URP_Profile to attach to user");
+			$exceptionToRaise = new HybridProvisioningAuthException("No sp group/profile matching found and no valid URP_Profile to attach to user");
+			if ($oUser->IsNew()){
+				throw $exceptionToRaise;
+			}
+
+			//fallback to default profiles: user looses his previous profiles
+			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 		}
 
 		IssueLog::Info("OpenID Profile provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
 
-		// read all the matching profiles
-		$sInSubquery = '"'.implode('","', $aRequestedProfileNames).'"';
-		$oSearch = DBObjectSearch::FromOQL("SELECT URP_Profiles WHERE name IN ($sInSubquery)");
-		$oSearch->AllowAllData();
-
-		$oSet = new DBObjectSet($oSearch);
-		$oSet->OptimizeColumnLoad(['URP_Profiles' => ['name']]);
-
+		$oSet = $this->GetOqlProfileSet($aRequestedProfileNames);
 		$aIdsToAttach = [];
 		$aNamesToAttach = [];
 		while ($oCurrentProfile = $oSet->Fetch()) {
@@ -274,8 +274,24 @@ class ProvisioningService {
 
 		if (count($aIdsToAttach)==0) {
 			\IssueLog::Error("no valid URP_Profile to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
-			throw new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
+
+			$exceptionToRaise = new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
 				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
+
+			if ($oUser->IsNew()){
+				throw $exceptionToRaise;
+			}
+
+			//fallback to default profiles: user looses his previous profiles
+			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
+			$oSet = $this->GetOqlProfileSet($aRequestedProfileNames);
+			while ($oCurrentProfile = $oSet->Fetch()) {
+				$aIdsToAttach []= $oCurrentProfile->GetKey();
+			}
+
+			if (count($aIdsToAttach)==0) {
+				throw $exceptionToRaise;
+			}
 		}
 
 		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
@@ -287,6 +303,25 @@ class ProvisioningService {
 		}
 
 		$oUser->Set('profile_list', $oProfilesSet);
+
+		if (! is_null($exceptionToRaise)){
+			if ($oUser->IsModified()){
+				$oUser->DBWrite();
+			}
+			throw $exceptionToRaise;
+		}
+	}
+
+	private function GetOqlProfileSet(array $aRequestedProfileNames) : DBObjectSet
+	{
+		// read all the matching profiles
+		$sInSubquery = '"'.implode('","', $aRequestedProfileNames).'"';
+		$oSearch = DBObjectSearch::FromOQL("SELECT URP_Profiles WHERE name IN ($sInSubquery)");
+		$oSearch->AllowAllData();
+
+		$oSet = new DBObjectSet($oSearch);
+		$oSet->OptimizeColumnLoad(['URP_Profiles' => ['name']]);
+		return $oSet;
 	}
 
 	/**

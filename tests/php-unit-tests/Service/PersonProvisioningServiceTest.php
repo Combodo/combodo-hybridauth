@@ -40,7 +40,7 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , new Profile());
 	}
 
-	public function testDoPersonProvisioningShouldCreatePersonWithEmailOnlyAsOtherFieldFromIdpAreMissing(){
+	public function testDoPersonProvisioningShouldCreatePersonWithEmailOnlyIfOtherFieldFromIdpAreMissing(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
 		$sDefaultOrgName = $this->sUniqId;
