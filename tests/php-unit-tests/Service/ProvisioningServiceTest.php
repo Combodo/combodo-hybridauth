@@ -23,7 +23,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 {
 	const USE_TRANSACTION = false;
 
-	public function testDoProvisioning_CreationOK(){
+	//nominal usecase
+	public function testDoProvisioningCreationOKUsingDefaultConfiguredOrgAndProfiles(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
@@ -64,7 +65,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Portal user']);
 	}
 
-	public function testDoProvisioning_CreationOK_UsingIdpFields(){
+	public function testDoProvisioningCreationOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => ["Administrator", "Configuration Manager"]]);
@@ -114,7 +115,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertAllowedOrg($oFoundUser, [$sDefaultOrgName, $sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
-	public function testDoProvisioning_RefreshOK(){
+	public function testDoProvisioning_RefreshOKFromConfiguredDefaultOrgProfiles(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
@@ -162,7 +163,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Configuration Manager']);
 	}
 
-	public function testDoProvisioning_RefreshOK_UsingIdpFields(){
+	public function testDoProvisioningRefreshOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);

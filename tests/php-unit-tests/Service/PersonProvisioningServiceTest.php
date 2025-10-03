@@ -33,14 +33,14 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertEquals($oPerson->GetKey(), $oFoundPerson->GetKey(), "Person already created; should return existing one in DB");
 	}
 
-	public function testDoPersonProvisioning_SynchroDisabled(){
+	public function testDoPersonProvisioningAndSSOShouldFailWithSynchroDisabled(){
 		$sEmail = $this->sUniqId."@test.fr";
 
 		$this->expectExceptionMessage("Cannot find Person and no automatic Contact provisioning (synchronize_contact)");
 		ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , new Profile());
 	}
 
-	public function testDoPersonProvisioning_CreationOKWithEmailOnly(){
+	public function testDoPersonProvisioningShouldCreatePersonWithEmailOnlyAsOtherFieldFromIdpAreMissing(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
 		$sDefaultOrgName = $this->sUniqId;
@@ -64,7 +64,7 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals('', $oFoundPerson->Get('phone'));
 	}
 
-	public function testDoPersonProvisioning_CreationOKWithAllFieldsProvidedByIdp(){
+	public function testDoPersonProvisioningShouldCreatePersonWithAllFieldsComingFromIdPResponse(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
 		$sDefaultOrgName = $this->sUniqId;
@@ -98,8 +98,8 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 
 		return [
 			'no org returned by IdP' => [$sDefaultOrgName, $sOrgName2, null, $sDefaultOrgName],
-			'unknown org returned by IdP' => [$sDefaultOrgName, $sOrgName2, "unknown_IDP_Org", $sDefaultOrgName],
-			'use IdP org name' => [$sDefaultOrgName, $sOrgName2, $sOrgName2, $sOrgName2],
+			'unknown org returned by IdP/ fallback to default one' => [$sDefaultOrgName, $sOrgName2, "unknown_IDP_Org", $sDefaultOrgName],
+			'use IdP org name ok/ use it' => [$sDefaultOrgName, $sOrgName2, $sOrgName2, $sOrgName2],
 		];
 	}
 
@@ -122,7 +122,7 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertEquals($sExpectedOrgReturned, $sOrgName);
 	}
 
-	public function testGetOrganizationForProvisioning_OqlSearchOrgFromIdpByAnotherFieldThanName()
+	public function testGetOrganizationForProvisioningFindOrgByAnotherItopAttributeThanName()
 	{
 		$sDefaultOrgName = 'IDP_ORG1'.uniqid();
 		$this->CreateOrganization($sDefaultOrgName);

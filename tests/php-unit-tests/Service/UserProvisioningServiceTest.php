@@ -26,7 +26,7 @@ require_once __DIR__ . "/AbstractHybridauthTest.php";
 
 class UserProvisioningServiceTest extends AbstractHybridauthTest
 {
-	public function testDoUserProvisioning_UserCreationOK() {
+	public function testDoUserProvisioningShouldCreateUserWithDefaultProfiles() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
@@ -48,7 +48,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Portal user']);
 	}
 
-	public function testDoUserProvisioning_UserUpdateOKWithAnotherProfile() {
+	public function testDoUserProvisioningShouldUpdateUserWithDefaultProfiles() {
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
 		$oFoundUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Portal user']);
@@ -70,7 +70,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Configuration Manager']);
 	}
 
-	public function testDoUserProvisioning_UserAlreadyExistAndNoUpdateConfigured() {
+	public function testDoUserProvisioningShouldNotRefreshAsFeatureIsDisabled() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 
 		$sEmail = $this->sUniqId."@test.fr";

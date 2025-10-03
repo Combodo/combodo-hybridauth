@@ -29,7 +29,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		parent::setUp();
 	}
 
-	public function testSynchronizeAllowedOrgs_NoGroupReturnedBySP_UseDefaultProfile() {
+	public function testNoAllowedOrgProvisionedWhenIdpResponseDoesNotIncludeOrgKey() {
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ['A' => 'B']);
 
 		//field 'groups' not found in IdP response
@@ -37,13 +37,13 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile(new Profile());
 	}
 
-	public function testSynchronizeAllowedOrgs_NoGroupMatchingConfigured_UserCreationWithoutAllowedOrg() {
+	public function testNoAllowedOrgProvisionedWhenIdpResponseDoesNotMatchAnyConfiguredOrgs() {
 		$oUserProfile = new Profile();
 		$oUserProfile->data['allowed_orgs']= ['A' => 'B'];
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile);
 	}
 
-	public function testSynchronizeAllowedOrgs_GroupMatchingBadlyConfigured_UserCreationWithoutAllowedOrg() {
+	public function testNoAllowedOrgProvisionedWhenAllowedOrgsBadlyConfigured() {
 		$this->InitializeGroupsToOrgs($this->sLoginMode, "groups_to_profiles set as string instead of array");
 
 		$oUserProfile = new Profile();
@@ -51,7 +51,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile);
 	}
 
-	public function testSynchronizeAllowedOrgs_NoAllowedOrgReturnedByIdp_UserCreationOK() {
+	public function testNoAllowedOrgProvisionedWhenAllowedOrgIdpResponseIsEmpty() {
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id2" => "org2"]);
 
 		$oUserProfile = new Profile();
@@ -60,7 +60,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile);
 	}
 
-	public function testSynchronizeAllowedOrgs_NoAllowedOrgFoundViaGroupMatchingConfiguration_UserCreationOK() {
+	public function testNoAllowedOrgProvisionedWhenAllowedOrgIdpResponseDoesNotMatchAnyConfiguredOrg() {
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id2" => "org2"]);
 
 		$oUserProfile = new Profile();
@@ -69,7 +69,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile);
 	}
 
-	public function testSynchronizeAllowedOrgs_OnlyUnexistingItopAllowedOrgsToProvision_UserCreationOK() {
+	public function testNoAllowedOrgProvisionedWhenAllowedOrgIdpResponseMatchUnexistingItopOrgs() {
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => "unexisting_itop_org1"]);
 
 		$oUserProfile = new Profile();
@@ -78,7 +78,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile);
 	}
 
-	public function testSynchronizeAllowedOrgs_SomeUnexistingOrgToProvision_UserCreationOK() {
+	public function testAllowedOrgProvisionedWhenAllowedOrgIdpResponsePartiallyMatchSomeExistingOrgs() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => "unexisting_itop_org1", "sp_id2" => $sOrgName1]);
 
@@ -88,7 +88,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1]);
 	}
 
-	public function testSynchronizeAllowedOrgs_UserCreationOK_UseDefaultAllowedOrg() {
+	public function testAllowedOrgProvisionedWithConfiguredDefaultAllowedOrgs_NoIdpMatching() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_allowed_orgs', [$sOrgName1, $sOrgName2]);
@@ -97,7 +97,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1, $sOrgName2]);
 	}
 
-	public function testSynchronizeAllowedOrgs_UserCreationOK_ConfiguredExplodeOnAllowedOrgIdpResponse() {
+	public function testAllowedOrgProvisionedWithIdpAllowedOrgsResponseExplodedBefore() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$sOrgName3 = $this->CreateOrgAndGetName();
@@ -110,7 +110,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
-	public function testSynchronizeAllowedOrgs_UserCreationOK_UseOfAnotherIdpKey() {
+	public function testAllowedOrgProvisionedWithIdpAllowedOrgsResponseFromAnotherIdpConfiguredKeyThanDefault() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$sOrgName3 = $this->CreateOrgAndGetName();
@@ -122,7 +122,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
-	public function testSynchronizeAllowedOrgs_NoExistingOrgToUpdate_UserConnect_AllPreviousAllowedOrgsRemoved() {
+	public function testAllAllowedOrgsRemovedFromUserAfterProvisioningRefresh() {
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => "unexisting itop org"]);
 
 		$oUserProfile = new Profile();
@@ -139,7 +139,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertAllowedOrg($oUser, []);
 	}
 
-	public function testSynchronizeAllowedOrgs_UserUpdateOK() {
+	public function testAllowedOrgsUpdatedViaIdpResponseExactMatch_NoExplodeConfigured() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => $sOrgName2]);
@@ -156,7 +156,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertAllowedOrg($oUser, [$sOrgName1, $sOrgName2]);
 	}
 
-	public function testSynchronizeAllowedOrgs_UserUpdateOK_UseOfAnotherIdpKey() {
+	public function testAllAllowedOrgsRemovedFromUserAfterProvisioningRefreshFromAnotherConfiguredIdPKey() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => $sOrgName2]);
@@ -174,7 +174,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertAllowedOrg($oUser, [$sOrgName1, $sOrgName2]);
 	}
 
-	public function testSynchronizeAllowedOrgs_UserUpdateOK_SearchOrgByCodeInsteadOfName() {
+	public function testAllAllowedOrgsProvisioningOkAfterReconciliatingOrgsViaAnotherItopAttributeThanName() {
 		$sCode1 = "code1".uniqid();
 		$sOrgName1 = $this->CreateOrgAndGetName($sCode1);
 		$sCode2 = "code2".uniqid();
