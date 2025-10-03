@@ -117,7 +117,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 	public function testDoProvisioning_RefreshOK(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
 
 		$sEmail = $this->sUniqId."@test.fr";
@@ -165,7 +165,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 	public function testDoProvisioning_RefreshOK_UsingIdpFields(){
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
 
 		$sEmail = $this->sUniqId."@test.fr";

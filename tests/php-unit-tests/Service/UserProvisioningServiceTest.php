@@ -54,7 +54,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		$oFoundUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Portal user']);
 		self::assertEquals('FR FR', $oFoundUser->Get('language'));
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', true);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 

@@ -195,7 +195,7 @@ class ProvisioningService {
 		/** @var UserExternal $oUser */
 		$oUser = $oHybridAuthProvisioning->FindUserExternal($sLoginMode, $sEmail, $oUserProfile);
 
-		if (! is_null($oUser) && ! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_users')) {
+		if (! is_null($oUser) && ! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_user')) {
 			return $oUser;
 		}
 

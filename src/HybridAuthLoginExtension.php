@@ -359,7 +359,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			return; // No automatic User provisioning
 		}
 		$sEmail = Session::Get('auth_user');
-		$bRefreshRequired = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_users') || Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
+		$bRefreshRequired = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_user') || Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
 		if (!$bRefreshRequired && LoginWebPage::FindUser($sEmail, false)) {
 			return; // User already present
 		}

@@ -75,7 +75,7 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		//no provisioning
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_users', false);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', false);
 
 	}
 
