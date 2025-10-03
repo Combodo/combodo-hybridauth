@@ -15,7 +15,6 @@ use URP_UserProfile;
 use UserExternal;
 use utils;
 
-
 /**
  *
  * @runTestsInSeparateProcesses
@@ -76,10 +75,9 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			'org_id' => $this->oOrg->GetKey(),
 		]);
 
-		$oUserProfile = new URP_UserProfile();
-		$oUserProfile->Set('profileid', $oProfile->GetKey());
-		$oUserProfile->Set('reason', 'UNIT Tests');
-		$oSet = DBObjectSet::FromObject($oUserProfile);
+		$oSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
+		$oSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => $oProfile->GetKey(), 'reason' => 'UNIT Tests')));
+
 		/** @var \UserExternal $oUser */
 		$this->oUser = $this->createObject(UserExternal::class, [
 			'login' => $this->sEmail,
@@ -130,7 +128,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 				$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 				$oExpectedPerson->DBDelete();
 			} catch (Exception $e) {
-				IssueLog($e->getMessage());
+				var_dump($e->getMessage());
 			}
 		}
 
@@ -143,6 +141,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			$oConfig = new Config($this->sConfigTmpBackupFile);
 			$oConfig->WriteToFile($sConfigPath);
 			@chmod($sConfigPath, 0440);
+			@unlink($this->sConfigTmpBackupFile);
 		}
 
 		if (is_file(ServiceProviderMock::GetFileConfPath())) {
@@ -220,7 +219,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sProfile);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', [$sProfile]);
 
 		$this->SaveItopConfFile();
 
@@ -254,7 +253,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sProfile);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', [$sProfile]);
 
 		$this->SaveItopConfFile();
 

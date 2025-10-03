@@ -55,7 +55,7 @@ SetupWebPage::AddModule(
             'synchronize_user' => false,
             'synchronize_contact' => false,
             'default_organization' => '',
-            'default_profile' => 'Portal User',
+            'default_profiles' => ['Portal User', 'Configuration Manager'],
 			'providers' => array(
 				'Google' => array(
 					'enabled' => false,

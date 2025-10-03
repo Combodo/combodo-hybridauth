@@ -25,7 +25,7 @@
           <comment>	/**
 	 * @param string $sLoginMode: SSO login mode
 	 * @param string $sEmail: login/email of user being currently provisioned
-	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
 	 * @return array: array includes the 2 provisioned objects [Person, UserExternal]
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
@@ -33,10 +33,85 @@
           </comment>
           <static>false</static>
           <access>public</access>
-          <type>EventListener</type>
+          <type>Custom</type>
           <code><![CDATA[	public function DoProvisioning(string $sLoginMode, string $sEmail, Hybridauth\User\Profile $oUserProfile) : array
           {
 		return Combodo\iTop\HybridAuth\Service\ProvisioningService::GetInstance()->DoProvisioning($sLoginMode, $sEmail, $oUserProfile);
+	}]]></code>
+        </method>
+        <method id="FindPerson">
+          <comment>	/**
+	 * Search is based on email (\LoginWebPage::FindPerson). For tricky reconciliations, please extend this method.
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
+	 *
+	 * @return \Person|null
+	 */
+          </comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function FindPerson(string $sLoginMode, string $sEmail, Hybridauth\User\Profile $oUserProfile) : ?\Person
+          {
+		return \LoginWebPage::FindPerson($sEmail);
+	}]]></code>
+        </method>
+        <method id="FindUserExternal">
+          <comment>	/**
+	 * Search is based on email (\LoginWebPage::FindPerson). For tricky reconciliations, please extend this method.
+	 * @param string $sLoginMode: SSO login mode
+	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
+	 *
+	 * @return \UserExternal|null
+	 */
+          </comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function FindUserExternal(string $sLoginMode, string $sEmail, Hybridauth\User\Profile $oUserProfile) : ?\UserExternal
+          {
+		return \MetaModel::GetObjectByName('UserExternal', $sEmail, false);
+	}]]></code>
+        </method>
+        <method id="CompletePersonAdditionalParamsBeforeDbWrite">
+          <comment>/**
+	 * Current method is called at the end of person provisioning, just after attaching organization and allowed_orgs. and before LoginWebPage::ProvisionPerson call.
+	 * @param string $sLoginMode
+	 * @param string $sEmail
+	 * @param \Person|null $oPerson: null in case of creation
+	 * @param \Hybridauth\User\Profile $oUserProfile
+	 * @param array $aAdditionalParams: additional parameters passed by reference.
+	 *
+	 * @return void
+	 */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function CompletePersonAdditionalParamsBeforeDbWrite(string $sLoginMode, string $sEmail, ?\Person $oPerson, \Hybridauth\User\Profile $oUserProfile, array &$aAdditionalParams) : void
+	{
+	  //Custom Code...
+	}]]></code>
+        </method>
+        <method id="CompleteUserProvisioningBeforeDbWrite">
+          <comment>/**
+	 * Current method is called at the end of user provisioning, just after attaching profiles and allowed_orgs. and before DBWrite call.
+	 * @param string $sLoginMode
+	 * @param string $sEmail
+	 * @param \Person $oPerson
+	 * @param \UserExternal $oUser
+	 * @param \Hybridauth\User\Profile $oUserProfile
+	 * @param string $sInfo: cmdb change track info
+	 *
+	 * @return void
+	 */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function CompleteUserProvisioningBeforeDbWrite(string $sLoginMode, string $sEmail, \Person $oPerson, \UserExternal $oUser, \Hybridauth\User\Profile $oUserProfile, string $sInfo) : void
+	{
+	  //Custom Code...
 	}]]></code>
         </method>
       </methods>

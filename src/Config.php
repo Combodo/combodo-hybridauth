@@ -187,9 +187,9 @@ class Config
 		return $aCurrentProviderConf['debug'] ?? false;
 	}
 
-	public static function IsUserSynchroEnabled(string $sLoginMode): bool
+	public static function IsOptionEnabled(string $sLoginMode, string $sOption): bool
 	{
-		if (static::Get('synchronize_user')) {
+		if (static::Get($sOption)) {
 			return true;
 		}
 
@@ -198,59 +198,46 @@ class Config
 			return false;
 		}
 
-		return $aCurrentProviderConf['synchronize_user'] ?? false;
-	}
-
-	public static function IsUserRefreshEnabled(string $sLoginMode): bool
-	{
-		if (static::Get('refresh_existing_users')) {
-			return true;
-		}
-
-		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
-		if (is_null($aCurrentProviderConf)) {
-			return false;
-		}
-
-		return $aCurrentProviderConf['refresh_existing_users'] ?? false;
+		return $aCurrentProviderConf[$sOption] ?? false;
 	}
 
 	public static function GetSynchroProfiles(string $sLoginMode): array
 	{
+		//from provider specific conf
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf) {
-			$aDefaultProfiles = $aCurrentProviderConf['default_profile'] ?? null;
-			if (is_string($aDefaultProfiles) && \utils::IsNullOrEmptyString($aDefaultProfiles)) {
-				$aDefaultProfiles = null;
+			$aDefaultProfiles = $aCurrentProviderConf['default_profiles'] ?? null;
+			if (! is_null($aDefaultProfiles) && is_array($aDefaultProfiles) ) {
+				return $aDefaultProfiles;
 			}
 		}
 
-		if (is_null($aDefaultProfiles)){
-			$aDefaultProfiles = static::Get('default_profile', null);
-			if (is_null($aDefaultProfiles) || is_string($aDefaultProfiles) && \utils::IsNullOrEmptyString($aDefaultProfiles)){
-				$aDefaultProfiles = ['Portal User'];
-			}
-		}
-
-		if (is_array($aDefaultProfiles)){
+		//from global conf
+		$aDefaultProfiles = static::Get('default_profiles', null);
+		if (! is_null($aDefaultProfiles) && is_array($aDefaultProfiles) ) {
 			return $aDefaultProfiles;
 		}
 
-		return [$aDefaultProfiles];
+		//from legacy default_profile conf (one profile only)
+		return [self::GetLegacySynchroProfile($sLoginMode)];
 	}
 
-	public static function IsContactSynchroEnabled(string $sLoginMode): bool
+	public static function GetLegacySynchroProfile(string $sLoginMode): string
 	{
-		if (static::Get('synchronize_contact')) {
-			return true;
-		}
-
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
-		if (is_null($aCurrentProviderConf)) {
-			return false;
+		if (null !== $aCurrentProviderConf) {
+			$sDefaultProfile = $aCurrentProviderConf['default_profile'] ?? null;
+			if (utils::IsNotNullOrEmptyString($sDefaultProfile)) {
+				return $sDefaultProfile;
+			}
 		}
 
-		return $aCurrentProviderConf['synchronize_contact'] ?? false;
+		$sDefaultProfile = static::Get('default_profile', 'Portal User');
+		if (utils::IsNotNullOrEmptyString($sDefaultProfile)) {
+			return $sDefaultProfile;
+		}
+
+		return 'Portal User';
 	}
 
 	public static function GetDefaultOrg(string $sLoginMode)
@@ -264,5 +251,34 @@ class Config
 		}
 
 		return static::Get('default_organization');
+	}
+
+	public static function GetDefaultAllowedOrgs(string $sLoginMode) : array
+	{
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (null !== $aCurrentProviderConf) {
+			$aDefaulAllowedOrgs = $aCurrentProviderConf['default_allowed_orgs'] ?? null;
+			if (is_array($aDefaulAllowedOrgs)) {
+				return $aDefaulAllowedOrgs;
+			}
+		}
+
+		$aDefaulAllowedOrgs = static::Get('default_allowed_orgs');
+		if (is_array($aDefaulAllowedOrgs)) {
+			return $aDefaulAllowedOrgs;
+		}
+
+		return [];
+	}
+
+
+	public static function GetIdpKey(string $sLoginMode, string $sField, ?string $sDefaultValue) : ?string
+	{
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (null !== $aCurrentProviderConf) {
+			return $aCurrentProviderConf[$sField] ?? $sDefaultValue;
+		}
+
+		return $sDefaultValue;
 	}
 }
