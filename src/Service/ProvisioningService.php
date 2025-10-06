@@ -108,7 +108,7 @@ class ProvisioningService {
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
 		$oHybridAuthProvisioning->CompletePersonAdditionalParamsBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUserProfile, $aPersonParams);
 
-		IssueLog::Info("OpenID Person provisioning", HybridAuthLoginExtension::LOG_CHANNEL, $aPersonParams);
+		IssueLog::Info("Person saved with OpenID provisioning info", HybridAuthLoginExtension::LOG_CHANNEL, $aPersonParams);
 		return self::SavePerson($oPerson, $sOrganization, $aPersonParams);
 	}
 
@@ -257,7 +257,7 @@ class ProvisioningService {
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 		}
 
-		IssueLog::Info("OpenID Profile provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
+		IssueLog::Debug("OpenID Profile matching between IdP and iTop", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
 
 		$oSet = $this->GetOqlProfileSet($aRequestedProfileNames);
 		$aIdsToAttach = [];
@@ -267,9 +267,10 @@ class ProvisioningService {
 			$aNamesToAttach []= $oCurrentProfile->Get('name');
 		}
 
-		$aUnfoundNames = array_intersect($aRequestedProfileNames, $aNamesToAttach);
+		$aUnfoundNames = array_diff($aRequestedProfileNames, $aNamesToAttach);
 		if (count($aUnfoundNames) > 0) {
-			\IssueLog::Warning("Cannot add some unfound profiles", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound_allowed_orgs' => $aUnfoundNames]);
+			\IssueLog::Warning("Cannot add some unfound profiles", HybridAuthLoginExtension::LOG_CHANNEL,
+				[ 'login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound profiles' => $aUnfoundNames ]);
 		}
 
 		if (count($aIdsToAttach)==0) {
@@ -349,7 +350,7 @@ class ProvisioningService {
 			$aRequestedOrgNames = Config::GetDefaultAllowedOrgs($sLoginMode);
 		}
 
-		IssueLog::Info("OpenID AllowedOrgs provisioning", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'orgs' => $aRequestedOrgNames]);
+		IssueLog::Info("OpenID (Allowed) Organization matching between IdP and iTop", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'orgs' => $aRequestedOrgNames]);
 
 		$iCount = 0;
 		$aOrgsIdsToAttach = [];
@@ -369,9 +370,9 @@ class ProvisioningService {
 				$iCount++;
 			}
 
-			$aUnfoundOrgNames = array_intersect($aRequestedOrgNames, $aOrgsNamesToAttach);
+			$aUnfoundOrgNames = array_diff($aRequestedOrgNames, $aOrgsNamesToAttach);
 			if (count($aUnfoundOrgNames) > 0) {
-				\IssueLog::Warning("Cannot add some unfound allowed organization", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound_allowed_orgs' => $aUnfoundOrgNames]);
+				\IssueLog::Warning("Cannot add some unfound allowed organization", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound orgs' => $aUnfoundOrgNames]);
 			}
 		}
 

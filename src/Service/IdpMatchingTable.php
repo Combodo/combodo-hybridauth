@@ -72,7 +72,7 @@ class IdpMatchingTable
 		foreach ($aSpGroupsIds as $sSpGroupId) {
 			$profileName = $this->aMatchingTable[$sSpGroupId] ?? null;
 			if (is_null($profileName)) {
-				IssueLog::Warning("Service provider ID does not match any configured iTop name",
+				IssueLog::Debug("Service provider ID does not match any configured iTop name",
 					HybridAuthLoginExtension::LOG_CHANNEL, ['sp_id' => $sSpGroupId, $this->sMatchingTableConfigurationKey => $this->aMatchingTable]);
 				continue;
 			}
