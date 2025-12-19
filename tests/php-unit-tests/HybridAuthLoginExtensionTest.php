@@ -41,9 +41,6 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 
 		$this->BackupConfiguration();
 
-		$sPath = __DIR__.'/Provider/ServiceProviderMock.php';
-		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
-
 		$_SESSION = [];
 		$this->sUniqId = "OpenID".uniqid();
 		$this->oOrg = $this->CreateOrganization($this->sUniqId);
@@ -87,6 +84,8 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			]
 		);
 
+		$sPath = __DIR__.'/Provider/ServiceProviderMock.php';
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aServiceProviderConf);
 		$this->sLoginMode = "hybridauth-".$sSsoMode;
 		$this->InitLoginMode($this->sLoginMode);
@@ -140,7 +139,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 
-		$sOutput = $this->CallItopUri("pages/UI.php");
+		$sOutput = $this->CallItopUri("pages/UI.php", ['login_mode' => $this->sLoginMode]);
 		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
 		$this->assertTrue(false !== strpos($sOutput, $this->sEmail), "user logged (and email) in => his login . ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
@@ -186,7 +185,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			'phone' => $sPhone,
 		];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUri("pages/UI.php");
+		$sOutput = $this->CallItopUri("pages/UI.php", ['login_mode' => $this->sLoginMode]);
 
 		if (!$bPortalPage) {
 			$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
@@ -224,7 +223,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			'organization' => $sIdPOrgName,
 		];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUri("pages/UI.php");
+		$sOutput = $this->CallItopUri("pages/UI.php", ['login_mode' => $this->sLoginMode]);
 
 		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
 		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $oIdPOrg->GetKey());
@@ -253,7 +252,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 	{
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUri("env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php?login_mode=".$this->sLoginMode, false, []);
+		$sOutput = $this->CallItopUri("env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php?login_mode=".$this->sLoginMode);
 		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
 		$this->assertFalse(strpos($sOutput, "An error occurred"), "An error occurred should NOT appear in output: ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
@@ -262,7 +261,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 	{
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUri("env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php", false, []);
+		$sOutput = $this->CallItopUri("env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php");
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:".$sOutput);
 		$this->assertTrue(false !== strpos($sOutput, "No login_mode specified by service provider"), "An error occurred should appear in output: ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
@@ -271,7 +270,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 	{
 		$aData = ['email' => $this->sEmail];
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
-		$sOutput = $this->CallItopUri("env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured", false, []);
+		$sOutput = $this->CallItopUri("env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php?login_mode=hybridauth-badlyconfigured");
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:".$sOutput);
 	}
 
