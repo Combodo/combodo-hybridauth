@@ -13,18 +13,15 @@ namespace Combodo\iTop\HybridAuth\Test;
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
 use Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
-use Config;
 use DBObjectSearch;
 use DBObjectSet;
 use Hybridauth\User\Profile;
-use LoginWebPage;
 use MetaModel;
 use Person;
 use UserExternal;
 
 class AbstractHybridauthTest extends ItopDataTestCase
 {
-	protected $sConfigTmpBackupFile;
 	protected $sLoginMode;
 	protected $sUniqId;
 
@@ -35,16 +32,6 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		$this->RequireOnceItopFile('env-production/combodo-hybridauth/vendor/autoload.php');
 		$this->RequireOnceItopFile('env-production/combodo-oauth2-client/vendor/autoload.php');
 		$this->RequireOnceUnitTestFile('../Provider/ServiceProviderMock.php');
-
-		$sConfigPath = MetaModel::GetConfig()->GetLoadedFile();
-
-		clearstatcache();
-		echo sprintf("rights via ls on %s:\n %s \n", $sConfigPath, exec("ls -al $sConfigPath"));
-		$sFilePermOutput = substr(sprintf('%o', fileperms('/etc/passwd')), -4);
-		echo sprintf("rights via fileperms on %s:\n %s \n", $sConfigPath, $sFilePermOutput);
-
-		$this->sConfigTmpBackupFile = tempnam(sys_get_temp_dir(), "config_");
-		MetaModel::GetConfig()->WriteToFile($this->sConfigTmpBackupFile);
 
 		$sPath = __DIR__.'/Provider/ServiceProviderMock.php';
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
@@ -91,16 +78,6 @@ class AbstractHybridauthTest extends ItopDataTestCase
 	protected function tearDown(): void
 	{
 		parent::tearDown();
-
-		if (!is_null($this->sConfigTmpBackupFile) && is_file($this->sConfigTmpBackupFile)) {
-			//put config back
-			$sConfigPath = MetaModel::GetConfig()->GetLoadedFile();
-			@chmod($sConfigPath, 0770);
-			$oConfig = new Config($this->sConfigTmpBackupFile);
-			$oConfig->WriteToFile($sConfigPath);
-			@chmod($sConfigPath, 0440);
-			@unlink($this->sConfigTmpBackupFile);
-		}
 
 		if (is_file(ServiceProviderMock::GetFileConfPath())) {
 			@unlink(ServiceProviderMock::GetFileConfPath());

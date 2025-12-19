@@ -5,13 +5,10 @@ namespace Combodo\iTop\HybridAuth\Test;
 use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
-use Config;
-use DBObjectSet;
 use Dict;
 use Exception;
 use MetaModel;
 use Person;
-use URP_UserProfile;
 use UserExternal;
 use utils;
 
@@ -28,13 +25,11 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 	//users need to be persisted in DB
 	const USE_TRANSACTION = false;
 
-	protected $sConfigTmpBackupFile;
 	protected $sEmail;
 	protected $sProvisionedUserPersonEmail;
 	protected $oUser;
 	protected $oOrg;
 	protected $sLoginMode;
-	protected $oiTopConfig;
 	protected $sUniqId;
 
 	protected function setUp(): void
@@ -44,17 +39,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->RequireOnceItopFile('env-production/combodo-hybridauth/vendor/autoload.php');
 		$this->RequireOnceUnitTestFile('Provider/ServiceProviderMock.php');
 
-		$sConfigPath = MetaModel::GetConfig()->GetLoadedFile();
-
-		clearstatcache();
-		echo sprintf("rights via ls on %s:\n %s \n", $sConfigPath, exec("ls -al $sConfigPath"));
-		$sFilePermOutput = substr(sprintf('%o', fileperms('/etc/passwd')), -4);
-		echo sprintf("rights via fileperms on %s:\n %s \n", $sConfigPath, $sFilePermOutput);
-
-		$this->sConfigTmpBackupFile = tempnam(sys_get_temp_dir(), "config_");
-		MetaModel::GetConfig()->WriteToFile($this->sConfigTmpBackupFile);
-
-		$this->oiTopConfig = new Config($sConfigPath);
+		$this->BackupConfiguration();
 
 		$sPath = __DIR__.'/Provider/ServiceProviderMock.php';
 		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
@@ -133,16 +118,6 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		}
 
 		parent::tearDown();
-
-		if (!is_null($this->sConfigTmpBackupFile) && is_file($this->sConfigTmpBackupFile)) {
-			//put config back
-			$sConfigPath = $this->oiTopConfig->GetLoadedFile();
-			@chmod($sConfigPath, 0770);
-			$oConfig = new Config($this->sConfigTmpBackupFile);
-			$oConfig->WriteToFile($sConfigPath);
-			@chmod($sConfigPath, 0440);
-			@unlink($this->sConfigTmpBackupFile);
-		}
 
 		if (is_file(ServiceProviderMock::GetFileConfPath())) {
 			@unlink(ServiceProviderMock::GetFileConfPath());
