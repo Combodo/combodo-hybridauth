@@ -96,13 +96,6 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->SaveItopConfFile();
 	}
 
-	private function SaveItopConfFile()
-	{
-		@chmod($this->oiTopConfig->GetLoadedFile(), 0770);
-		$this->oiTopConfig->WriteToFile();
-		@chmod($this->oiTopConfig->GetLoadedFile(), 0440);
-	}
-
 	protected function tearDown(): void
 	{
 		if (!is_null($this->sProvisionedUserPersonEmail)) {
