@@ -20,7 +20,7 @@ SetupWebPage::AddModule(
 		// Setup
 		//
 		'dependencies' => array(
-			'combodo-oauth2-client/1.0.2',
+			'combodo-oauth2-client/1.0.10',
 		),
 		'mandatory' => false,
 		'visible' => true,
