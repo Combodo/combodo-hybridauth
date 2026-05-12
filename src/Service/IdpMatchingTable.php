@@ -11,22 +11,23 @@ class IdpMatchingTable
 	private string $sLoginMode;
 	private mixed $aMatchingTable;
 	private string $sMatchingTableConfigurationKey;
-	private string $sServiceProviderProfileKey;
+	/** @var string|array $serviceProviderKey */
+	private $serviceProviderKey;
 	private ?string $sSeparator;
 
 	/**
 	 * @param string $sLoginMode
 	 * @param mixed $aMatchingTable : matching definition between idp response and itop object names. should be an array or no matching applied
 	 * @param string $sMatchingTableConfigurationKey : used here only for supportability (logging/exception messages)
-	 * @param string $sServiceProviderProfileKey : key to fetch in IdP response
+	 * @param string|array $serviceProviderKey : key to fetch in IdP response
 	 * @param string|null $sSeparator : separator to explode IdP response in array if needed
 	 */
-	public function __construct(string $sLoginMode, mixed $aMatchingTable, string $sMatchingTableConfigurationKey, string $sServiceProviderProfileKey, ?string $sSeparator)
+	public function __construct(string $sLoginMode, mixed $aMatchingTable, string $sMatchingTableConfigurationKey, string $serviceProviderKey, ?string $sSeparator)
 	{
 		$this->sLoginMode = $sLoginMode;
 		$this->aMatchingTable = $aMatchingTable;
 		$this->sMatchingTableConfigurationKey = $sMatchingTableConfigurationKey;
-		$this->sServiceProviderProfileKey = $sServiceProviderProfileKey;
+		$this->serviceProviderKey = $serviceProviderKey;
 		$this->sSeparator = $sSeparator;
 	}
 
@@ -39,7 +40,7 @@ class IdpMatchingTable
 	 * @return array|null: return null when matching is not possible somehow. either it is not configured either IdP response does not fit
 	 * * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function GetObjectNamesFromIdpMatchingTable(string $sEmail, Profile $oUserProfile) : ?array
+	public function GetObjectNamesFromIdpMatchingTable(string $sEmail, Profile $oUserProfile): ?array
 	{
 		if (is_null($this->aMatchingTable)) {
 			return null;
@@ -54,26 +55,29 @@ class IdpMatchingTable
 		}
 
 		$aCurrentProfilesName = [];
-		$aSpGroupsIds = $oUserProfile->data[$this->sServiceProviderProfileKey] ?? null;
-		if (is_string($aSpGroupsIds) && !is_null($this->sSeparator)) {
+		$aSpIds = IdpMatchingTable::GetIdpFieldValue($oUserProfile, $this->serviceProviderKey);
+		if (is_string($aSpIds) && !is_null($this->sSeparator)) {
 			$aFields = [];
-			foreach (explode($this->sSeparator, $aSpGroupsIds) as $sValue) {
+			foreach (explode($this->sSeparator, $aSpIds) as $sValue) {
 				$aFields[] = trim($sValue);
 			}
-			$aSpGroupsIds = $aFields;
-		} else if (!is_array($aSpGroupsIds)) {
-			IssueLog::Warning("Service provider $this->sServiceProviderProfileKey not an array", null, [$this->sServiceProviderProfileKey => $aSpGroupsIds]);
+			$aSpIds = $aFields;
+		} elseif (!is_array($aSpIds)) {
+			IssueLog::Warning("Service provider not an array", null, ['serviceProviderKey' => $this->serviceProviderKey, 'aSpIds' => $aSpIds]);
 
 			return null;
 		}
 
-		IssueLog::Debug("Service provider contains proper $this->sServiceProviderProfileKey value", null, [$this->sServiceProviderProfileKey => $aSpGroupsIds]);
+		IssueLog::Debug("Service provider contains proper value", null, ['serviceProviderKey' => $this->serviceProviderKey, 'aSpIds' => $aSpIds]);
 
-		foreach ($aSpGroupsIds as $sSpGroupId) {
+		foreach ($aSpIds as $sSpGroupId) {
 			$profileName = $this->aMatchingTable[$sSpGroupId] ?? null;
 			if (is_null($profileName)) {
-				IssueLog::Debug("Service provider ID does not match any configured iTop name",
-					HybridAuthLoginExtension::LOG_CHANNEL, ['sp_id' => $sSpGroupId, $this->sMatchingTableConfigurationKey => $this->aMatchingTable]);
+				IssueLog::Debug(
+					"Service provider ID does not match any configured iTop name",
+					HybridAuthLoginExtension::LOG_CHANNEL,
+					['sp_id' => $sSpGroupId, $this->sMatchingTableConfigurationKey => $this->aMatchingTable]
+				);
 				continue;
 			}
 
@@ -90,16 +94,59 @@ class IdpMatchingTable
 			$aContext = [
 				'login_mode'                          => $this->sLoginMode,
 				'email'                               => $sEmail,
-				'idp_key'                             => $this->sServiceProviderProfileKey,
-				'sp_ids'                              => $aSpGroupsIds,
+				'idp_key'                             => $this->serviceProviderKey,
+				'sp_ids'                              => $aSpIds,
 				$this->sMatchingTableConfigurationKey => $this->aMatchingTable,
 			];
 
-			IssueLog::Error("No matching between IdP $this->sServiceProviderProfileKey response and configured table ($this->sMatchingTableConfigurationKey)",
-				HybridAuthLoginExtension::LOG_CHANNEL, $aContext);
+			IssueLog::Error(
+				"No matching between IdP response and configured table ($this->sMatchingTableConfigurationKey)",
+				HybridAuthLoginExtension::LOG_CHANNEL,
+				$aContext
+			);
 		}
 
 		return $aCurrentProfilesName;
 	}
 
+	/**
+	 * @param \Hybridauth\User\Profile $oUserProfile
+	 * @param array|string $serviceProviderKey
+	 *
+	 *  @return array|string|null
+	 */
+	public static function GetIdpFieldValue(Profile $oUserProfile, $serviceProviderKey)
+	{
+		return self::RecursiveGetIdpFieldValue($oUserProfile->data, $serviceProviderKey);
+	}
+
+	/**
+	 * @param array $aData
+	 * @param array|string $serviceProviderKey
+	 *
+	 * @return array|string|null
+	 */
+	private static function RecursiveGetIdpFieldValue(array $aData, $serviceProviderKey)
+	{
+		if (is_string($serviceProviderKey) || is_int($serviceProviderKey)) {
+			return $aData[$serviceProviderKey] ?? null;
+		}
+
+		$first = array_key_first($serviceProviderKey);
+		if (is_null($first)) {
+			return null;
+		}
+
+		$nextKey = $serviceProviderKey[$first];
+		if (is_int($nextKey)) {
+			return $aData[$nextKey] ?? null;
+		}
+
+		$aNextData = $aData[$first] ?? null;
+		if (is_null($aNextData)) {
+			return null;
+		}
+
+		return self::RecursiveGetIdpFieldValue($aNextData, $nextKey);
+	}
 }

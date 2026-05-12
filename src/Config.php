@@ -271,8 +271,24 @@ class Config
 		return [];
 	}
 
+	public static function GetIdpKey(string $sLoginMode, string $sField, ?string $sDefaultValue): ?string
+	{
+		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
+		if (null !== $aCurrentProviderConf) {
+			return $aCurrentProviderConf[$sField] ?? $sDefaultValue;
+		}
 
-	public static function GetIdpKey(string $sLoginMode, string $sField, ?string $sDefaultValue) : ?string
+		return $sDefaultValue;
+	}
+
+	/**
+	 * @param string $sLoginMode
+	 * @param string $sField
+	 * @param array|string $sDefaultValue
+	 *
+	 * @return string|array
+	 */
+	public static function GetIdpSearchKey(string $sLoginMode, string $sField, string $sDefaultValue)
 	{
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf) {

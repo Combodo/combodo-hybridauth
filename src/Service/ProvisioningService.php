@@ -93,8 +93,9 @@ class ProvisioningService {
 			$sLastName = $oUserProfile->lastName ?? $sEmail;
 		}
 
-		$sServiceProviderOrganizationKey = Config::GetIdpKey($sLoginMode, 'org_idp_key', 'organization');
-		$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $oUserProfile->data[$sServiceProviderOrganizationKey] ?? null);
+		$serviceProviderOrganizationKey = Config::GetIdpSearchKey($sLoginMode, 'org_idp_key', 'organization');
+		$sIdPOrgName = IdpMatchingTable::GetIdpFieldValue($oUserProfile, $serviceProviderOrganizationKey);
+		$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $sIdPOrgName);
 		$aPersonParams = [
 			'first_name' => $sFirstName,
 			'name' => $sLastName,
@@ -236,11 +237,11 @@ class ProvisioningService {
 	 */
 	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
 	{
-		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'profiles_idp_key', 'groups');
+		$serviceProviderProfileKey = Config::GetIdpSearchKey($sLoginMode, 'profiles_idp_key', 'groups');
 		$sSeparator = Config::GetIdpKey($sLoginMode, 'profiles_idp_separator', null);
 		$aMatchingTable = $aProviderConf['groups_to_profiles'] ?? null;
 
-		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_profiles', $sServiceProviderProfileKey, $sSeparator);
+		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_profiles', $serviceProviderProfileKey, $sSeparator);
 		$aRequestedProfileNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
 		if (is_null($aRequestedProfileNames)){
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
@@ -339,12 +340,12 @@ class ProvisioningService {
 	 */
 	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId=null)
 	{
-		$sServiceProviderProfileKey = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_key', 'allowed_orgs');
+		$serviceOrgsKey = Config::GetIdpSearchKey($sLoginMode, 'allowed_orgs_idp_key', 'allowed_orgs');
 		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_separator', null);
 		$sOrgOqlSearchField = Config::GetIdpKey($sLoginMode, 'allowed_orgs_oql_search_field', 'name');
 		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
 
-		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $sServiceProviderProfileKey, $sSeparator);
+		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $serviceOrgsKey, $sSeparator);
 		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
 		if (is_null($aRequestedOrgNames)){
 			$aRequestedOrgNames = Config::GetDefaultAllowedOrgs($sLoginMode);
