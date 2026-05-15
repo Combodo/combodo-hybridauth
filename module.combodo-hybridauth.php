@@ -74,7 +74,7 @@ SetupWebPage::AddModule(
                 'debug' => true,
                 'url' => 'keycloak_url',
                 'realm' => 'my_realm',
-                'label' => 'keycloak',
+                'label' => 'Sign in with Keycloak',
                 'tooltip' => 'click to authenticate through keycloak',
                 'icon_url' => '',
                 'synchronize_contact' => false,
