@@ -319,6 +319,29 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
 	}
 
+
+	public function testGetTwigContext_EmptyLabel() {
+		$sMode = 'basic-buttons';
+
+		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+			[ "$sMode" => [ 'enabled' => true, 'label' => '', 'tooltip' => ' ' ]]
+		);
+
+		$oHybridAuthLoginExtension = new HybridAuthLoginExtension();
+		$aExpected = [
+			[
+				'sLoginMode' => "hybridauth-$sMode",
+				'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sMode),
+				'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sMode),
+				'sFaImage' => "fa-$sMode",
+				'sIconUrl' => null,
+			],
+		];
+		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
+	}
+
 	public function testGetTwigContext_MSGraph() {
 		$sMode = 'MicrosoftGraph';
 

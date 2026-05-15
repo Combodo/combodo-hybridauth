@@ -431,8 +431,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				]
 			);
 
-			$sLabel = isset($aProviderData['label']) ? $aProviderData['label'] : Dict::Format('HybridAuth:Login:SignIn', $sProvider);
-			$sTooltip = isset($aProviderData['tooltip']) ? $aProviderData['tooltip'] : Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider);
+			$sLabel = $this->GetLabel($aProviderData, 'label', Dict::Format('HybridAuth:Login:SignIn', $sProvider));
+			$sTooltip = $this->GetLabel($aProviderData, 'tooltip', Dict::Format('HybridAuth:Login:SignInTooltip', $sProvider));
 			$aData[] = [
 				'sLoginMode' => "hybridauth-$sProvider",
 				'sLabel' => $sLabel,
@@ -447,6 +447,16 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		$oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
 
 		return $oLoginContext;
+	}
+
+	private function GetLabel(array $aProviderData, string $sKey, $sDefaultLabel) : string {
+		$sLabel = $aProviderData[$sKey] ?? null;
+
+		if (! empty($sLabel) && ! empty(trim($sLabel))){
+			return $sLabel;
+		}
+
+		return $sDefaultLabel;
 	}
 
 	/**
