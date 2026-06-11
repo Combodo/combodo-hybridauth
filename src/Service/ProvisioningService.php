@@ -275,14 +275,7 @@ class ProvisioningService {
 		}
 
 		if (count($aIdsToAttach)==0) {
-			\IssueLog::Error("no valid URP_Profile to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
-
-			$exceptionToRaise = new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
-				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
-
-			if ($oUser->IsNew()){
-				throw $exceptionToRaise;
-			}
+			\IssueLog::Error("use default profile (no valid URP_Profile to attach to user)", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
 
 			//fallback to default profiles: user looses his previous profiles
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
@@ -292,7 +285,8 @@ class ProvisioningService {
 			}
 
 			if (count($aIdsToAttach)==0) {
-				throw $exceptionToRaise;
+				throw new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
+					['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
 			}
 		}
 

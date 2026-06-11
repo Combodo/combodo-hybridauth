@@ -107,6 +107,15 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile($oUserProfile, null, true);
 	}
 
+	public function testSynchronizeProfilesMatchingAndProvisioningOkAtUserCreationWithoutAnyGroupToProfileMatchingTableConfigured() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		$this->InitializeGroupsToProfile($this->sLoginMode, null);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ["Configuration Manager", "Administrator", "Portal power user"];
+		$this->CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile($oUserProfile, ["Administrator", "Configuration Manager", "Portal power user"]);
+	}
+
 	public function testSynchronizeProfilesMatchingAndProvisioningOkAtUserCreation() {
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal power user"]]);
@@ -166,6 +175,25 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 			$this->assertEquals("no valid URP_Profile to attach to user", $e->getMessage());
 			$this->assertUserProfiles($oUser, ['Administrator'], "When no profile found SSO should raise an exception and user end up with default profiles afterwhile");
 		}
+	}
+
+	public function testSynchronizeProfilesOk_UserUpdateWithoutAnyGroupToProfileMatchingTableConfigured() {
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
+		$this->InitializeGroupsToProfile($this->sLoginMode, null);
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups']= ['Portal user', "Change Approver"];
+		$sEmail = $this->sUniqId."@test.fr";
+
+		$aInitialProfileNames=[
+			"Configuration Manager", //to remove after provisioning update
+			"Change Approver", //to keep
+		];
+		$oUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, $aInitialProfileNames);
+
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
+		$this->assertUserProfiles($oUser, ['Portal user', "Change Approver"]);
 	}
 
 	public function testSynchronizeProfilesOk_UserUpdate() {

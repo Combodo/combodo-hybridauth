@@ -139,6 +139,22 @@ class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertAllowedOrg($oUser, []);
 	}
 
+	public function testAllowedOrgsUpdatedViaIdpResponseExactMatch_NoExplodeConfiguredWithoutAnyGroupsToAllowedOrgMatchingTable() {
+		$sOrgName1 = $this->CreateOrgAndGetName();
+		$sOrgName2 = $this->CreateOrgAndGetName();
+
+		$oUserProfile = new Profile();
+		$oUserProfile->data['allowed_orgs']= [$sOrgName1, $sOrgName2];
+		$sEmail = $this->sUniqId."@test.fr";
+
+		$oUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ["Configuration Manager"]);
+		$this->assertAllowedOrg($oUser, []);
+
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeAllowedOrgs($this->sLoginMode, $sEmail , $oUser, $oUserProfile, $aProviderConf, "");
+		$this->assertAllowedOrg($oUser, [$sOrgName1, $sOrgName2]);
+	}
+
 	public function testAllowedOrgsUpdatedViaIdpResponseExactMatch_NoExplodeConfigured() {
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();

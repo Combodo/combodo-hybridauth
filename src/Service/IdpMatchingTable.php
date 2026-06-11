@@ -42,13 +42,9 @@ class IdpMatchingTable
 	 */
 	public function GetObjectNamesFromIdpMatchingTable(string $sEmail, Profile $oUserProfile): ?array
 	{
-		if (is_null($this->aMatchingTable)) {
-			return null;
-		}
-
 		IssueLog::Debug(__METHOD__.": use matching table", HybridAuthLoginExtension::LOG_CHANNEL, [$this->sMatchingTableConfigurationKey => $this->aMatchingTable]);
 
-		if (!is_array($this->aMatchingTable)) {
+		if (! is_null($this->aMatchingTable) && !is_array($this->aMatchingTable)) {
 			IssueLog::Warning("Configuration issue with $this->sMatchingTableConfigurationKey section", null, ['login_mode' => $this->sLoginMode, $this->sMatchingTableConfigurationKey => $this->aMatchingTable]);
 
 			return null;
@@ -64,11 +60,15 @@ class IdpMatchingTable
 			$aSpIds = $aFields;
 		} elseif (!is_array($aSpIds)) {
 			IssueLog::Warning("Service provider not an array", null, ['serviceProviderKey' => $this->serviceProviderKey, 'aSpIds' => $aSpIds]);
-
 			return null;
 		}
 
 		IssueLog::Debug("Service provider contains proper value", null, ['serviceProviderKey' => $this->serviceProviderKey, 'aSpIds' => $aSpIds]);
+
+		if (is_null($this->aMatchingTable)) {
+			IssueLog::Debug("No matching table", null, ['serviceProviderKey' => $this->serviceProviderKey]);
+			return $aSpIds;
+		}
 
 		foreach ($aSpIds as $sSpGroupId) {
 			$profileName = $this->aMatchingTable[$sSpGroupId] ?? null;
