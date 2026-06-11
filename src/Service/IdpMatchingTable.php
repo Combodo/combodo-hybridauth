@@ -52,12 +52,18 @@ class IdpMatchingTable
 
 		$aCurrentProfilesName = [];
 		$aSpIds = IdpMatchingTable::GetIdpFieldValue($oUserProfile, $this->serviceProviderKey);
-		if (is_string($aSpIds) && !is_null($this->sSeparator)) {
-			$aFields = [];
-			foreach (explode($this->sSeparator, $aSpIds) as $sValue) {
-				$aFields[] = trim($sValue);
+		if (is_string($aSpIds)) {
+			if (is_null($this->sSeparator)) {
+				//one single string value converted into a single value array. no need to configure separator if useless for current IdP
+				$aFields = [$aSpIds];
+				$aSpIds = $aFields;
+			} else {
+				$aFields = [];
+				foreach (explode($this->sSeparator, $aSpIds) as $sValue) {
+					$aFields[] = trim($sValue);
+				}
+				$aSpIds = $aFields;
 			}
-			$aSpIds = $aFields;
 		} elseif (!is_array($aSpIds)) {
 			IssueLog::Warning("Service provider not an array", null, ['serviceProviderKey' => $this->serviceProviderKey, 'aSpIds' => $aSpIds]);
 			return null;
