@@ -73,7 +73,9 @@ class Config
 	 */
 	public static function SetHybridConfig(array $aProvidersConfig, string $sSelectedSP, bool $bEnabled)
 	{
-		IssueLog::Info('SetHybridConfig', HybridAuthLoginExtension::LOG_CHANNEL,
+		IssueLog::Info(
+			'SetHybridConfig',
+			HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'aProviderConf' => $aProvidersConfig,
 				'sSelectedSP' => $sSelectedSP,
@@ -148,15 +150,17 @@ class Config
 				}
 
 				//login_mode forced and not enabled. exit to stop login automata
-				IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration."
-					, HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
+				IssueLog::Error("Allowed login_mode forced without being properly properly enabled. Please check combodo-hybridauth section in iTop configuration.", HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 				throw new \Exception("Login modes configuration needs to be fixed.");
 			}
 		}
 
 		//login_mode forced and not configured. exit to stop login automata
-		IssueLog::Error("Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.",
-			HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
+		IssueLog::Error(
+			"Allowed login_mode forced forced without being configured. Please check combodo-hybridauth section in iTop configuration.",
+			HybridAuthLoginExtension::LOG_CHANNEL,
+			['sLoginMode' => $sLoginMode]
+		);
 		throw new \Exception("Login modes configuration needs to be fixed.");
 	}
 
@@ -207,14 +211,14 @@ class Config
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf) {
 			$aDefaultProfiles = $aCurrentProviderConf['default_profiles'] ?? null;
-			if (! is_null($aDefaultProfiles) && is_array($aDefaultProfiles) ) {
+			if (! is_null($aDefaultProfiles) && is_array($aDefaultProfiles)) {
 				return $aDefaultProfiles;
 			}
 		}
 
 		//from global conf
 		$aDefaultProfiles = static::Get('default_profiles', null);
-		if (! is_null($aDefaultProfiles) && is_array($aDefaultProfiles) ) {
+		if (! is_null($aDefaultProfiles) && is_array($aDefaultProfiles)) {
 			return $aDefaultProfiles;
 		}
 
@@ -253,7 +257,7 @@ class Config
 		return static::Get('default_organization');
 	}
 
-	public static function GetDefaultAllowedOrgs(string $sLoginMode) : array
+	public static function GetDefaultAllowedOrgs(string $sLoginMode): array
 	{
 		$aCurrentProviderConf = self::GetProviderConf($sLoginMode);
 		if (null !== $aCurrentProviderConf) {

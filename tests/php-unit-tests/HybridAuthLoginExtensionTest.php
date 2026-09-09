@@ -23,7 +23,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 {
 	//iTop called from outside
 	//users need to be persisted in DB
-	const USE_TRANSACTION = false;
+	public const USE_TRANSACTION = false;
 
 	protected $sEmail;
 	protected $sProvisionedUserPersonEmail;
@@ -45,8 +45,11 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->sUniqId = "OpenID".uniqid();
 		$this->oOrg = $this->CreateOrganization($this->sUniqId);
 
-		$oProfile = MetaModel::GetObjectFromOQL("SELECT URP_Profiles WHERE name = :name",
-			['name' => 'Configuration Manager'], true);
+		$oProfile = MetaModel::GetObjectFromOQL(
+			"SELECT URP_Profiles WHERE name = :name",
+			['name' => 'Configuration Manager'],
+			true
+		);
 		$this->sEmail = $this->sUniqId."@test.fr";
 
 		/** @var Person $oPerson */
@@ -58,7 +61,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		]);
 
 		$oSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
-		$oSet->AddItem(MetaModel::NewObject('URP_UserProfile', array('profileid' => $oProfile->GetKey(), 'reason' => 'UNIT Tests')));
+		$oSet->AddItem(MetaModel::NewObject('URP_UserProfile', ['profileid' => $oProfile->GetKey(), 'reason' => 'UNIT Tests']));
 
 		/** @var \UserExternal $oUser */
 		$this->oUser = $this->createObject(UserExternal::class, [
@@ -71,7 +74,8 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$sSsoMode = 'ServiceProviderMock';
 
 		$aCurrentModuleSettings = $this->oiTopConfig->GetModuleSetting('combodo-hybridauth', 'providers', []);
-		$aServiceProviderConf = array_merge($aCurrentModuleSettings,
+		$aServiceProviderConf = array_merge(
+			$aCurrentModuleSettings,
 			[
 				"$sSsoMode" => [
 					'adapter' => 'Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock',
@@ -182,10 +186,14 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 
 		if (!$bPortalPage) {
 			$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
-			$this->assertTrue(false !== strpos($sOutput, $sFirstName),
-				"user logged in => his firstname . ".$sFirstName." . should appear in the welcome page :".$sOutput);
-			$this->assertTrue(false !== strpos($sOutput, $sLatName),
-				"user logged in => his lastname . ".$sLatName." . should appear in the welcome page :".$sOutput);
+			$this->assertTrue(
+				false !== strpos($sOutput, $sFirstName),
+				"user logged in => his firstname . ".$sFirstName." . should appear in the welcome page :".$sOutput
+			);
+			$this->assertTrue(
+				false !== strpos($sOutput, $sLatName),
+				"user logged in => his lastname . ".$sLatName." . should appear in the welcome page :".$sOutput
+			);
 		}
 
 		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $this->oOrg->GetKey());
@@ -280,7 +288,9 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[
 				'notallowed-enabled-provider' => [ 'enabled' => true ],
 				'allowed-enabled-provider' => [ 'enabled' => true ],
@@ -297,12 +307,15 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		);
 	}
 
-	public function testGetTwigContext_BasicConf() {
+	public function testGetTwigContext_BasicConf()
+	{
 		$sMode = 'basic-buttons';
 
 		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[ "$sMode" => [ 'enabled' => true ]]
 		);
 
@@ -319,13 +332,15 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
 	}
 
-
-	public function testGetTwigContext_EmptyLabel() {
+	public function testGetTwigContext_EmptyLabel()
+	{
 		$sMode = 'basic-buttons';
 
 		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[ "$sMode" => [ 'enabled' => true, 'label' => '', 'tooltip' => ' ' ]]
 		);
 
@@ -342,12 +357,15 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
 	}
 
-	public function testGetTwigContext_MSGraph() {
+	public function testGetTwigContext_MSGraph()
+	{
 		$sMode = 'MicrosoftGraph';
 
 		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[ "$sMode" => [ 'enabled' => true ]]
 		);
 
@@ -364,12 +382,15 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
 	}
 
-	public function testGetTwigContext_Icon() {
+	public function testGetTwigContext_Icon()
+	{
 		$sMode = 'basic-buttons';
 
 		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[ "$sMode" => [ 'enabled' => true, 'icon_url' => 'toto.png' ]]
 		);
 
@@ -380,18 +401,21 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 				'sLabel' => Dict::Format('HybridAuth:Login:SignIn', $sMode),
 				'sTooltip' => Dict::Format('HybridAuth:Login:SignInTooltip', $sMode),
 				'sFaImage' => null,
-				'sIconUrl' => utils::GetAbsoluteUrlAppRoot() . 'toto.png',
+				'sIconUrl' => utils::GetAbsoluteUrlAppRoot().'toto.png',
 			],
 		];
 		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
 	}
 
-	public function testGetTwigContext_ImageUrl() {
+	public function testGetTwigContext_ImageUrl()
+	{
 		$sMode = 'basic-buttons';
 
 		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[ "$sMode" => [ 'enabled' => true, 'icon_url' => 'http://titi/toto.png' ]]
 		);
 
@@ -408,12 +432,15 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertEquals($aExpected, $oHybridAuthLoginExtension->GetTwigContext()->GetBlockExtension('login_sso_buttons')->GetData());
 	}
 
-	public function testGetTwigContext_Labels() {
+	public function testGetTwigContext_Labels()
+	{
 		$sMode = 'basic-buttons';
 
 		MetaModel::GetConfig()->SetAllowedLoginTypes([ "hybridauth-$sMode" ]);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[ "$sMode" => [ 'enabled' => true, 'label' => "My Label", 'tooltip' => "My Tooltip" ]]
 		);
 

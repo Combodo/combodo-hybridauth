@@ -18,14 +18,15 @@ use MetaModel;
 use Person;
 use UserExternal;
 
-require_once __DIR__ . "/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractHybridauthTest.php";
 
 class ProvisioningServiceTest extends AbstractHybridauthTest
 {
-	const USE_TRANSACTION = false;
+	public const USE_TRANSACTION = false;
 
 	//nominal usecase
-	public function testDoProvisioningCreationOKUsingDefaultConfiguredOrgAndProfiles(){
+	public function testDoProvisioningCreationOKUsingDefaultConfiguredOrgAndProfiles()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
@@ -45,7 +46,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
+		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -67,7 +68,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Portal user']);
 	}
 
-	public function testDoProvisioningCreationOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching(){
+	public function testDoProvisioningCreationOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
@@ -89,13 +91,13 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertNull(LoginWebPage::FindUser($sEmail));
 
 		$oProfileWithMostFields = new Profile();
-		$oProfileWithMostFields->data['groups']= ['sp_id1', 'sp_id2'];
-		$oProfileWithMostFields->data['allowed_orgs']= ['sp_id1', 'sp_id2'];
+		$oProfileWithMostFields->data['groups'] = ['sp_id1', 'sp_id2'];
+		$oProfileWithMostFields->data['allowed_orgs'] = ['sp_id1', 'sp_id2'];
 		$oProfileWithMostFields->email = $this->sUniqId."@test.fr";
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
+		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -118,7 +120,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertAllowedOrg($oFoundUser, [$sDefaultOrgName, $sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
-	public function testDoProvisioning_RefreshOKFromConfiguredDefaultOrgProfiles(){
+	public function testDoProvisioning_RefreshOKFromConfiguredDefaultOrgProfiles()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
@@ -130,11 +133,11 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , new Profile());
+		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, new Profile());
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
-		$sDefaultOrgName2 = "anotherorg_" . $this->sUniqId;
+		$sDefaultOrgName2 = "anotherorg_".$this->sUniqId;
 		$oOrg2 = $this->CreateOrganization($sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
@@ -144,7 +147,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
+		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
@@ -167,7 +170,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Configuration Manager']);
 	}
 
-	public function testDoProvisioningRefreshOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching(){
+	public function testDoProvisioningRefreshOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
@@ -179,11 +183,11 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , new Profile());
+		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, new Profile());
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
-		$sDefaultOrgName2 = "anotherorg_" . $this->sUniqId;
+		$sDefaultOrgName2 = "anotherorg_".$this->sUniqId;
 		$oOrg2 = $this->CreateOrganization($sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
@@ -195,13 +199,13 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => [$sOrgName2, $sOrgName3]]);
 
 		$oProfileWithMostFields = new Profile();
-		$oProfileWithMostFields->data['groups']= ['sp_id1', 'sp_id2'];
-		$oProfileWithMostFields->data['allowed_orgs']= ['sp_id1', 'sp_id2'];
+		$oProfileWithMostFields->data['groups'] = ['sp_id1', 'sp_id2'];
+		$oProfileWithMostFields->data['allowed_orgs'] = ['sp_id1', 'sp_id2'];
 		$oProfileWithMostFields->email = $sEmail;
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
+		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
@@ -225,7 +229,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertAllowedOrg($oFoundUser, [$sDefaultOrgName2, $sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
-	public function testDoProvisioningRefreshFailsSSoConnectionForbiddenAndUserEndsUpWithDefaultProfilesAfterwhile(){
+	public function testDoProvisioningRefreshFailsSSoConnectionForbiddenAndUserEndsUpWithDefaultProfilesAfterwhile()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
@@ -237,7 +242,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$this->CreateOrganization($sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
-		ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , new Profile());
+		ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, new Profile());
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
@@ -247,12 +252,12 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithEmptyProfileGroups = new Profile();
 		$oProfileWithEmptyProfileGroups->email = $sEmail;
 		//no profile associated to user
-		$oProfileWithEmptyProfileGroups->data['groups']= [];
+		$oProfileWithEmptyProfileGroups->data['groups'] = [];
 
-		try{
-			ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail , $oProfileWithEmptyProfileGroups);
+		try {
+			ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithEmptyProfileGroups);
 			$this->fail("SSO should have failed with HybridProvisioningAuthException");
-		} catch(HybridProvisioningAuthException $e){
+		} catch (HybridProvisioningAuthException $e) {
 			$this->assertEquals("No sp group/profile matching found and no valid URP_Profile to attach to user", $e->getMessage());
 
 			/** @var UserExternal $oFoundUser */

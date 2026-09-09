@@ -6,7 +6,8 @@ use Exception;
 use Throwable;
 use utils;
 
-class HybridProvisioningAuthException extends Exception {
+class HybridProvisioningAuthException extends Exception
+{
 	public array $aContext = [];
 
 	public function __construct(string $message = "", int $code = 0, ?Throwable $previous = null, array $aContext = [])

@@ -172,7 +172,9 @@ class ConfigTest extends ItopDataTestCase
 
 	public function testGetProviderConfShouldReturnTheCorrespondingValue()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[
 				'Google' => ['ga' => 'bu'],
 			]
@@ -218,7 +220,9 @@ class ConfigTest extends ItopDataTestCase
 	 */
 	public function testIsOptionEnabled_CheckThatUserSynchroShouldMatchConfiguration($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[
 				'Google' => $aProviderConf,
 			]
@@ -229,8 +233,11 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals($bExpectedRes, Config::IsOptionEnabled('hybridauth-Google', 'synchronize_user'), $sMessage);
 	}
 
-	public function PrepareSynchroProfileConfiguration($aProviderProfiles, $sProviderProfile, $aGlobalProfiles, $sGlobalProviderProfile) {
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+	public function PrepareSynchroProfileConfiguration($aProviderProfiles, $sProviderProfile, $aGlobalProfiles, $sGlobalProviderProfile)
+	{
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[
 				'Google' => ['default_profiles' => $aProviderProfiles, 'default_profile' => $sProviderProfile],
 			]
@@ -240,42 +247,50 @@ class ConfigTest extends ItopDataTestCase
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $sGlobalProviderProfile);
 	}
 
-	public function testGetSynchroProfileProvider_FurtherProfilesFromProviderLevel() {
+	public function testGetSynchroProfileProvider_FurtherProfilesFromProviderLevel()
+	{
 		$this->PrepareSynchroProfileConfiguration(['SuperUser', 'Administrator'], null, null, null);
 		$this->assertEquals(['SuperUser', 'Administrator'], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
-	public function testGetSynchroProfileProvider_EmptyProfileListFromProviderLevel() {
+	public function testGetSynchroProfileProvider_EmptyProfileListFromProviderLevel()
+	{
 		$this->PrepareSynchroProfileConfiguration([], null, null, null);
 		$this->assertEquals([], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
-	public function testGetSynchroProfileProvider_FurtherProfilesFromGlobalLevel() {
+	public function testGetSynchroProfileProvider_FurtherProfilesFromGlobalLevel()
+	{
 		$this->PrepareSynchroProfileConfiguration(null, null, ['SuperUser', 'Administrator'], null);
 		$this->assertEquals(['SuperUser', 'Administrator'], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
-	public function testGetSynchroProfileProvider_EmptyProfileListFromGlobalLevel() {
+	public function testGetSynchroProfileProvider_EmptyProfileListFromGlobalLevel()
+	{
 		$this->PrepareSynchroProfileConfiguration(null, null, [], null);
 		$this->assertEquals([], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
-	public function testGetSynchroProfileProvider_OneSingleProfileAtProviderLevel() {
+	public function testGetSynchroProfileProvider_OneSingleProfileAtProviderLevel()
+	{
 		$this->PrepareSynchroProfileConfiguration(null, 'SuperUser', null, null);
 		$this->assertEquals(['SuperUser'], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
-	public function testGetSynchroProfileProvider_OneSingleProfileAtGlobalLevel() {
+	public function testGetSynchroProfileProvider_OneSingleProfileAtGlobalLevel()
+	{
 		$this->PrepareSynchroProfileConfiguration(null, null, null, 'SuperUser');
 		$this->assertEquals(['SuperUser'], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
-	public function testGetSynchroProfileProvider_NoDefaultProfileConfigured() {
+	public function testGetSynchroProfileProvider_NoDefaultProfileConfigured()
+	{
 		$this->PrepareSynchroProfileConfiguration(null, null, null, null);
 		$this->assertEquals(['Portal User'], Config::GetSynchroProfiles('hybridauth-Google'));
 	}
 
-	public function testGetSynchroProfileProvider_NoDefaultProfileConfigured_EmptyStringValue() {
+	public function testGetSynchroProfileProvider_NoDefaultProfileConfigured_EmptyStringValue()
+	{
 		$this->PrepareSynchroProfileConfiguration(null, '', null, null);
 		$this->assertEquals(['Portal User'], Config::GetSynchroProfiles('hybridauth-Google'));
 
@@ -318,7 +333,9 @@ class ConfigTest extends ItopDataTestCase
 	 */
 	public function testGetDebugShouldMatchTheConfigurationForTheProvider($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[
 				'Google' => $aProviderConf,
 			]
@@ -329,10 +346,11 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals($bExpectedRes, Config::GetDebug('Google'), $sMessage);
 	}
 
-
 	public function testGetDefaultOrgShouldMatchPerProviderConfiguration()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers',
+		MetaModel::GetConfig()->SetModuleSetting(
+			'combodo-hybridauth',
+			'providers',
 			[
 				'Google' => ['default_organization' => 'provider-org'],
 				'NoDefaultOrg' => [],
@@ -345,7 +363,6 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-NoDefaultOrg'), 'The default organization should be the global default when no organization is configured for the provider');
 		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-MissingProvider'), 'The default organization should be the global default when the provider is not present in the configuration');
 	}
-
 
 	public function SetHybridConfigProvider()
 	{
@@ -388,7 +405,8 @@ class ConfigTest extends ItopDataTestCase
 		];
 		Config::SetHybridConfig($aProvidersConfig, $sSelectedSP, $bEnabled);
 
-		$this->assertEquals($aProvidersConfig,
+		$this->assertEquals(
+			$aProvidersConfig,
 			MetaModel::GetConfig()->GetModuleSetting('combodo-hybridauth', 'providers', [])
 		);
 

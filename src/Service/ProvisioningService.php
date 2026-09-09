@@ -20,7 +20,8 @@ use Combodo\iTop\Application\Helper\Session;
 use URP_UserProfile;
 use UserExternal;
 
-class ProvisioningService {
+class ProvisioningService
+{
 	private static ProvisioningService $oInstance;
 
 	protected function __construct()
@@ -49,7 +50,8 @@ class ProvisioningService {
 	 * @return array
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function DoProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile) : array {
+	public function DoProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile): array
+	{
 		$oPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($sLoginMode, $sEmail, $oUserProfile);
 		$oUser = ProvisioningService::GetInstance()->DoUserProvisioning($sLoginMode, $sEmail, $oPerson, $oUserProfile);
 		return [$oPerson, $oUser];
@@ -63,7 +65,7 @@ class ProvisioningService {
 	 * @return \Person|null
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function DoPersonProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile) : Person
+	public function DoPersonProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile): Person
 	{
 		//HybridAuthProvisioning class comes from datamodel
 		//By default Person is found based on email search (\LoginWebPage::FindPerson)
@@ -71,7 +73,7 @@ class ProvisioningService {
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
 		$oPerson = $oHybridAuthProvisioning->FindPerson($sLoginMode, $sEmail, $oUserProfile);
 		$bRefresh = false;
-		if (! is_null($oPerson)){
+		if (! is_null($oPerson)) {
 			if (! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact')) {
 				return $oPerson;
 			}
@@ -80,12 +82,16 @@ class ProvisioningService {
 		}
 
 		if (! Config::IsOptionEnabled($sLoginMode, 'synchronize_contact')) {
-			throw new HybridProvisioningAuthException("Cannot find Person and no automatic Contact provisioning (synchronize_contact)", 0, null,
-				['login_mode' => $sLoginMode, 'email' => $sEmail]); // No automatic Contact provisioning
+			throw new HybridProvisioningAuthException(
+				"Cannot find Person and no automatic Contact provisioning (synchronize_contact)",
+				0,
+				null,
+				['login_mode' => $sLoginMode, 'email' => $sEmail]
+			); // No automatic Contact provisioning
 		}
 
 		// Create the person
-		if ($bRefresh){
+		if ($bRefresh) {
 			$sFirstName = $oUserProfile->firstName ?? $oPerson->Get('first_name');
 			$sLastName = $oUserProfile->lastName ?? $oPerson->Get('name');
 		} else {
@@ -128,23 +134,20 @@ class ProvisioningService {
 	{
 		CMDBObject::SetTrackOrigin('custom-extension');
 		$sInfo = 'External User provisioning';
-		if (Session::IsSet('login_mode'))
-		{
+		if (Session::IsSet('login_mode')) {
 			$sInfo .= " (".Session::Get('login_mode').")";
 		}
 		CMDBObject::SetTrackInfo($sInfo);
 
-		if (is_null($oPerson)){
+		if (is_null($oPerson)) {
 			$oPerson = MetaModel::NewObject('Person');
 		}
 		$oOrg = MetaModel::GetObjectByName('Organization', $sOrganization, false);
-		if (is_null($oOrg))
-		{
+		if (is_null($oOrg)) {
 			throw new Exception(Dict::S('UI:Login:Error:WrongOrganizationName'));
 		}
 		$oPerson->Set('org_id', $oOrg->GetKey());
-		foreach ($aPersonParams as $sAttCode => $sValue)
-		{
+		foreach ($aPersonParams as $sAttCode => $sValue) {
 			$oPerson->Set($sAttCode, $sValue);
 		}
 
@@ -178,11 +181,15 @@ class ProvisioningService {
 	 * @return \UserExternal
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function DoUserProvisioning(string $sLoginMode, string $sEmail, Person $oPerson, Profile $oUserProfile) : UserExternal
+	public function DoUserProvisioning(string $sLoginMode, string $sEmail, Person $oPerson, Profile $oUserProfile): UserExternal
 	{
 		if (!MetaModel::IsValidClass('URP_Profiles')) {
-			throw new HybridProvisioningAuthException("URP_Profiles is not a valid class. Automatic creation of Users is not supported in this context, sorry.", 0, null,
-				['login_mode' => $sLoginMode, 'email' => $sEmail]);
+			throw new HybridProvisioningAuthException(
+				"URP_Profiles is not a valid class. Automatic creation of Users is not supported in this context, sorry.",
+				0,
+				null,
+				['login_mode' => $sLoginMode, 'email' => $sEmail]
+			);
 		}
 
 		CMDBObject::SetTrackOrigin('custom-extension');
@@ -218,7 +225,7 @@ class ProvisioningService {
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
 		$oHybridAuthProvisioning->CompleteUserProvisioningBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUser, $oUserProfile, $sInfo);
 
-		if ($oUser->IsModified()){
+		if ($oUser->IsModified()) {
 			$oUser->DBWrite();
 		}
 		return $oUser;
@@ -243,14 +250,14 @@ class ProvisioningService {
 
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_profiles', $serviceProviderProfileKey, $sSeparator);
 		$aRequestedProfileNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
-		if (is_null($aRequestedProfileNames)){
+		if (is_null($aRequestedProfileNames)) {
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 		}
 
 		$exceptionToRaise = null;
-		if (count($aRequestedProfileNames)==0){
+		if (count($aRequestedProfileNames) == 0) {
 			$exceptionToRaise = new HybridProvisioningAuthException("No sp group/profile matching found and no valid URP_Profile to attach to user");
-			if ($oUser->IsNew()){
+			if ($oUser->IsNew()) {
 				throw $exceptionToRaise;
 			}
 
@@ -264,23 +271,30 @@ class ProvisioningService {
 		$aIdsToAttach = [];
 		$aNamesToAttach = [];
 		while ($oCurrentProfile = $oSet->Fetch()) {
-			$aIdsToAttach []= $oCurrentProfile->GetKey();
-			$aNamesToAttach []= $oCurrentProfile->Get('name');
+			$aIdsToAttach [] = $oCurrentProfile->GetKey();
+			$aNamesToAttach [] = $oCurrentProfile->Get('name');
 		}
 
 		$aUnfoundNames = array_diff($aRequestedProfileNames, $aNamesToAttach);
 		if (count($aUnfoundNames) > 0) {
-			\IssueLog::Warning("Cannot add some unfound profiles", HybridAuthLoginExtension::LOG_CHANNEL,
-				[ 'login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound profiles' => $aUnfoundNames ]);
+			\IssueLog::Warning(
+				"Cannot add some unfound profiles",
+				HybridAuthLoginExtension::LOG_CHANNEL,
+				[ 'login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound profiles' => $aUnfoundNames ]
+			);
 		}
 
-		if (count($aIdsToAttach)==0) {
+		if (count($aIdsToAttach) == 0) {
 			\IssueLog::Error("no valid URP_Profile to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
 
-			$exceptionToRaise = new HybridProvisioningAuthException("no valid URP_Profile to attach to user", 0, null,
-				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
+			$exceptionToRaise = new HybridProvisioningAuthException(
+				"no valid URP_Profile to attach to user",
+				0,
+				null,
+				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]
+			);
 
-			if ($oUser->IsNew()){
+			if ($oUser->IsNew()) {
 				throw $exceptionToRaise;
 			}
 
@@ -288,33 +302,32 @@ class ProvisioningService {
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 			$oSet = $this->GetOqlProfileSet($aRequestedProfileNames);
 			while ($oCurrentProfile = $oSet->Fetch()) {
-				$aIdsToAttach []= $oCurrentProfile->GetKey();
+				$aIdsToAttach [] = $oCurrentProfile->GetKey();
 			}
 
-			if (count($aIdsToAttach)==0) {
+			if (count($aIdsToAttach) == 0) {
 				throw $exceptionToRaise;
 			}
 		}
 
 		$oProfilesSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
 
-		foreach ($aIdsToAttach as $iProfileId)
-		{
+		foreach ($aIdsToAttach as $iProfileId) {
 			$oLink = MetaModel::NewObject('URP_UserProfile', ['profileid' => $iProfileId, 'reason' => $sInfo]);
 			$oProfilesSet->AddItem($oLink);
 		}
 
 		$oUser->Set('profile_list', $oProfilesSet);
 
-		if (! is_null($exceptionToRaise)){
-			if ($oUser->IsModified()){
+		if (! is_null($exceptionToRaise)) {
+			if ($oUser->IsModified()) {
 				$oUser->DBWrite();
 			}
 			throw $exceptionToRaise;
 		}
 	}
 
-	private function GetOqlProfileSet(array $aRequestedProfileNames) : DBObjectSet
+	private function GetOqlProfileSet(array $aRequestedProfileNames): DBObjectSet
 	{
 		// read all the matching profiles
 		$sInSubquery = '"'.implode('","', $aRequestedProfileNames).'"';
@@ -338,7 +351,7 @@ class ProvisioningService {
 	 * @return void
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId=null)
+	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId = null)
 	{
 		$serviceOrgsKey = Config::GetIdpSearchKey($sLoginMode, 'allowed_orgs_idp_key', 'allowed_orgs');
 		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_separator', null);
@@ -347,7 +360,7 @@ class ProvisioningService {
 
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $serviceOrgsKey, $sSeparator);
 		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
-		if (is_null($aRequestedOrgNames)){
+		if (is_null($aRequestedOrgNames)) {
 			$aRequestedOrgNames = Config::GetDefaultAllowedOrgs($sLoginMode);
 		}
 
@@ -366,8 +379,8 @@ class ProvisioningService {
 
 			$aOrgsNamesToAttach = [];
 			while ($oCurrenOrg = $oOrgSet->Fetch()) {
-				$aOrgsIdsToAttach []= $oCurrenOrg->GetKey();
-				$aOrgsNamesToAttach []= $oCurrenOrg->Get($sOrgOqlSearchField);
+				$aOrgsIdsToAttach [] = $oCurrenOrg->GetKey();
+				$aOrgsNamesToAttach [] = $oCurrenOrg->Get($sOrgOqlSearchField);
 				$iCount++;
 			}
 
@@ -384,7 +397,7 @@ class ProvisioningService {
 				array_unshift($aOrgsIdsToAttach, $sPersonOrgId);
 			}
 
-			foreach ($aOrgsIdsToAttach as $iOrgId){
+			foreach ($aOrgsIdsToAttach as $iOrgId) {
 				$oLink = MetaModel::NewObject('URP_UserOrg', ['allowed_org_id' => $iOrgId, 'reason' => $sInfo]);
 				$oAllowedOrgSet->AddItem($oLink);
 			}
