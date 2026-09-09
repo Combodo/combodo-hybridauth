@@ -21,26 +21,29 @@ use MetaModel;
 use Person;
 use UserExternal;
 
-require_once __DIR__ . "/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractHybridauthTest.php";
 
 class PersonProvisioningServiceTest extends AbstractHybridauthTest
 {
-	public function testDoPersonProvisioning_PersonAlreadyExists(){
+	public function testDoPersonProvisioning_PersonAlreadyExists()
+	{
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
 
-		$oFoundPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , new Profile());
+		$oFoundPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile());
 		$this->assertEquals($oPerson->GetKey(), $oFoundPerson->GetKey(), "Person already created; should return existing one in DB");
 	}
 
-	public function testDoPersonProvisioningAndSSOShouldFailWithSynchroDisabled(){
+	public function testDoPersonProvisioningAndSSOShouldFailWithSynchroDisabled()
+	{
 		$sEmail = $this->sUniqId."@test.fr";
 
 		$this->expectExceptionMessage("Cannot find Person and no automatic Contact provisioning (synchronize_contact)");
-		ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , new Profile());
+		ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile());
 	}
 
-	public function testDoPersonProvisioningShouldCreatePersonWithEmailOnlyIfOtherFieldFromIdpAreMissing(){
+	public function testDoPersonProvisioningShouldCreatePersonWithEmailOnlyIfOtherFieldFromIdpAreMissing()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
 		$sDefaultOrgName = $this->sUniqId;
@@ -52,7 +55,7 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
-		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , $oUserProfile);
+		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -64,7 +67,8 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals('', $oFoundPerson->Get('phone'));
 	}
 
-	public function testDoPersonProvisioningShouldCreatePersonWithAllFieldsComingFromIdPResponse(){
+	public function testDoPersonProvisioningShouldCreatePersonWithAllFieldsComingFromIdPResponse()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
 		$sDefaultOrgName = $this->sUniqId;
@@ -79,7 +83,7 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail , $oProfileWithMostFields);
+		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -116,7 +120,6 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 
 		$this->CreateOrganization($sDefaultOrgName);
 		$this->CreateOrganization($sOrgName2);
-
 
 		$sOrgName = $this->InvokeNonPublicMethod(ProvisioningService::class, 'GetOrganizationForProvisioning', ProvisioningService::GetInstance(), [$this->sLoginMode, $sIdpOrgName]);
 		$this->assertEquals($sExpectedOrgReturned, $sOrgName);

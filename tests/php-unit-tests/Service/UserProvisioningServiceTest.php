@@ -22,11 +22,12 @@ use Person;
 use UserExternal;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 
-require_once __DIR__ . "/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractHybridauthTest.php";
 
 class UserProvisioningServiceTest extends AbstractHybridauthTest
 {
-	public function testDoUserProvisioningShouldCreateUserWithDefaultProfiles() {
+	public function testDoUserProvisioningShouldCreateUserWithDefaultProfiles()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
@@ -35,7 +36,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 
 		self::assertNull(LoginWebPage::FindUser($sEmail));
 
-		$oReturnedCreatedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
+		$oReturnedCreatedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail, $oPerson, new Profile());
 
 		/** @var UserExternal $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
@@ -48,7 +49,8 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Portal user']);
 	}
 
-	public function testDoUserProvisioningShouldUpdateUserWithDefaultProfiles() {
+	public function testDoUserProvisioningShouldUpdateUserWithDefaultProfiles()
+	{
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
 		$oFoundUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Portal user']);
@@ -59,7 +61,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
 
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
-		ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
+		ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail, $oPerson, new Profile());
 
 		/** @var UserExternal $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
@@ -70,14 +72,15 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		$this->assertUserProfiles($oFoundUser, ['Configuration Manager']);
 	}
 
-	public function testDoUserProvisioningShouldNotRefreshIfFeatureIsDisabled() {
+	public function testDoUserProvisioningShouldNotRefreshIfFeatureIsDisabled()
+	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
 		$this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Portal user']);
 
-		$oReturnedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail , $oPerson, new Profile());
+		$oReturnedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail, $oPerson, new Profile());
 		$this->assertUserProfiles($oReturnedUser, ['Portal user']);
 		self::assertEquals(0, $oReturnedUser->Get('contactid'));
 	}

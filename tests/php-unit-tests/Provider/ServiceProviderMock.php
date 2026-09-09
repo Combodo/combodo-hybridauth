@@ -75,10 +75,8 @@ class ServiceProviderMock extends OAuth2
 		return $aData;
 	}
 
-
 	public function disconnect()
 	{
 	}
-
 
 }
