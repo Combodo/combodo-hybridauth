@@ -11,7 +11,7 @@ class IdpMatchingTable
 	private string $sLoginMode;
 	private mixed $aMatchingTable;
 	private string $sMatchingTableConfigurationKey;
-	/** @var string|array $serviceProviderKey */
+	/** @var string $serviceProviderKey */
 	private $serviceProviderKey;
 	private ?string $sSeparator;
 
@@ -19,7 +19,7 @@ class IdpMatchingTable
 	 * @param string $sLoginMode
 	 * @param mixed $aMatchingTable : matching definition between idp response and itop object names. should be an array or no matching applied
 	 * @param string $sMatchingTableConfigurationKey : used here only for supportability (logging/exception messages)
-	 * @param string|array $serviceProviderKey : key to fetch in IdP response
+	 * @param string $serviceProviderKey : key to fetch in IdP response
 	 * @param string|null $sSeparator : separator to explode IdP response in array if needed
 	 */
 	public function __construct(string $sLoginMode, mixed $aMatchingTable, string $sMatchingTableConfigurationKey, string $serviceProviderKey, ?string $sSeparator)
@@ -35,9 +35,9 @@ class IdpMatchingTable
 	 * Use IdP response to compute matching table and return a list of names
 	 *
 	 * @param string $sEmail
-	 * @param \Combodo\iTop\HybridAuth\Service\Profile $oUserProfile
+	 * @param Profile $oUserProfile
 	 *
-	 * @return array|null: return null when matching is not possible somehow. either it is not configured either IdP response does not fit
+	 * @return array|null return null when matching is not possible somehow. either it is not configured either IdP response does not fit
 	 * * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
 	public function GetObjectNamesFromIdpMatchingTable(string $sEmail, Profile $oUserProfile): ?array
@@ -128,7 +128,7 @@ class IdpMatchingTable
 
 	/**
 	 * @param array $aData
-	 * @param array|string $serviceProviderKey
+	 * @param array|string|int $serviceProviderKey
 	 *
 	 * @return array|string|null
 	 */

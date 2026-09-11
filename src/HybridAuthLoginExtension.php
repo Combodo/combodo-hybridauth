@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @copyright   Copyright (C) 2010-2019 Combodo SARL
  * @license     https://www.combodo.com/documentation/combodo-software-license.html
@@ -31,10 +32,10 @@ if (!class_exists('Combodo\iTop\Application\Helper\Session')) {
 
 class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLogoutExtension, iLoginUIExtension
 {
-	const LOG_CHANNEL = "Hybridauth";
+	public const LOG_CHANNEL = "Hybridauth";
 
 	/** @var ?HybridauthService $oHybridauthService */
-	static $oHybridauthService;
+	public static $oHybridauthService;
 
 	//used only for testing purpose
 	public static function SetHybridauthService(?HybridauthService $oHybridauthService): void
@@ -109,7 +110,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 		$bLoginDebug = MetaModel::GetConfig()->Get('login_debug');
 		if ($bLoginDebug) {
-			IssueLog::Info(__METHOD__, null,
+			IssueLog::Info(
+				__METHOD__,
+				null,
 				[
 					'REQUEST_SCHEME' => $_SERVER['REQUEST_SCHEME'],
 					'HTTP_HOST' => $_SERVER['HTTP_HOST'],
@@ -142,7 +145,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (!Session::IsSet('login_mode')) {
 			$aSupportedLoginModes = self::ListSupportedLoginModes();
 			$sLoginMode = array_shift($aSupportedLoginModes);
-			if (! is_null($sLoginMode)){
+			if (! is_null($sLoginMode)) {
 				Session::Set('login_mode', $sLoginMode);
 			}
 		}
@@ -186,7 +189,6 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			return $sLoginMode;
 		}
 
-
 		return $_REQUEST['login_mode'] ?? null;
 	}
 
@@ -226,10 +228,13 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		// Get the info from provider
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 		$oUserProfile = $oAuthAdapter->getUserProfile();
-		IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
+		IssueLog::Info(
+			"OpenID UserProfile returned by service provider",
+			HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'oUserProfile' => $oUserProfile,
-			]);
+			]
+		);
 		Session::Set('auth_user', $oUserProfile->email);
 
 		// Already redirected to OpenID provider
@@ -265,7 +270,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				return LoginWebPage::LOGIN_FSM_ERROR;
 			}
 
-			try{
+			try {
 				self::DoUserProvisioning($sLoginMode);
 				return LoginWebPage::LOGIN_FSM_CONTINUE;
 			} catch (HybridProvisioningAuthException $e) {
@@ -329,12 +334,12 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	private static function GetProviderName()
 	{
 		$sLoginMode = Session::Get('login_mode', '');
-		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
-		if (false === $sProviderName) {
+		if (0 !== strpos($sLoginMode, 'hybridauth-')) {
 			IssueLog::Error("login_mode provided not OpenID compliant", HybridAuthLoginExtension::LOG_CHANNEL, ['$sLoginMode' => $sLoginMode]);
 			throw new \Exception("login_mode provided not OpenID compliant");
 		}
 
+		$sProviderName = substr($sLoginMode, strlen('hybridauth-'));
 		return $sProviderName;
 	}
 
@@ -366,7 +371,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 		$oUserProfile = $oAuthAdapter->getUserProfile();
-		IssueLog::Info("OpenID UserProfile returned by service provider", HybridAuthLoginExtension::LOG_CHANNEL,
+		IssueLog::Info(
+			"OpenID UserProfile returned by service provider",
+			HybridAuthLoginExtension::LOG_CHANNEL,
 			[
 				'oUserProfile' => $oUserProfile,
 			]
@@ -423,7 +430,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				$sFaImage = utils::StartsWith($sAdapterClass, "Microsoft") ? "fa-microsoft" : "fa-$sAdapterClass";
 			}
 
-			IssueLog::Debug("login button settings", null,
+			IssueLog::Debug(
+				"login button settings",
+				null,
 				[
 					'sProvider' => $sProvider,
 					'sFaImage' => $sFaImage,
@@ -449,10 +458,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		return $oLoginContext;
 	}
 
-	private function GetLabel(array $aProviderData, string $sKey, $sDefaultLabel) : string {
+	private function GetLabel(array $aProviderData, string $sKey, $sDefaultLabel): string
+	{
 		$sLabel = $aProviderData[$sKey] ?? null;
 
-		if (! empty($sLabel) && ! empty(trim($sLabel))){
+		if (! empty($sLabel) && ! empty(trim($sLabel))) {
 			return $sLabel;
 		}
 

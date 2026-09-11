@@ -30,16 +30,16 @@ class ProvisioningService
 
 	final public static function GetInstance(): ProvisioningService
 	{
-		if (!isset(static::$oInstance)) {
-			static::$oInstance = new ProvisioningService();
+		if (!isset(self::$oInstance)) {
+			self::$oInstance = new ProvisioningService();
 		}
 
-		return static::$oInstance;
+		return self::$oInstance;
 	}
 
 	final public static function SetInstance(?ProvisioningService $oInstance): void
 	{
-		static::$oInstance = $oInstance;
+		self::$oInstance = $oInstance;
 	}
 
 	/**
@@ -62,7 +62,7 @@ class ProvisioningService
 	 * @param string $sEmail: login/email of user being currently provisioned
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
-	 * @return \Person|null
+	 * @return \Person
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
 	public function DoPersonProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile): Person
@@ -79,6 +79,9 @@ class ProvisioningService
 			}
 
 			$bRefresh = true;
+		} else {
+			/** @var Person $oPerson */
+			$oPerson = MetaModel::NewObject('Person');
 		}
 
 		if (! Config::IsOptionEnabled($sLoginMode, 'synchronize_contact')) {
@@ -99,8 +102,17 @@ class ProvisioningService
 			$sLastName = $oUserProfile->lastName ?? $sEmail;
 		}
 
-		$serviceProviderOrganizationKey = Config::GetIdpSearchKey($sLoginMode, 'org_idp_key', 'organization');
-		$sIdPOrgName = IdpMatchingTable::GetIdpFieldValue($oUserProfile, $serviceProviderOrganizationKey);
+		$serviceProviderProfileKey = Config::GetIdpSearchKey($sLoginMode, 'org_idp_key', 'organization');
+		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_separator', null);
+		$aProviderConf = Config::GetProviderConf($sLoginMode);
+		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
+		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $serviceProviderProfileKey, $sSeparator);
+		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
+		$sIdPOrgName = null;
+		if (! is_null($aRequestedOrgNames)) {
+			$sIdPOrgName = $aRequestedOrgNames[0] ?? null;
+		}
+
 		$sOrganization = $this->GetOrganizationForProvisioning($sLoginMode, $sIdPOrgName);
 		$aPersonParams = [
 			'first_name' => $sFirstName,
@@ -116,7 +128,8 @@ class ProvisioningService
 		$oHybridAuthProvisioning->CompletePersonAdditionalParamsBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUserProfile, $aPersonParams);
 
 		IssueLog::Info("Person saved with OpenID provisioning info", HybridAuthLoginExtension::LOG_CHANNEL, $aPersonParams);
-		return self::SavePerson($oPerson, $sOrganization, $aPersonParams);
+		self::SavePerson($oPerson, $sOrganization, $aPersonParams);
+		return $oPerson;
 	}
 
 	/**
@@ -124,13 +137,13 @@ class ProvisioningService
 	 *
 	 * @api
 	 *
-	 * @param Person|null $oPerson
+	 * @param Person $oPerson
 	 * @param string $sOrganization
 	 * @param array $aPersonParams
 	 *
-	 * @return \Person
+	 * @return void
 	 */
-	public static function SavePerson(?Person $oPerson, $sOrganization, array $aPersonParams)
+	public static function SavePerson(Person $oPerson, $sOrganization, array $aPersonParams): void
 	{
 		CMDBObject::SetTrackOrigin('custom-extension');
 		$sInfo = 'External User provisioning';
@@ -139,9 +152,6 @@ class ProvisioningService
 		}
 		CMDBObject::SetTrackInfo($sInfo);
 
-		if (is_null($oPerson)) {
-			$oPerson = MetaModel::NewObject('Person');
-		}
 		$oOrg = MetaModel::GetObjectByName('Organization', $sOrganization, false);
 		if (is_null($oOrg)) {
 			throw new Exception(Dict::S('UI:Login:Error:WrongOrganizationName'));
@@ -152,7 +162,6 @@ class ProvisioningService
 		}
 
 		$oPerson->DBWrite();
-		return $oPerson;
 	}
 
 	private function GetOrganizationForProvisioning(string $sLoginMode, ?string $sIdPOrgName): string
@@ -161,13 +170,14 @@ class ProvisioningService
 			return Config::GetDefaultOrg($sLoginMode);
 		}
 
-		$sOrgOqlSearchField = Config::GetIdpKey($sLoginMode, 'org_oql_search_field', 'name');
+		$sOrgOqlSearchField = Config::GetIdpSearchKey($sLoginMode, 'org_oql_search_field', 'name');
+		/** @var ?\Organization $oOrg */
 		$oOrg = MetaModel::GetObjectByColumn('Organization', $sOrgOqlSearchField, $sIdPOrgName, false, true);
 		if (!is_null($oOrg)) {
 			return $oOrg->Get('name');
 		}
 
-		IssueLog::Error(Dict::S('UI:Login:Error:WrongOrganizationName', null, ['idp_organization' => $sIdPOrgName]));
+		IssueLog::Error(Dict::S('UI:Login:Error:WrongOrganizationName'), null, ['idp_organization' => $sIdPOrgName]);
 
 		return Config::GetDefaultOrg($sLoginMode);
 	}
@@ -200,7 +210,7 @@ class ProvisioningService
 		//By default UserExternal is found based on email===login
 		//For tricky reconciliations please extend datamodel
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
-		/** @var UserExternal $oUser */
+		/** @var ?UserExternal $oUser */
 		$oUser = $oHybridAuthProvisioning->FindUserExternal($sLoginMode, $sEmail, $oUserProfile);
 
 		if (! is_null($oUser) && ! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_user')) {

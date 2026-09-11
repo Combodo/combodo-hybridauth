@@ -73,12 +73,13 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
 		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
-		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => ["Administrator", "Configuration Manager"]]);
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["profile_id1" => "Change Approver", "profile_id2" => ["Administrator", "Configuration Manager"]]);
 
-		$sOrgName1 = $this->CreateOrgAndGetName();
+		$sOrgName1 = "anotherorg_".$this->sUniqId;
+		$oOrg1 = $this->CreateOrganization($sOrgName1);
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$sOrgName3 = $this->CreateOrgAndGetName();
-		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => [$sOrgName2, $sOrgName3]]);
+		$this->InitializeGroupsToOrgs($this->sLoginMode, ["org_id1" => $sOrgName1, "org_id2" => [$sOrgName2, $sOrgName3]]);
 
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
@@ -91,8 +92,9 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertNull(LoginWebPage::FindUser($sEmail));
 
 		$oProfileWithMostFields = new Profile();
-		$oProfileWithMostFields->data['groups'] = ['sp_id1', 'sp_id2'];
-		$oProfileWithMostFields->data['allowed_orgs'] = ['sp_id1', 'sp_id2'];
+		$oProfileWithMostFields->data['groups'] = ['profile_id1', 'profile_id2'];
+		$oProfileWithMostFields->data['allowed_orgs'] = ['org_id2'];
+		$oProfileWithMostFields->data['organization'] = 'org_id1';
 		$oProfileWithMostFields->email = $this->sUniqId."@test.fr";
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
@@ -105,7 +107,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals($oProfileWithMostFields->firstName, $oFoundPerson->Get('first_name'));
 		self::assertEquals($oProfileWithMostFields->lastName, $oFoundPerson->Get('name'));
 		self::assertEquals($sEmail, $oFoundPerson->Get('email'));
-		self::assertEquals($oOrg->GetKey(), $oFoundPerson->Get('org_id'));
+		self::assertEquals($oOrg1->GetKey(), $oFoundPerson->Get('org_id'), "org should come from org_id1/$sOrgName1/{$oOrg1->GetKey()} and not from default org $sDefaultOrgName/{$oOrg->GetKey()}");
 		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 
 		/** @var UserExternal $oFoundUser */
@@ -117,7 +119,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals($oFoundPerson->GetKey(), $oFoundUser->Get('contactid'));
 		self::assertEquals('EN US', $oFoundUser->Get('language'));
 		$this->assertUserProfiles($oFoundUser, ['Change Approver', 'Administrator', 'Configuration Manager']);
-		$this->assertAllowedOrg($oFoundUser, [$sDefaultOrgName, $sOrgName1, $sOrgName2, $sOrgName3]);
+		$this->assertAllowedOrg($oFoundUser, [$sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
 	public function testDoProvisioning_RefreshOKFromConfiguredDefaultOrgProfiles()
@@ -187,20 +189,22 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
-		$sDefaultOrgName2 = "anotherorg_".$this->sUniqId;
+		$sDefaultOrgName2 = "anotherdefaultorg_".$this->sUniqId;
 		$oOrg2 = $this->CreateOrganization($sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
-		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => ["Administrator", "Configuration Manager"]]);
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["profile_id1" => "Change Approver", "profile_id2" => ["Administrator", "Configuration Manager"]]);
 
-		$sOrgName1 = $this->CreateOrgAndGetName();
+		$sOrgName1 = "anotherorg_".$this->sUniqId;
+		$oOrg1 = $this->CreateOrganization($sOrgName1);
 		$sOrgName2 = $this->CreateOrgAndGetName();
 		$sOrgName3 = $this->CreateOrgAndGetName();
-		$this->InitializeGroupsToOrgs($this->sLoginMode, ["sp_id1" => $sOrgName1, "sp_id2" => [$sOrgName2, $sOrgName3]]);
+		$this->InitializeGroupsToOrgs($this->sLoginMode, ["org_id1" => $sOrgName1, "org_id2" => [$sOrgName2, $sOrgName3]]);
 
 		$oProfileWithMostFields = new Profile();
-		$oProfileWithMostFields->data['groups'] = ['sp_id1', 'sp_id2'];
-		$oProfileWithMostFields->data['allowed_orgs'] = ['sp_id1', 'sp_id2'];
+		$oProfileWithMostFields->data['groups'] = ['profile_id1', 'profile_id2'];
+		$oProfileWithMostFields->data['allowed_orgs'] = ['org_id1', 'org_id2'];
+		$oProfileWithMostFields->data['organization'] = ['org_id1'];
 		$oProfileWithMostFields->email = $sEmail;
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
@@ -214,7 +218,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals($oProfileWithMostFields->firstName, $oFoundPerson->Get('first_name'));
 		self::assertEquals($oProfileWithMostFields->lastName, $oFoundPerson->Get('name'));
 		self::assertEquals($sEmail, $oFoundPerson->Get('email'));
-		self::assertEquals($oOrg2->GetKey(), $oFoundPerson->Get('org_id'));
+		self::assertEquals($oOrg1->GetKey(), $oFoundPerson->Get('org_id'), "org should come from org_id1/$sOrgName1/{$oOrg1->GetKey()} and not from default org $sDefaultOrgName/{$oOrg->GetKey()}");
+
 		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 
 		/** @var UserExternal $oFoundUser */
@@ -226,7 +231,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals($oFoundPerson->GetKey(), $oFoundUser->Get('contactid'));
 		self::assertEquals('EN US', $oFoundUser->Get('language'));
 		$this->assertUserProfiles($oFoundUser, ['Change Approver', 'Administrator', 'Configuration Manager']);
-		$this->assertAllowedOrg($oFoundUser, [$sDefaultOrgName2, $sOrgName1, $sOrgName2, $sOrgName3]);
+		$this->assertAllowedOrg($oFoundUser, [$sOrgName1, $sOrgName2, $sOrgName3]);
 	}
 
 	public function testDoProvisioningRefreshFailsSSoConnectionForbiddenAndUserEndsUpWithDefaultProfilesAfterwhile()
@@ -247,7 +252,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Change Approver', 'Configuration Manager']);
-		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => ["Administrator"]]);
+		$this->InitializeGroupsToProfile($this->sLoginMode, ["profile_id1" => ["Administrator"]]);
 
 		$oProfileWithEmptyProfileGroups = new Profile();
 		$oProfileWithEmptyProfileGroups->email = $sEmail;

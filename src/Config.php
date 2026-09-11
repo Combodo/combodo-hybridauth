@@ -288,7 +288,7 @@ class Config
 	/**
 	 * @param string $sLoginMode
 	 * @param string $sField
-	 * @param array|string $sDefaultValue
+	 * @param string $sDefaultValue
 	 *
 	 * @return string|array
 	 */
