@@ -11,7 +11,7 @@
 //
 SetupWebPage::AddModule(
 	__FILE__, // Path to the current file, all other file names are relative to the directory containing this file
-	'combodo-hybridauth/2.1.4',
+	'combodo-hybridauth/2.1.5',
 	[
 		// Identification
 		//
