@@ -115,7 +115,7 @@ class ProfileProvisioningServiceTest extends AbstractHybridauthTest
 		$oUserProfile = new Profile();
 		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
 		$this->expectException(HybridProvisioningAuthException::class);
-		$this->CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile($oUserProfile, null, true);
+		$this->CallProfileSynchronizationAndValidateProfilesAttachedAfterwhile($oUserProfile, null);
 	}
 
 	public function testSynchronizeProfilesMatchingAndProvisioningOkAtUserCreationWithoutAnyGroupToProfileMatchingTableConfigured()

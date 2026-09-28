@@ -34,13 +34,13 @@ class IdpMatchingTable
 	/**
 	 * Use IdP response to compute matching table and return a list of names
 	 *
-	 * @param string $sEmail
+	 * @param string $sAuthUser
 	 * @param Profile $oUserProfile
 	 *
 	 * @return array|null return null when matching is not possible somehow. either it is not configured either IdP response does not fit
 	 * * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function GetObjectNamesFromIdpMatchingTable(string $sEmail, Profile $oUserProfile): ?array
+	public function GetObjectNamesFromIdpMatchingTable(string $sAuthUser, Profile $oUserProfile): ?array
 	{
 		IssueLog::Debug(__METHOD__.": use matching table", HybridAuthLoginExtension::LOG_CHANNEL, [$this->sMatchingTableConfigurationKey => $this->aMatchingTable]);
 
@@ -99,7 +99,7 @@ class IdpMatchingTable
 		if (count($aCurrentProfilesName) == 0) {
 			$aContext = [
 				'login_mode'                          => $this->sLoginMode,
-				'email'                               => $sEmail,
+				'auth_user'                           => $sAuthUser,
 				'idp_key'                             => $this->serviceProviderKey,
 				'sp_ids'                              => $aSpIds,
 				$this->sMatchingTableConfigurationKey => $this->aMatchingTable,

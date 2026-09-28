@@ -92,12 +92,10 @@ class AbstractHybridauthTest extends ItopDataTestCase
 		$sOrgName = $this->sUniqId.'_'.microtime();
 
 		if (is_null($sCode)) {
-			/** @var \Organization $oObj */
 			$this->createObject('Organization', [
 				'name' => $sOrgName,
 			]);
 		} else {
-			/** @var \Organization $oObj */
 			$this->createObject('Organization', [
 				'name' => $sOrgName,
 				'code' => $sCode,

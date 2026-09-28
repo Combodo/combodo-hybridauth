@@ -38,7 +38,6 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 
 		$oReturnedCreatedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail, $oPerson, new Profile());
 
-		/** @var UserExternal $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");

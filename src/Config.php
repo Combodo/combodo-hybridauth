@@ -110,6 +110,7 @@ class Config
 	public static function Get($sName, $default = [])
 	{
 		return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
+		//	return MetaModel::GetModuleSetting('combodo-hybridauth-hidden', $sName, $default);
 	}
 
 	public static function ListProviders()

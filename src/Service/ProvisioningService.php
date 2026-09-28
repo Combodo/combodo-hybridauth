@@ -44,34 +44,34 @@ class ProvisioningService
 
 	/**
 	 * @param string $sLoginMode: SSO login mode
-	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param string $sAuthUser: login/email of user being currently provisioned
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
 	 *
 	 * @return array
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function DoProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile): array
+	public function DoProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): array
 	{
-		$oPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($sLoginMode, $sEmail, $oUserProfile);
-		$oUser = ProvisioningService::GetInstance()->DoUserProvisioning($sLoginMode, $sEmail, $oPerson, $oUserProfile);
+		$oPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($sLoginMode, $sAuthUser, $oUserProfile);
+		$oUser = ProvisioningService::GetInstance()->DoUserProvisioning($sLoginMode, $sAuthUser, $oPerson, $oUserProfile);
 		return [$oPerson, $oUser];
 	}
 
 	/**
 	 * @param string $sLoginMode: SSO login mode
-	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param string $sAuthUser: login/email of user being currently provisioned
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
 	 * @return \Person
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function DoPersonProvisioning(string $sLoginMode, string $sEmail, Profile $oUserProfile): Person
+	public function DoPersonProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): Person
 	{
 		//HybridAuthProvisioning class comes from datamodel
 		//By default Person is found based on email search (\LoginWebPage::FindPerson)
 		//For tricky reconciliations please extend datamodel
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
-		$oPerson = $oHybridAuthProvisioning->FindPerson($sLoginMode, $sEmail, $oUserProfile);
+		$oPerson = $oHybridAuthProvisioning->FindPerson($sLoginMode, $sAuthUser, $oUserProfile);
 		$bRefresh = false;
 		if (! is_null($oPerson)) {
 			if (! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact')) {
@@ -89,7 +89,7 @@ class ProvisioningService
 				"Cannot find Person and no automatic Contact provisioning (synchronize_contact)",
 				0,
 				null,
-				['login_mode' => $sLoginMode, 'email' => $sEmail]
+				['login_mode' => $sLoginMode, 'email' => $sAuthUser]
 			); // No automatic Contact provisioning
 		}
 
@@ -98,8 +98,8 @@ class ProvisioningService
 			$sFirstName = $oUserProfile->firstName ?? $oPerson->Get('first_name');
 			$sLastName = $oUserProfile->lastName ?? $oPerson->Get('name');
 		} else {
-			$sFirstName = $oUserProfile->firstName ?? $sEmail;
-			$sLastName = $oUserProfile->lastName ?? $sEmail;
+			$sFirstName = $oUserProfile->firstName ?? $sAuthUser;
+			$sLastName = $oUserProfile->lastName ?? $sAuthUser;
 		}
 
 		$serviceProviderProfileKey = Config::GetIdpSearchKey($sLoginMode, 'org_idp_key', 'organization');
@@ -107,7 +107,7 @@ class ProvisioningService
 		$aProviderConf = Config::GetProviderConf($sLoginMode);
 		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $serviceProviderProfileKey, $sSeparator);
-		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
+		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sAuthUser, $oUserProfile);
 		$sIdPOrgName = null;
 		if (! is_null($aRequestedOrgNames)) {
 			$sIdPOrgName = $aRequestedOrgNames[0] ?? null;
@@ -117,7 +117,7 @@ class ProvisioningService
 		$aPersonParams = [
 			'first_name' => $sFirstName,
 			'name' => $sLastName,
-			'email' => $sEmail,
+			'email' => $oUserProfile->email,
 			'phone' => $oUserProfile->phone,
 		];
 
@@ -125,7 +125,7 @@ class ProvisioningService
 		//By default CompletePersonAdditionalParamsBeforeDbWrite is doing nothing
 		//if someone wants to extend person provisioning it can be done via DM...
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
-		$oHybridAuthProvisioning->CompletePersonAdditionalParamsBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUserProfile, $aPersonParams);
+		$oHybridAuthProvisioning->CompletePersonAdditionalParamsBeforeDbWrite($sLoginMode, $sAuthUser, $oPerson, $oUserProfile, $aPersonParams);
 
 		IssueLog::Info("Person saved with OpenID provisioning info", HybridAuthLoginExtension::LOG_CHANNEL, $aPersonParams);
 		self::SavePerson($oPerson, $sOrganization, $aPersonParams);
@@ -184,21 +184,21 @@ class ProvisioningService
 
 	/**
 	 * @param string $sLoginMode: SSO login mode
-	 * @param string $sEmail: login/email of user being currently provisioned
+	 * @param string $sAuthUser: login/email of user being currently provisioned
 	 * @param \Person $oPerson : Person object attached to user
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
 	 * @return \UserExternal
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function DoUserProvisioning(string $sLoginMode, string $sEmail, Person $oPerson, Profile $oUserProfile): UserExternal
+	public function DoUserProvisioning(string $sLoginMode, string $sAuthUser, Person $oPerson, Profile $oUserProfile): UserExternal
 	{
 		if (!MetaModel::IsValidClass('URP_Profiles')) {
 			throw new HybridProvisioningAuthException(
 				"URP_Profiles is not a valid class. Automatic creation of Users is not supported in this context, sorry.",
 				0,
 				null,
-				['login_mode' => $sLoginMode, 'email' => $sEmail]
+				['login_mode' => $sLoginMode, 'auth_user' => $sAuthUser]
 			);
 		}
 
@@ -211,7 +211,7 @@ class ProvisioningService
 		//For tricky reconciliations please extend datamodel
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
 		/** @var ?UserExternal $oUser */
-		$oUser = $oHybridAuthProvisioning->FindUserExternal($sLoginMode, $sEmail, $oUserProfile);
+		$oUser = $oHybridAuthProvisioning->FindUserExternal($sLoginMode, $sAuthUser, $oUserProfile);
 
 		if (! is_null($oUser) && ! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_user')) {
 			return $oUser;
@@ -219,21 +219,23 @@ class ProvisioningService
 
 		if (is_null($oUser)) {
 			$oUser = MetaModel::NewObject('UserExternal');
-			$oUser->Set('login', $sEmail);
+			$oUser->Set('login', $sAuthUser);
 			$oUser->Set('language', MetaModel::GetConfig()->GetDefaultLanguage());
+			IssueLog::Info("User saved with OpenID provisioning info", HybridAuthLoginExtension::LOG_CHANNEL,
+				['login' => $sAuthUser, 'language' => MetaModel::GetConfig()->GetDefaultLanguage()]);
 		}
 
 		$oUser->Set('contactid', $oPerson->GetKey());
 
 		$aProviderConf = Config::GetProviderConf($sLoginMode);
-		$this->SynchronizeProfiles($sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, $sInfo);
-		$this->SynchronizeAllowedOrgs($sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, $sInfo, $oPerson->Get('org_id'), );
+		$this->SynchronizeProfiles($sLoginMode, $sAuthUser, $oUser, $oUserProfile, $aProviderConf, $sInfo);
+		$this->SynchronizeAllowedOrgs($sLoginMode, $sAuthUser, $oUser, $oUserProfile, $aProviderConf, $sInfo, $oPerson->Get('org_id'), );
 
 		//HybridAuthProvisioning class comes from datamodel
 		//By default CompleteUserProvisioningBeforeDbWrite is doing nothing
 		//if someone wants to extend user provisioning it can be done via DM...
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
-		$oHybridAuthProvisioning->CompleteUserProvisioningBeforeDbWrite($sLoginMode, $sEmail, $oPerson, $oUser, $oUserProfile, $sInfo);
+		$oHybridAuthProvisioning->CompleteUserProvisioningBeforeDbWrite($sLoginMode, $sAuthUser, $oPerson, $oUser, $oUserProfile, $sInfo);
 
 		if ($oUser->IsModified()) {
 			$oUser->DBWrite();
@@ -243,7 +245,7 @@ class ProvisioningService
 
 	/**
 	 * @param string $sLoginMode: SSO login mode
-	 * @param string $sEmail : login/email of user to provision (create/update)
+	 * @param string $sAuthUser : login/email of user to provision (create/update)
 	 * @param \UserExternal $oUser : current user being created
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
 	 * @param array $aProviderConf : itop provider configuration
@@ -252,14 +254,14 @@ class ProvisioningService
 	 * @return void
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function SynchronizeProfiles(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
+	public function SynchronizeProfiles(string $sLoginMode, string $sAuthUser, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo)
 	{
 		$serviceProviderProfileKey = Config::GetIdpSearchKey($sLoginMode, 'profiles_idp_key', 'groups');
 		$sSeparator = Config::GetIdpKey($sLoginMode, 'profiles_idp_separator', null);
 		$aMatchingTable = $aProviderConf['groups_to_profiles'] ?? null;
 
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_profiles', $serviceProviderProfileKey, $sSeparator);
-		$aRequestedProfileNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
+		$aRequestedProfileNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sAuthUser, $oUserProfile);
 		if (is_null($aRequestedProfileNames)) {
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 		}
@@ -275,7 +277,7 @@ class ProvisioningService
 			$aRequestedProfileNames = Config::GetSynchroProfiles($sLoginMode);
 		}
 
-		IssueLog::Debug("OpenID Profile matching between IdP and iTop", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'profiles' => $aRequestedProfileNames]);
+		IssueLog::Debug("OpenID Profile matching between IdP and iTop", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sAuthUser, 'profiles' => $aRequestedProfileNames]);
 
 		$oSet = $this->GetOqlProfileSet($aRequestedProfileNames);
 		$aIdsToAttach = [];
@@ -290,18 +292,18 @@ class ProvisioningService
 			\IssueLog::Warning(
 				"Cannot add some unfound profiles",
 				HybridAuthLoginExtension::LOG_CHANNEL,
-				[ 'login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound profiles' => $aUnfoundNames ]
+				['login_mode' => $sLoginMode, 'auth_user' => $sAuthUser, 'unfound profiles' => $aUnfoundNames ]
 			);
 		}
 
 		if (count($aIdsToAttach) == 0) {
-			\IssueLog::Error("no valid URP_Profile to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]);
+			\IssueLog::Error("no valid URP_Profile to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sAuthUser, 'aRequestedProfileNames' => $aRequestedProfileNames]);
 
 			$exceptionToRaise = new HybridProvisioningAuthException(
 				"no valid URP_Profile to attach to user",
 				0,
 				null,
-				['login_mode' => $sLoginMode, 'email' => $sEmail, 'aRequestedProfileNames' => $aRequestedProfileNames]
+				['login_mode' => $sLoginMode, 'auth_user' => $sAuthUser, 'aRequestedProfileNames' => $aRequestedProfileNames]
 			);
 
 			if ($oUser->IsNew()) {
@@ -351,7 +353,7 @@ class ProvisioningService
 
 	/**
 	 * @param string $sLoginMode: SSO login mode
-	 * @param string $sEmail : login/email of user to provision (create/update)
+	 * @param string $sAuthUser : login/email of user to provision (create/update)
 	 * @param \UserExternal $oUser : current user being created
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response
 	 * @param array $aProviderConf : itop provider configuration
@@ -361,7 +363,7 @@ class ProvisioningService
 	 * @return void
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sEmail, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId = null)
+	public function SynchronizeAllowedOrgs(string $sLoginMode, string $sAuthUser, UserExternal &$oUser, Profile $oUserProfile, array $aProviderConf, string $sInfo, ?string $sPersonOrgId = null)
 	{
 		$serviceOrgsKey = Config::GetIdpSearchKey($sLoginMode, 'allowed_orgs_idp_key', 'allowed_orgs');
 		$sSeparator = Config::GetIdpKey($sLoginMode, 'allowed_orgs_idp_separator', null);
@@ -369,12 +371,12 @@ class ProvisioningService
 		$aMatchingTable = $aProviderConf['groups_to_orgs'] ?? null;
 
 		$oIdpMatchingTable = new IdpMatchingTable($sLoginMode, $aMatchingTable, 'groups_to_orgs', $serviceOrgsKey, $sSeparator);
-		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sEmail, $oUserProfile);
+		$aRequestedOrgNames = $oIdpMatchingTable->GetObjectNamesFromIdpMatchingTable($sAuthUser, $oUserProfile);
 		if (is_null($aRequestedOrgNames)) {
 			$aRequestedOrgNames = Config::GetDefaultAllowedOrgs($sLoginMode);
 		}
 
-		IssueLog::Info("OpenID (Allowed) Organization matching between IdP and iTop", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'orgs' => $aRequestedOrgNames]);
+		IssueLog::Info("OpenID (Allowed) Organization matching between IdP and iTop", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sAuthUser, 'orgs' => $aRequestedOrgNames]);
 
 		$iCount = 0;
 		$aOrgsIdsToAttach = [];
@@ -396,7 +398,7 @@ class ProvisioningService
 
 			$aUnfoundOrgNames = array_diff($aRequestedOrgNames, $aOrgsNamesToAttach);
 			if (count($aUnfoundOrgNames) > 0) {
-				\IssueLog::Warning("Cannot add some unfound allowed organization", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'unfound orgs' => $aUnfoundOrgNames]);
+				\IssueLog::Warning("Cannot add some unfound allowed organization", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sAuthUser, 'unfound orgs' => $aUnfoundOrgNames]);
 			}
 		}
 
@@ -412,7 +414,7 @@ class ProvisioningService
 				$oAllowedOrgSet->AddItem($oLink);
 			}
 		} else {
-			\IssueLog::Warning("no valid URP_UserOrg to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sEmail, 'sp_org_names' => $aRequestedOrgNames]);
+			\IssueLog::Warning("no valid URP_UserOrg to attach to user", HybridAuthLoginExtension::LOG_CHANNEL, ['login_mode' => $sLoginMode, 'email' => $sAuthUser, 'sp_org_names' => $aRequestedOrgNames]);
 		}
 
 		$oUser->Set('allowed_org_list', $oAllowedOrgSet);
