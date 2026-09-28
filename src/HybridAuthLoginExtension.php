@@ -228,14 +228,17 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		// Get the info from provider
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 		$oUserProfile = $oAuthAdapter->getUserProfile();
+		$sAuthUser = $oUserProfile->data['login'] ?? $oUserProfile->email;
 		IssueLog::Info(
 			"OpenID UserProfile returned by service provider",
 			HybridAuthLoginExtension::LOG_CHANNEL,
 			[
-				'oUserProfile' => $oUserProfile,
+				'auth_user' => $sAuthUser,
+				'oUserProfile' => var_export($oUserProfile, true),
 			]
 		);
-		Session::Set('auth_user', $oUserProfile->email);
+
+		Session::Set('auth_user', $sAuthUser);
 
 		// Already redirected to OpenID provider
 		Session::Unset('login_will_redirect');
@@ -363,9 +366,10 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (!Config::IsOptionEnabled($sLoginMode, 'synchronize_user')) {
 			return; // No automatic User provisioning
 		}
-		$sEmail = Session::Get('auth_user');
+
+		$sAuthUser = Session::Get('auth_user');
 		$bRefreshRequired = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_user') || Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
-		if (!$bRefreshRequired && LoginWebPage::FindUser($sEmail, false)) {
+		if (!$bRefreshRequired && LoginWebPage::FindUser($sAuthUser, false)) {
 			return; // User already present
 		}
 
@@ -387,7 +391,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		//By default it calls ProvisioningService
 		//if someone wants to extend provisioning it can be done via DM...
 		$oHybridAuthProvisioning = new HybridAuthProvisioning();
-		$oHybridAuthProvisioning->DoProvisioning($sLoginMode, $sEmail, $oUserProfile);
+		$oHybridAuthProvisioning->DoProvisioning($sLoginMode, $sAuthUser, $oUserProfile);
 	}
 
 	public function GetTwigContext()

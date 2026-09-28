@@ -27,7 +27,8 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 
 	protected $sEmail;
 	protected $sProvisionedUserPersonEmail;
-	protected $oUser;
+
+	protected ?\UserExternal $oUser;
 	protected $oOrg;
 	protected $sLoginMode;
 	protected $sUniqId;
@@ -63,7 +64,6 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$oSet = new \ormLinkSet(\UserExternal::class, 'profile_list', \DBObjectSet::FromScratch(\URP_UserProfile::class));
 		$oSet->AddItem(MetaModel::NewObject('URP_UserProfile', ['profileid' => $oProfile->GetKey(), 'reason' => 'UNIT Tests']));
 
-		/** @var \UserExternal $oUser */
 		$this->oUser = $this->createObject(UserExternal::class, [
 			'login' => $this->sEmail,
 			'contactid' => $oPerson->GetKey(),
@@ -199,6 +199,44 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $this->oOrg->GetKey());
 	}
 
+	public function test_SSOConnectedAlready_WithiTopUserProvisioningByLogin_OK()
+	{
+		$sProfile = 'Configuration Manager';
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $this->oOrg->Get('name'));
+		$this->oiTopConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', [$sProfile]);
+
+		$this->SaveItopConfFile();
+
+		$this->sProvisionedUserPersonEmail = 'usercontacttoprovision_'.$this->sUniqId.'@test.fr';
+		$sLogin = 'LOGIN_'.$this->sUniqId;
+		$sFirstName = $this->sUniqId."_firstName";
+		$sLatName = $this->sUniqId."_lastName";
+		$sPhone = "123456789";
+		$aData = [
+			'email' => $this->sProvisionedUserPersonEmail,
+			'login' => $sLogin,
+			'firstName' => $sFirstName,
+			'lastName' => $sLatName,
+			'phone' => $sPhone,
+		];
+		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
+		$sOutput = $this->CallItopUri("pages/UI.php", ['login_mode' => $this->sLoginMode]);
+
+		$this->assertFalse(strpos($sOutput, "login-body"), "user logged in => no login page:".$sOutput);
+		$this->assertTrue(
+			false !== strpos($sOutput, $sFirstName),
+			"user logged in => his firstname . ".$sFirstName." . should appear in the welcome page :".$sOutput
+		);
+		$this->assertTrue(
+			false !== strpos($sOutput, $sLatName),
+			"user logged in => his lastname . ".$sLatName." . should appear in the welcome page :".$sOutput
+		);
+
+		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $this->oOrg->GetKey(), $sLogin);
+	}
+
 	public function test_SSOConnectedAlready_WithiTopUserProvisioning_UseIdPOrg_OK()
 	{
 		$sProfile = "Configuration Manager";
@@ -230,7 +268,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $oIdPOrg->GetKey());
 	}
 
-	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId): void
+	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId, $sLogin = null): void
 	{
 		$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedPerson);
@@ -239,7 +277,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertEquals($sLatName, $oExpectedPerson->Get('name'));
 		$this->assertEquals($sOrgId, $oExpectedPerson->Get('org_id'));
 
-		$oExpectedUser = MetaModel::GetObjectByColumn("UserExternal", "login", $this->sProvisionedUserPersonEmail);
+		$oExpectedUser = MetaModel::GetObjectByColumn("UserExternal", "login", $sLogin ?? $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedUser);
 		$this->assertEquals($oExpectedPerson->GetKey(), $oExpectedUser->Get('contactid'));
 		$oProfilesSet = $oExpectedUser->Get('profile_list');

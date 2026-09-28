@@ -24,9 +24,11 @@ class ServiceProviderMock extends OAuth2
 			$aData = $this->GetData();
 			IssueLog::Info("ServiceProvider->authenticate data to pass to OpenID:", null, $aData);
 
+			$sLogin = $aData['login'] ?? null;
 			$sEmail = $aData['email'] ?? null;
-			if (!is_null($sEmail)) {
-				Session::Set('auth_user', $sEmail);
+			$sAuthUser = $sLogin ?? $sEmail;
+			if (!is_null($sAuthUser)) {
+				Session::Set('auth_user', $sAuthUser);
 				Session::Unset('login_will_redirect');
 				Session::Set('login_hybridauth', 'connected');
 			}
@@ -49,11 +51,7 @@ class ServiceProviderMock extends OAuth2
 				$property->setAccessible(true);
 				$property->setValue($oProfile, $sValue);
 			} else {
-				$property = $class->getProperty('data');
-				$property->setAccessible(true);
-				$aProfileData = $property->GetValue($oProfile);
-				$aProfileData[$sField] = $sValue;
-				$property->setValue($oProfile, $aProfileData);
+				$oProfile->data[$sField] = $sValue;
 			}
 		}
 
