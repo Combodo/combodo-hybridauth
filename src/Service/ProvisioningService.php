@@ -221,8 +221,11 @@ class ProvisioningService
 			$oUser = MetaModel::NewObject('UserExternal');
 			$oUser->Set('login', $sAuthUser);
 			$oUser->Set('language', MetaModel::GetConfig()->GetDefaultLanguage());
-			IssueLog::Info("User saved with OpenID provisioning info", HybridAuthLoginExtension::LOG_CHANNEL,
-				['login' => $sAuthUser, 'language' => MetaModel::GetConfig()->GetDefaultLanguage()]);
+			IssueLog::Info(
+				"User saved with OpenID provisioning info",
+				HybridAuthLoginExtension::LOG_CHANNEL,
+				['login' => $sAuthUser, 'language' => MetaModel::GetConfig()->GetDefaultLanguage()]
+			);
 		}
 
 		$oUser->Set('contactid', $oPerson->GetKey());

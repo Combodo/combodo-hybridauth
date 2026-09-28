@@ -268,7 +268,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->VerifyProvisioningIsOk($sFirstName, $sPhone, $sLatName, $sProfile, $oIdPOrg->GetKey());
 	}
 
-	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId, $sLogin=null): void
+	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId, $sLogin = null): void
 	{
 		$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedPerson);

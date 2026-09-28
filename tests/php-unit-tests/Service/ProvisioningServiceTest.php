@@ -84,7 +84,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNull(LoginWebPage::FindUser($sEmail));
 
-		$sLogin = "LOGIN-" . $this->sUniqId;
+		$sLogin = "LOGIN-".$this->sUniqId;
 		$oProfileWithMostFields = new Profile();
 		$oProfileWithMostFields->email = $this->sUniqId."@test.fr";
 		$oProfileWithMostFields->firstName = 'firstNameA';
