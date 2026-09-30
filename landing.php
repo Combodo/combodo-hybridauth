@@ -8,11 +8,7 @@
 
 namespace Combodo\iTop\HybridAuth;
 
-use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
-use IssueLog;
 use LoginWebPage;
-use MetaModel;
-use utils;
 
 /**
  *  Return from OpenID Provider after a successful login
