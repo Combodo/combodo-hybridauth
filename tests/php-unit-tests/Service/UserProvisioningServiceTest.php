@@ -17,9 +17,9 @@ use MetaModel;
 use Person;
 use UserExternal;
 
-require_once __DIR__."/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractTestHybridauth.php";
 
-class UserProvisioningServiceTest extends AbstractHybridauthTest
+class UserProvisioningServiceTest extends AbstractTestHybridauth
 {
 	public function testDoUserProvisioningShouldCreateUserWithDefaultProfiles()
 	{
@@ -33,6 +33,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 
 		$oReturnedCreatedUser = ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail, $oPerson, new Profile());
 
+		/** @var ?\User $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");
@@ -57,7 +58,7 @@ class UserProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 		ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail, $oPerson, new Profile());
 
-		/** @var UserExternal $oFoundUser */
+		/** @var ?\User $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		self::assertEquals($sEmail, $oFoundUser->Get('login'));

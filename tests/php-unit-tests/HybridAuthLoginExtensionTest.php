@@ -270,6 +270,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 
 	private function VerifyProvisioningIsOk(string $sFirstName, string $sPhone, string $sLatName, string $sProfile, string $sOrgId, $sLogin = null): void
 	{
+		/** @var ?\Person $oExpectedPerson */
 		$oExpectedPerson = MetaModel::GetObjectByColumn("Person", "email", $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedPerson);
 		$this->assertEquals($sFirstName, $oExpectedPerson->Get('first_name'));
@@ -277,6 +278,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		$this->assertEquals($sLatName, $oExpectedPerson->Get('name'));
 		$this->assertEquals($sOrgId, $oExpectedPerson->Get('org_id'));
 
+		/** @var ?\User $oExpectedUser */
 		$oExpectedUser = MetaModel::GetObjectByColumn("UserExternal", "login", $sLogin ?? $this->sProvisionedUserPersonEmail);
 		$this->assertNotNull($oExpectedUser);
 		$this->assertEquals($oExpectedPerson->GetKey(), $oExpectedUser->Get('contactid'));

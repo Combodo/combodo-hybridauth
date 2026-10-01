@@ -16,6 +16,7 @@ class ConfigTest extends ItopDataTestCase
 	protected function setUp(): void
 	{
 		parent::setUp();
+		$this->BackupConfiguration();
 		$this->aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
 	}
 
@@ -24,7 +25,7 @@ class ConfigTest extends ItopDataTestCase
 		parent::tearDown();
 		MetaModel::GetConfig()->SetAllowedLoginTypes($this->aAllowedLoginTypes);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', null);
 	}
 
 	public function testGetHybridConfig()
@@ -411,6 +412,27 @@ class ConfigTest extends ItopDataTestCase
 		);
 
 		$this->assertEquals($aExpectedAllowedLoginTypes, MetaModel::GetConfig()->GetAllowedLoginTypes());
+	}
+
+	public function testGetConfFromUIHiddenSettings()
+	{
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'glob1', 'val1');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'glob3', 'val3');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'glob2', 'val2');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'glob3', 'val4');
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+
+		$aExpected = [
+			//merge providers
+			'Google' => ["a" => "b"],
+			'Keycloak' => ["c" => "d"],
+		];
+		$this->assertEquals($aExpected, Config::Get('providers', []));
+		$this->assertEquals("val1", Config::Get('glob1', null));
+		$this->assertEquals("val2", Config::Get('glob2', null));
+		$this->assertEquals("val4", Config::Get('glob3', null));
 	}
 
 	public static function DisableConsentModeConfigurationProvider()

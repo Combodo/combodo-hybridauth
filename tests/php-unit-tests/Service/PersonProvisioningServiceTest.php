@@ -16,9 +16,9 @@ use LoginWebPage;
 use MetaModel;
 use Person;
 
-require_once __DIR__."/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractTestHybridauth.php";
 
-class PersonProvisioningServiceTest extends AbstractHybridauthTest
+class PersonProvisioningServiceTest extends AbstractTestHybridauth
 {
 	public function testDoPersonProvisioning_PersonAlreadyExistsButNotUsed()
 	{
@@ -66,6 +66,7 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
 		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -94,6 +95,8 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
 		$oReturnedCreatedPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
+
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
