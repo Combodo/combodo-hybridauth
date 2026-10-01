@@ -18,9 +18,9 @@ use MetaModel;
 use Person;
 use UserExternal;
 
-require_once __DIR__."/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractTestHybridauth.php";
 
-class ProvisioningServiceTest extends AbstractHybridauthTest
+class ProvisioningServiceTest extends AbstractTestHybridauth
 {
 	public const USE_TRANSACTION = false;
 
@@ -47,6 +47,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
 		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
+
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -57,6 +59,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals($oOrg->GetKey(), $oFoundPerson->Get('org_id'));
 		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 
+		/** @var ?\User $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");
@@ -92,6 +95,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->phone = '456978';
 		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sLogin, $oProfileWithMostFields);
 
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -128,6 +132,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 
 		self::assertNull($oReturnedCreatedPerson, 'No Person should have been created if "synchronize_contact" is false');
 
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNull($oFoundPerson, 'No Person should exist if "synchronize_contact" is false');
 
@@ -168,6 +173,8 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
 		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
+
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -178,6 +185,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals($oOrg1->GetKey(), $oFoundPerson->Get('org_id'), "org should come from org_id1/$sOrgName1/{$oOrg1->GetKey()} and not from default org $sDefaultOrgName/{$oOrg->GetKey()}");
 		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 
+		/** @var ?\User $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");
@@ -221,6 +229,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->phone = '456978';
 		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person refresh OK");
@@ -231,7 +240,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		self::assertEquals($oOrg2->GetKey(), $oFoundPerson->Get('org_id'));
 		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 
-		/** @var UserExternal $oFoundUser */
+		/** @var ?\User $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User refresh OK");
@@ -259,6 +268,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
 		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
+
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
@@ -284,6 +294,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->phone = '456978';
 		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 
+		/** @var ?\Person $oFoundPerson */
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person refresh OK");
@@ -295,7 +306,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 
 		self::assertEquals($oProfileWithMostFields->phone, $oFoundPerson->Get('phone'));
 
-		/** @var UserExternal $oFoundUser */
+		/** @var ?\User $oFoundUser */
 		$oFoundUser = LoginWebPage::FindUser($sEmail);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User refresh OK");
@@ -342,7 +353,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		} catch (HybridProvisioningAuthException $e) {
 			$this->assertEquals("No sp group/profile matching found and no valid URP_Profile to attach to user", $e->getMessage());
 
-			/** @var UserExternal $oFoundUser */
+			/** @var ?\User $oFoundUser */
 			$oFoundUser = LoginWebPage::FindUser($sEmail);
 			self::assertNotNull($oFoundUser);
 			$this->assertUserProfiles($oFoundUser, ['Change Approver', 'Configuration Manager'], "When no profile found SSO should raise an exception and user end up with default profiles afterwhile");

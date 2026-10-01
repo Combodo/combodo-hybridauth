@@ -66,7 +66,7 @@ class ProvisioningService
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 * @throws \CoreException
 	 */
-	public function DoPersonProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): ?Person
+	public function DoPersonProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): ?\Person
 	{
 		$bSynchronizeContact = Config::IsOptionEnabled($sLoginMode, 'synchronize_contact');
 		$bRefreshContact = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
@@ -86,10 +86,11 @@ class ProvisioningService
 
 			$bRefresh = true;
 		} else {
-			/** @var Person $oPerson */
 			if (!$bSynchronizeContact) {
 				return null;
 			}
+
+			/** @var \Person $oPerson */
 			$oPerson = MetaModel::NewObject('Person');
 		}
 

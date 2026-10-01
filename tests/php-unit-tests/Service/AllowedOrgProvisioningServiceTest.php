@@ -21,9 +21,9 @@ use MetaModel;
 use Person;
 use UserExternal;
 
-require_once __DIR__."/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractTestHybridauth.php";
 
-class AllowedOrgProvisioningServiceTest extends AbstractHybridauthTest
+class AllowedOrgProvisioningServiceTest extends AbstractTestHybridauth
 {
 	protected function setUp(): void
 	{

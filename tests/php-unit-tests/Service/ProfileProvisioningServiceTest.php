@@ -22,9 +22,9 @@ use Person;
 use UserExternal;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 
-require_once __DIR__."/AbstractHybridauthTest.php";
+require_once __DIR__."/AbstractTestHybridauth.php";
 
-class ProfileProvisioningServiceTest extends AbstractHybridauthTest
+class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 {
 	public function testSynchronizeProfilesShouldUseDefaultProfilesIfIdpResponseDoesNotIncludeProfile()
 	{
