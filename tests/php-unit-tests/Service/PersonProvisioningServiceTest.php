@@ -25,8 +25,10 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 		$sEmail = $this->sUniqId.'@test.fr';
 		$this->CreatePersonByEmail($sEmail);
 
-		$this->assertNull(ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile()),
-			'Person already created; but not used during provisioning.');
+		$this->assertNull(
+			ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile()),
+			'Person already created; but not used during provisioning.'
+		);
 	}
 
 	public function testDoPersonProvisioning_PersonAlreadyExistsAndUsed()
@@ -44,8 +46,10 @@ class PersonProvisioningServiceTest extends AbstractHybridauthTest
 	{
 		$sEmail = $this->sUniqId.'@test.fr';
 
-		$this->assertNull(ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile()),
-			'Person not created during provisioning.');
+		$this->assertNull(
+			ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile()),
+			'Person not created during provisioning.'
+		);
 	}
 
 	public function testDoPersonProvisioningShouldCreatePersonWithEmailOnlyIfOtherFieldFromIdpAreMissing()

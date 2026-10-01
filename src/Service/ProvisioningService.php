@@ -71,7 +71,7 @@ class ProvisioningService
 		$bSynchronizeContact = Config::IsOptionEnabled($sLoginMode, 'synchronize_contact');
 		$bRefreshContact = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
 		if (!$bRefreshContact && !$bSynchronizeContact) {
-				return null;
+			return null;
 		}
 		//HybridAuthProvisioning class comes from datamodel
 		//By default Person is found based on email search (\LoginWebPage::FindPerson)
