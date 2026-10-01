@@ -82,7 +82,7 @@
 	 * Current method is called at the end of person provisioning, just after attaching organization and allowed_orgs. and before LoginWebPage::ProvisionPerson call.
 	 * @param string $sLoginMode
 	 * @param string $sAuthUser
-	 * @param \Person|null $oPerson: null in case of creation
+	 * @param \Person $oPerson
 	 * @param \Hybridauth\User\Profile $oUserProfile
 	 * @param array $aAdditionalParams: additional parameters passed by reference.
 	 *
@@ -91,7 +91,7 @@
           <static>false</static>
           <access>public</access>
           <type>Custom</type>
-          <code><![CDATA[	public function CompletePersonAdditionalParamsBeforeDbWrite(string $sLoginMode, string $sAuthUser, ?\Person $oPerson, \Hybridauth\User\Profile $oUserProfile, array &$aAdditionalParams) : void
+          <code><![CDATA[	public function CompletePersonAdditionalParamsBeforeDbWrite(string $sLoginMode, string $sAuthUser, \Person $oPerson, \Hybridauth\User\Profile $oUserProfile, array &$aAdditionalParams) : void
 	{
 	  //Custom Code...
 	}]]></code>
@@ -101,7 +101,7 @@
 	 * Current method is called at the end of user provisioning, just after attaching profiles and allowed_orgs. and before DBWrite call.
 	 * @param string $sLoginMode
 	 * @param string $sAuthUser
-	 * @param \Person $oPerson
+	 * @param \Person|null $oPerson
 	 * @param \UserExternal $oUser
 	 * @param \Hybridauth\User\Profile $oUserProfile
 	 * @param string $sInfo: cmdb change track info
@@ -111,7 +111,7 @@
           <static>false</static>
           <access>public</access>
           <type>Custom</type>
-          <code><![CDATA[	public function CompleteUserProvisioningBeforeDbWrite(string $sLoginMode, string $sAuthUser, \Person $oPerson, \UserExternal $oUser, \Hybridauth\User\Profile $oUserProfile, string $sInfo) : void
+          <code><![CDATA[	public function CompleteUserProvisioningBeforeDbWrite(string $sLoginMode, string $sAuthUser, ?\Person $oPerson, \UserExternal $oUser, \Hybridauth\User\Profile $oUserProfile, string $sInfo) : void
 	{
 	  //Custom Code...
 	}]]></code>

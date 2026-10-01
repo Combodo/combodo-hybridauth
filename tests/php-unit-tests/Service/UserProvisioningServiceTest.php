@@ -11,16 +11,11 @@ namespace Combodo\iTop\HybridAuth\Test;
  */
 
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
-use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
-use Config;
-use DBObjectSearch;
-use DBObjectSet;
 use Hybridauth\User\Profile;
 use LoginWebPage;
 use MetaModel;
 use Person;
 use UserExternal;
-use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 
 require_once __DIR__."/AbstractHybridauthTest.php";
 

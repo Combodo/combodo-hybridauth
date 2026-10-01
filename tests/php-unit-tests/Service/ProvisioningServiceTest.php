@@ -46,7 +46,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -90,7 +90,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sLogin, $oProfileWithMostFields);
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sLogin, $oProfileWithMostFields);
 
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
@@ -99,6 +99,41 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oFoundUser = LoginWebPage::FindUser($sLogin);
 		self::assertNotNull($oFoundUser);
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), "User creation OK");
+	}
+
+	//nominal usecase
+	public function testDoProvisioningCreatUserWithoutPerson()
+	{
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+
+		$sDefaultOrgName = $this->sUniqId;
+		$oOrg = $this->CreateOrganization($sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
+
+		$sEmail = $this->sUniqId.'@test.fr';
+		self::assertNull(LoginWebPage::FindPerson($sEmail));
+		self::assertNull(LoginWebPage::FindUser($sEmail));
+
+		$sLogin = 'LOGIN-'.$this->sUniqId;
+		$oProfileWithMostFields = new Profile();
+		$oProfileWithMostFields->email = $this->sUniqId.'@test.fr';
+		$oProfileWithMostFields->firstName = 'firstNameA';
+		$oProfileWithMostFields->lastName = 'lastNameA';
+		$oProfileWithMostFields->phone = '456978';
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sLogin, $oProfileWithMostFields);
+
+		self::assertNull($oReturnedCreatedPerson, 'No Person should have been created if "synchronize_contact" is false');
+
+		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
+		self::assertNull($oFoundPerson, 'No Person should exist if "synchronize_contact" is false');
+
+		$oFoundUser = LoginWebPage::FindUser($sLogin);
+		self::assertNotNull($oFoundUser);
+		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), 'User should have been created if "synchronize_user" is true');
 	}
 
 	public function testDoProvisioningCreationOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching()
@@ -132,7 +167,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
 		$this->assertEquals($oFoundPerson->GetKey(), $oReturnedCreatedPerson->GetKey(), "Person creation OK");
@@ -170,7 +205,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
@@ -184,7 +219,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);
@@ -223,7 +258,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
@@ -247,7 +282,7 @@ class ProvisioningServiceTest extends AbstractHybridauthTest
 		$oProfileWithMostFields->firstName = 'firstNameA';
 		$oProfileWithMostFields->lastName = 'lastNameA';
 		$oProfileWithMostFields->phone = '456978';
-		list($oReturnedCreatedPerson, $oReturnedCreatedUser) = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sEmail, $oProfileWithMostFields);
 
 		$oFoundPerson = LoginWebPage::FindPerson($sEmail);
 		self::assertNotNull($oFoundPerson);

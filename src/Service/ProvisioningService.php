@@ -58,15 +58,21 @@ class ProvisioningService
 	}
 
 	/**
-	 * @param string $sLoginMode: SSO login mode
-	 * @param string $sAuthUser: login/email of user being currently provisioned
+	 * @param string $sLoginMode : SSO login mode
+	 * @param string $sAuthUser : login/email of user being currently provisioned
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
-	 * @return \Person
+	 * @return \Person|null
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
+	 * @throws \CoreException
 	 */
-	public function DoPersonProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): Person
+	public function DoPersonProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): ?Person
 	{
+		$bSynchronizeContact = Config::IsOptionEnabled($sLoginMode, 'synchronize_contact');
+		$bRefreshContact = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
+		if (!$bRefreshContact && !$bSynchronizeContact) {
+				return null;
+		}
 		//HybridAuthProvisioning class comes from datamodel
 		//By default Person is found based on email search (\LoginWebPage::FindPerson)
 		//For tricky reconciliations please extend datamodel
@@ -74,23 +80,17 @@ class ProvisioningService
 		$oPerson = $oHybridAuthProvisioning->FindPerson($sLoginMode, $sAuthUser, $oUserProfile);
 		$bRefresh = false;
 		if (! is_null($oPerson)) {
-			if (! Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact')) {
+			if (!$bRefreshContact) {
 				return $oPerson;
 			}
 
 			$bRefresh = true;
 		} else {
 			/** @var Person $oPerson */
+			if (!$bSynchronizeContact) {
+				return null;
+			}
 			$oPerson = MetaModel::NewObject('Person');
-		}
-
-		if (! Config::IsOptionEnabled($sLoginMode, 'synchronize_contact')) {
-			throw new HybridProvisioningAuthException(
-				"Cannot find Person and no automatic Contact provisioning (synchronize_contact)",
-				0,
-				null,
-				['login_mode' => $sLoginMode, 'email' => $sAuthUser]
-			); // No automatic Contact provisioning
 		}
 
 		// Create the person
@@ -185,13 +185,13 @@ class ProvisioningService
 	/**
 	 * @param string $sLoginMode: SSO login mode
 	 * @param string $sAuthUser: login/email of user being currently provisioned
-	 * @param \Person $oPerson : Person object attached to user
+	 * @param \Person|null $oPerson : Person object attached to user
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
 	 * @return \UserExternal
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
-	public function DoUserProvisioning(string $sLoginMode, string $sAuthUser, Person $oPerson, Profile $oUserProfile): UserExternal
+	public function DoUserProvisioning(string $sLoginMode, string $sAuthUser, ?Person $oPerson, Profile $oUserProfile): UserExternal
 	{
 		if (!MetaModel::IsValidClass('URP_Profiles')) {
 			throw new HybridProvisioningAuthException(
@@ -228,11 +228,11 @@ class ProvisioningService
 			);
 		}
 
-		$oUser->Set('contactid', $oPerson->GetKey());
+		$oUser->Set('contactid', $oPerson?->GetKey() ?? 0);
 
 		$aProviderConf = Config::GetProviderConf($sLoginMode);
 		$this->SynchronizeProfiles($sLoginMode, $sAuthUser, $oUser, $oUserProfile, $aProviderConf, $sInfo);
-		$this->SynchronizeAllowedOrgs($sLoginMode, $sAuthUser, $oUser, $oUserProfile, $aProviderConf, $sInfo, $oPerson->Get('org_id'), );
+		$this->SynchronizeAllowedOrgs($sLoginMode, $sAuthUser, $oUser, $oUserProfile, $aProviderConf, $sInfo, $oPerson?->Get('org_id'));
 
 		//HybridAuthProvisioning class comes from datamodel
 		//By default CompleteUserProvisioningBeforeDbWrite is doing nothing
