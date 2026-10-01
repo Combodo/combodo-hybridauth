@@ -11,35 +11,45 @@ namespace Combodo\iTop\HybridAuth\Test;
  */
 
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
-use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
-use Config;
-use DBObjectSearch;
-use DBObjectSet;
 use Hybridauth\User\Profile;
 use LoginWebPage;
 use MetaModel;
 use Person;
-use UserExternal;
 
 require_once __DIR__."/AbstractHybridauthTest.php";
 
 class PersonProvisioningServiceTest extends AbstractHybridauthTest
 {
-	public function testDoPersonProvisioning_PersonAlreadyExists()
+	public function testDoPersonProvisioning_PersonAlreadyExistsButNotUsed()
+	{
+		$sEmail = $this->sUniqId.'@test.fr';
+		$this->CreatePersonByEmail($sEmail);
+
+		$this->assertNull(
+			ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile()),
+			'Person already created; but not used during provisioning.'
+		);
+	}
+
+	public function testDoPersonProvisioning_PersonAlreadyExistsAndUsed()
 	{
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
+
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
 		$oFoundPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile());
 		$this->assertEquals($oPerson->GetKey(), $oFoundPerson->GetKey(), "Person already created; should return existing one in DB");
 	}
 
-	public function testDoPersonProvisioningAndSSOShouldFailWithSynchroDisabled()
+	public function testDoPersonProvisioning_PersonDoesNotExistAndIsNotCreated()
 	{
-		$sEmail = $this->sUniqId."@test.fr";
+		$sEmail = $this->sUniqId.'@test.fr';
 
-		$this->expectExceptionMessage("Cannot find Person and no automatic Contact provisioning (synchronize_contact)");
-		ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile());
+		$this->assertNull(
+			ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile()),
+			'Person not created during provisioning.'
+		);
 	}
 
 	public function testDoPersonProvisioningShouldCreatePersonWithEmailOnlyIfOtherFieldFromIdpAreMissing()
