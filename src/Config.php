@@ -109,8 +109,19 @@ class Config
 
 	public static function Get($sName, $default = [])
 	{
-		return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
-		//	return MetaModel::GetModuleSetting('combodo-hybridauth-hidden', $sName, $default);
+		$aRes = MetaModel::GetModuleSetting('combodo-hybridauth-hidden', $sName);
+		$aRes2 = MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
+
+		if (is_null($aRes)) {
+			return $aRes2;
+		}
+
+		if (! is_array($aRes) && ! is_array($aRes2)) {
+			return $aRes;
+		}
+
+		return $aRes + $aRes2;
+		//return array_merge_recursive($aRes, $aRes2);
 	}
 
 	public static function ListProviders()
