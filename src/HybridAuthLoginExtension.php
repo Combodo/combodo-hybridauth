@@ -309,6 +309,11 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 		if (Config::IsLoginModeSupported(Session::Get('login_mode'))) {
 			Session::Unset('HYBRIDAUTH::STORAGE');
 			Session::Unset('hybridauth_count');
+			Session::Unset('login_mode');
+			Session::Unset('auth_user');
+			Session::Unset('login_original_page');
+			Session::Unset('login_will_redirect');
+
 			if (LoginWebPage::getIOnExit() === LoginWebPage::EXIT_RETURN) {
 				// Not allowed if not already connected
 				return LoginWebPage::LOGIN_FSM_CONTINUE;
