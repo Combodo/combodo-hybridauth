@@ -10,11 +10,11 @@ use utils;
 
 class Config
 {
-	public static function GetHybridConfig()
+	public static function GetHybridConfig(bool $bFilterHidden=false)
 	{
 		$aConfig = [];
 		$aConfig['callback'] = utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php';
-		$aConfig['providers'] = self::Get('providers');
+		$aConfig['providers'] = self::Get('providers', [], $bFilterHidden);
 
 		return $aConfig;
 	}
@@ -107,8 +107,12 @@ class Config
 		}
 	}
 
-	public static function Get($sName, $default = [])
+	public static function Get($sName, $default = [], bool $bFilterHidden=false)
 	{
+		if ($bFilterHidden){
+			return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
+		}
+
 		$aRes = MetaModel::GetModuleSetting('combodo-hybridauth-hidden', $sName);
 		$aRes2 = MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
 
