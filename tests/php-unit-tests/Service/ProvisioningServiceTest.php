@@ -106,7 +106,7 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 	}
 
 	//nominal usecase
-	public function testDoProvisioningCreatUserWithoutPerson()
+	public function testDoProvisioningCreateUserWithoutPerson()
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);

@@ -435,6 +435,46 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals("val4", Config::Get('glob3', null));
 	}
 
+	public function testGetConfFiltered()
+	{
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+
+		$aExpected = [
+			'Google' => ["a" => "b"],
+		];
+		$this->assertEquals($aExpected, Config::Get('providers', [], true));
+	}
+
+	public function testGetHybridConfigMerged()
+	{
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+
+		$aExpected = [
+			'callback' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
+			'providers' => [
+				'Google' => ["a" => "b"],
+				'Keycloak' => ["c" => "d"],
+			]
+		];
+		$this->assertEquals($aExpected, Config::GetHybridConfig());
+	}
+
+	public function testGetHybridConfigFiltered()
+	{
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+
+		$aExpected = [
+			'callback' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
+			'providers' => [
+				'Google' => ["a" => "b"],
+			]
+		];
+		$this->assertEquals($aExpected, Config::GetHybridConfig(true));
+	}
+
 	public static function DisableConsentModeConfigurationProvider()
 	{
 		$aUseCases = [];
