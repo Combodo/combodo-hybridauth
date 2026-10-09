@@ -456,7 +456,7 @@ class ConfigTest extends ItopDataTestCase
 			'providers' => [
 				'Google' => ["a" => "b"],
 				'Keycloak' => ["c" => "d"],
-			]
+			],
 		];
 		$this->assertEquals($aExpected, Config::GetHybridConfig());
 	}
@@ -470,7 +470,7 @@ class ConfigTest extends ItopDataTestCase
 			'callback' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
 			'providers' => [
 				'Google' => ["a" => "b"],
-			]
+			],
 		];
 		$this->assertEquals($aExpected, Config::GetHybridConfig(true));
 	}

@@ -10,7 +10,7 @@ use utils;
 
 class Config
 {
-	public static function GetHybridConfig(bool $bFilterHidden=false)
+	public static function GetHybridConfig(bool $bFilterHidden = false)
 	{
 		$aConfig = [];
 		$aConfig['callback'] = utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php';
@@ -107,9 +107,9 @@ class Config
 		}
 	}
 
-	public static function Get($sName, $default = [], bool $bFilterHidden=false)
+	public static function Get($sName, $default = [], bool $bFilterHidden = false)
 	{
-		if ($bFilterHidden){
+		if ($bFilterHidden) {
 			return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
 		}
 
