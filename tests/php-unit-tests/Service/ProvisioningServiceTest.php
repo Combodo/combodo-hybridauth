@@ -20,6 +20,9 @@ use UserExternal;
 
 require_once __DIR__."/AbstractTestHybridauth.php";
 
+/**
+ * @group use-classical-profiles
+ */
 class ProvisioningServiceTest extends AbstractTestHybridauth
 {
 	public const USE_TRANSACTION = false;

@@ -17,6 +17,7 @@ use utils;
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  * @backupGlobals disabled
+ * @group use-classical-profiles
  *
  */
 class HybridAuthLoginExtensionTest extends ItopDataTestCase

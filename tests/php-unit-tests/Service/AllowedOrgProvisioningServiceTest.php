@@ -7,6 +7,7 @@ namespace Combodo\iTop\HybridAuth\Test;
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  * @backupGlobals disabled
+ * @group use-classical-profiles
  *
  */
 

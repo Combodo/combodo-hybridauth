@@ -19,6 +19,9 @@ use UserExternal;
 
 require_once __DIR__."/AbstractTestHybridauth.php";
 
+/**
+ * @group use-classical-profiles
+ */
 class UserProvisioningServiceTest extends AbstractTestHybridauth
 {
 	public function testDoUserProvisioningShouldCreateUserWithDefaultProfiles()
