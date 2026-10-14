@@ -20,13 +20,47 @@ use LoginWebPage;
 use MetaModel;
 use Person;
 use UserExternal;
+use UserRights;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 
 require_once __DIR__."/AbstractTestHybridauth.php";
 
 class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 {
-	public function testSynchronizeProfilesShouldUseDefaultProfilesIfIdpResponseDoesNotIncludeProfile()
+    public function testSynchronizeProfilesForNewUserWhenNotLoggedIn(): void
+    {
+        // Ensure the configuration filter on joins
+        MetaModel::GetConfig()->Set('security.disable_joined_classes_filter', false);
+        // Ensure we are logged off to test SynchronizeProfiles profile writing
+        UserRights::Logoff();
+        $this->assertFalse(UserRights::IsLoggedIn());
+
+        // Default SynchronizeProfile set up
+        $this->InitializeGroupsToProfile($this->sLoginMode, ['provider_group' => 'Configuration Manager']);
+        $oUserProfile = new Profile();
+        $oUserProfile->data['groups'] = ['provider_group'];
+
+        $sEmail = $this->sUniqId."@test.fr";
+        $oUser = MetaModel::NewObject(UserExternal::class);
+        $oUser->Set('login', $sEmail);
+
+        $aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+        ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, "");
+
+        $this->assertTrue($oUser->IsNew());
+
+        // Write the user to the database to persist the changes (and the new profiles links)
+        $oUser->DBWrite();
+
+        // Ensure the user profiles are persisted and are the expected ones
+        $oPersistedUser = MetaModel::GetObject(UserExternal::class, $oUser->GetKey(), true, true);
+
+        $this->assertFalse(UserRights::IsLoggedIn());
+        $this->assertSame(['Configuration Manager'], array_values(UserRights::ListProfiles($oPersistedUser)));
+        $this->assertTrue(UserRights::HasProfile('Configuration Manager', $oPersistedUser));
+    }
+
+    public function testSynchronizeProfilesShouldUseDefaultProfilesIfIdpResponseDoesNotIncludeProfile()
 	{
 		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ['A' => 'B']);
