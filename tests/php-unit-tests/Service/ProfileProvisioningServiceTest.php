@@ -11,59 +11,55 @@ namespace Combodo\iTop\HybridAuth\Test;
  *
  */
 
+use Combodo\iTop\HybridAuth\Config;
+use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
-use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
-use Config;
-use DBObjectSearch;
-use DBObjectSet;
 use Hybridauth\User\Profile;
-use LoginWebPage;
 use MetaModel;
 use Person;
 use UserExternal;
 use UserRights;
-use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 
 require_once __DIR__."/AbstractTestHybridauth.php";
 
 class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 {
-    public function testSynchronizeProfilesForNewUserWhenNotLoggedIn(): void
-    {
-        // Ensure the configuration filter on joins
-        MetaModel::GetConfig()->Set('security.disable_joined_classes_filter', false);
-        // Ensure we are logged off to test SynchronizeProfiles profile writing
-        UserRights::Logoff();
-        $this->assertFalse(UserRights::IsLoggedIn());
-
-        // Default SynchronizeProfile set up
-        $this->InitializeGroupsToProfile($this->sLoginMode, ['provider_group' => 'Configuration Manager']);
-        $oUserProfile = new Profile();
-        $oUserProfile->data['groups'] = ['provider_group'];
-
-        $sEmail = $this->sUniqId."@test.fr";
-        $oUser = MetaModel::NewObject(UserExternal::class);
-        $oUser->Set('login', $sEmail);
-
-        $aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
-        ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, "");
-
-        $this->assertTrue($oUser->IsNew());
-
-        // Write the user to the database to persist the changes (and the new profiles links)
-        $oUser->DBWrite();
-
-        // Ensure the user profiles are persisted and are the expected ones
-        $oPersistedUser = MetaModel::GetObject(UserExternal::class, $oUser->GetKey(), true, true);
-
-        $this->assertFalse(UserRights::IsLoggedIn());
-        $this->assertSame(['Configuration Manager'], array_values(UserRights::ListProfiles($oPersistedUser)));
-        $this->assertTrue(UserRights::HasProfile('Configuration Manager', $oPersistedUser));
-    }
-
-    public function testSynchronizeProfilesShouldUseDefaultProfilesIfIdpResponseDoesNotIncludeProfile()
+	public function testSynchronizeProfilesForNewUserWhenNotLoggedIn(): void
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		// Ensure the configuration filter on joins
+		Config::$oConfig->Set('security.disable_joined_classes_filter', false);
+		// Ensure we are logged off to test SynchronizeProfiles profile writing
+		UserRights::Logoff();
+		$this->assertFalse(UserRights::IsLoggedIn());
+
+		// Default SynchronizeProfile set up
+		$this->InitializeGroupsToProfile($this->sLoginMode, ['provider_group' => 'Configuration Manager']);
+		$oUserProfile = new Profile();
+		$oUserProfile->data['groups'] = ['provider_group'];
+
+		$sEmail = $this->sUniqId."@test.fr";
+		$oUser = MetaModel::NewObject(UserExternal::class);
+		$oUser->Set('login', $sEmail);
+
+		$aProviderConf = \Combodo\iTop\HybridAuth\Config::GetProviderConf($this->sLoginMode);
+		ProvisioningService::GetInstance()->SynchronizeProfiles($this->sLoginMode, $sEmail, $oUser, $oUserProfile, $aProviderConf, "");
+
+		$this->assertTrue($oUser->IsNew());
+
+		// Write the user to the database to persist the changes (and the new profiles links)
+		$oUser->DBWrite();
+
+		// Ensure the user profiles are persisted and are the expected ones
+		$oPersistedUser = MetaModel::GetObject(UserExternal::class, $oUser->GetKey(), true, true);
+
+		$this->assertFalse(UserRights::IsLoggedIn());
+		$this->assertSame(['Configuration Manager'], array_values(UserRights::ListProfiles($oPersistedUser)));
+		$this->assertTrue(UserRights::HasProfile('Configuration Manager', $oPersistedUser));
+	}
+
+	public function testSynchronizeProfilesShouldUseDefaultProfilesIfIdpResponseDoesNotIncludeProfile()
+	{
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ['A' => 'B']);
 
 		//field 'groups' not found in IdP response
@@ -73,7 +69,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesShouldUseDefaultProfilesIfIdpResponseDoesNotMatchAnyExistingProfile()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 
 		$oUserProfile = new Profile();
 		$oUserProfile->data['groups'] = ['A' => 'B'];
@@ -85,7 +81,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesShouldUseDefaultProfilesIfProfileMatchingBadlyConfigured()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, "groups_to_profiles set as string instead of array");
 
 		$oUserProfile = new Profile();
@@ -95,7 +91,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesAndSSOShouldFailIfIdpProfileResponseIsEmpty()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id2" => "itop_profile2"]);
 
 		$oUserProfile = new Profile();
@@ -108,7 +104,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesAndSSOShouldFailIfIdpProfileResponseDoesNotMatchAnyConfiguredItopProfiles()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id2" => "itop_profile2"]);
 
 		$oUserProfile = new Profile();
@@ -121,7 +117,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesAndSSOShouldFailIfIdpProfileResponseMatchUnexistingProfilesOnly()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting_itop_profile1"]);
 
 		$oUserProfile = new Profile();
@@ -134,7 +130,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesWithPartialMatchingWithExistingItopProfiles()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting_itop_profile1", "sp_id2" => "Configuration Manager"]);
 
 		$oUserProfile = new Profile();
@@ -145,7 +141,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesAndSSOShouldFailTryingToAttachConfiguredDefaultProfilesNotExistingInItop()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Wrong iTop Profile']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Wrong iTop Profile']);
 
 		$oUserProfile = new Profile();
 		$this->expectExceptionMessage("no valid URP_Profile to attach to user");
@@ -155,7 +151,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesMatchingAndProvisioningOkAtUserCreationWithoutAnyGroupToProfileMatchingTableConfigured()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, null);
 
 		$oUserProfile = new Profile();
@@ -165,7 +161,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesMatchingAndProvisioningOkAtUserCreation()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal power user"]]);
 
 		$oUserProfile = new Profile();
@@ -175,7 +171,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesMatchingAndProvisioningOkAtUserCreationWithIdpResponseExplode()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->Configure($this->sLoginMode, 'profiles_idp_separator', ',');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal power user"]]);
 
@@ -186,7 +182,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesCaseInsensitiveMatchingAndProvisioningOkAtUserCreation()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["administrator", "portal power user"]]);
 
 		$oUserProfile = new Profile();
@@ -196,7 +192,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesMatchingAndProvisioningOkAtUserCreationFromAnotherConfiguredIdpKey()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Configuration Manager", "sp_id2" => ["Administrator", "Portal power user"]]);
 		$this->Configure($this->sLoginMode, 'profiles_idp_key', 'groups2');
 		$oUserProfile = new Profile();
@@ -206,7 +202,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesAndSSOShouldFailIfUserHasNoMoreProfileAtRefresh()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "unexisting itop profile"]);
 
 		$oUserProfile = new Profile();
@@ -231,7 +227,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesOk_UserUpdateWithoutAnyGroupToProfileMatchingTableConfigured()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, null);
 
 		$oUserProfile = new Profile();
@@ -251,7 +247,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesOk_UserUpdate()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => "Portal user"]);
 
 		$oUserProfile = new Profile();
@@ -271,7 +267,7 @@ class ProfileProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testSynchronizeProfilesOk_UserUpdateFromAnotherIdpKey()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Administrator']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["sp_id1" => "Change Approver", "sp_id2" => "Portal user"]);
 		$this->Configure($this->sLoginMode, 'profiles_idp_key', 'groups2');
 

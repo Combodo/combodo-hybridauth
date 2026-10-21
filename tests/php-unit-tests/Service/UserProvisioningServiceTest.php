@@ -10,12 +10,11 @@ namespace Combodo\iTop\HybridAuth\Test;
  *
  */
 
+use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
 use Hybridauth\User\Profile;
 use LoginWebPage;
-use MetaModel;
 use Person;
-use UserExternal;
 
 require_once __DIR__."/AbstractTestHybridauth.php";
 
@@ -26,8 +25,8 @@ class UserProvisioningServiceTest extends AbstractTestHybridauth
 {
 	public function testDoUserProvisioningShouldCreateUserWithDefaultProfiles()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetDefaultLanguage('EN US');
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);
@@ -54,9 +53,9 @@ class UserProvisioningServiceTest extends AbstractTestHybridauth
 		$oFoundUser = $this->CreateExternalUserWithProfilesAndAllowedOrgs($sEmail, ['Portal user']);
 		self::assertEquals('FR FR', $oFoundUser->Get('language'));
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
+		Config::$oConfig->SetDefaultLanguage('EN US');
 
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 		ProvisioningService::GetInstance()->DoUserProvisioning($this->sLoginMode, $sEmail, $oPerson, new Profile());
@@ -72,7 +71,7 @@ class UserProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testDoUserProvisioningShouldNotRefreshIfFeatureIsDisabled()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$oPerson = $this->CreatePersonByEmail($sEmail);

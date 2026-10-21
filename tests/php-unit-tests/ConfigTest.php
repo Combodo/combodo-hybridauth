@@ -12,7 +12,6 @@ class ConfigTest extends ItopDataTestCase
 	protected function setUp(): void
 	{
 		parent::setUp();
-		$this->BackupConfiguration();
 		Config::$oConfig = new \Config();
 	}
 

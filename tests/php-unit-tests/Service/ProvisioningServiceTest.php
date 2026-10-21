@@ -10,13 +10,12 @@ namespace Combodo\iTop\HybridAuth\Test;
  *
  */
 
+use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
 use Hybridauth\User\Profile;
 use LoginWebPage;
-use MetaModel;
 use Person;
-use UserExternal;
 
 require_once __DIR__."/AbstractTestHybridauth.php";
 
@@ -30,15 +29,15 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 	//nominal usecase
 	public function testDoProvisioningCreationOKUsingDefaultConfiguredOrgAndProfiles()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
 
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		self::assertNull(LoginWebPage::FindPerson($sEmail));
@@ -76,15 +75,15 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 	//nominal usecase
 	public function testDoProvisioningCreationOKUsingLogin()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
 
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		self::assertNull(LoginWebPage::FindPerson($sEmail));
@@ -111,15 +110,15 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 	//nominal usecase
 	public function testDoProvisioningCreateUserWithoutPerson()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
 
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 
 		$sEmail = $this->sUniqId.'@test.fr';
 		self::assertNull(LoginWebPage::FindPerson($sEmail));
@@ -146,9 +145,9 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testDoProvisioningCreationOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["profile_id1" => "Change Approver", "profile_id2" => ["Administrator", "Configuration Manager"]]);
 
 		$sOrgName1 = "anotherorg_".$this->sUniqId;
@@ -159,9 +158,9 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		self::assertNull(LoginWebPage::FindPerson($sEmail));
@@ -202,17 +201,17 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testDoProvisioning_RefreshOKFromConfiguredDefaultOrgProfiles()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
@@ -222,8 +221,8 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 
 		$sDefaultOrgName2 = "anotherorg_".$this->sUniqId;
 		$oOrg2 = $this->CreateOrganization($sDefaultOrgName2);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 
 		$oProfileWithMostFields = new Profile();
 		$oProfileWithMostFields->email = $sEmail;
@@ -256,17 +255,17 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testDoProvisioningRefreshOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$sDefaultOrgName = $this->sUniqId;
 		$oOrg = $this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
@@ -277,8 +276,8 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 
 		$sDefaultOrgName2 = "anotherdefaultorg_".$this->sUniqId;
 		$oOrg2 = $this->CreateOrganization($sDefaultOrgName2);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName2);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Configuration Manager']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["profile_id1" => "Change Approver", "profile_id2" => ["Administrator", "Configuration Manager"]]);
 
 		$sOrgName1 = "anotherorg_".$this->sUniqId;
@@ -323,17 +322,17 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 
 	public function testDoProvisioningRefreshFailsSSoConnectionForbiddenAndUserEndsUpWithDefaultProfilesAfterwhile()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
-		MetaModel::GetConfig()->SetDefaultLanguage('EN US');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
 
 		$sEmail = $this->sUniqId."@test.fr";
 		$sDefaultOrgName = $this->sUniqId;
 		$this->CreateOrganization($sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Portal user']);
 
 		$oUserProfile = new Profile();
 		$oUserProfile->email = $sEmail;
@@ -342,7 +341,7 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 		self::assertNotNull(LoginWebPage::FindPerson($sEmail));
 		self::assertNotNull(LoginWebPage::FindUser($sEmail));
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Change Approver', 'Configuration Manager']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', ['Change Approver', 'Configuration Manager']);
 		$this->InitializeGroupsToProfile($this->sLoginMode, ["profile_id1" => ["Administrator"]]);
 
 		$oProfileWithEmptyProfileGroups = new Profile();

@@ -11,16 +11,10 @@ namespace Combodo\iTop\HybridAuth\Test;
  *
  */
 
+use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
-use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
-use Config;
-use DBObjectSearch;
-use DBObjectSet;
 use Hybridauth\User\Profile;
-use LoginWebPage;
-use MetaModel;
 use Person;
-use UserExternal;
 
 require_once __DIR__."/AbstractTestHybridauth.php";
 
@@ -101,7 +95,7 @@ class AllowedOrgProvisioningServiceTest extends AbstractTestHybridauth
 	{
 		$sOrgName1 = $this->CreateOrgAndGetName();
 		$sOrgName2 = $this->CreateOrgAndGetName();
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_allowed_orgs', [$sOrgName1, $sOrgName2]);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_allowed_orgs', [$sOrgName1, $sOrgName2]);
 
 		$oUserProfile = new Profile();
 		$this->CallAllowedOrgSynchronizationAndValidateAfterwhile($oUserProfile, [$sOrgName1, $sOrgName2]);

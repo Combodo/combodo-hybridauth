@@ -10,6 +10,7 @@ namespace Combodo\iTop\HybridAuth\Test;
  *
  */
 
+use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\Service\ProvisioningService;
 use Combodo\iTop\HybridAuth\Test\Provider\ServiceProviderMock;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
@@ -29,19 +30,21 @@ class AbstractTestHybridauth extends ItopDataTestCase
 	{
 		parent::setUp();
 
+		Config::$oConfig = new \Config();
+
 		$this->RequireOnceItopFile('env-production/combodo-hybridauth/vendor/autoload.php');
 		$this->RequireOnceItopFile('env-production/combodo-oauth2-client/vendor/autoload.php');
 		$this->RequireOnceUnitTestFile('../Provider/ServiceProviderMock.php');
 
 		$sPath = __DIR__.'/Provider/ServiceProviderMock.php';
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'oauth_test_class_path', $sPath);
 
 		$_SESSION = [];
 		$this->sUniqId = "OpenID".uniqid();
 
 		$sSsoMode = 'ServiceProviderMock';
 
-		$aCurrentModuleSettings = MetaModel::GetConfig()->GetModuleSetting('combodo-hybridauth', 'providers', []);
+		$aCurrentModuleSettings = Config::$oConfig->GetModuleSetting('combodo-hybridauth', 'providers', []);
 		$aServiceProviderConf = array_merge(
 			$aCurrentModuleSettings,
 			[
@@ -56,29 +59,31 @@ class AbstractTestHybridauth extends ItopDataTestCase
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aServiceProviderConf);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aServiceProviderConf);
 		$this->sLoginMode = "hybridauth-".$sSsoMode;
 		$this->InitLoginMode($this->sLoginMode);
 
 		//no provisioning
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', false);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', false);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', false);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', false);
 
 	}
 
 	protected function InitLoginMode($sLoginMode)
 	{
-		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedLoginTypes = Config::$oConfig->GetAllowedLoginTypes();
 		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
 			$aAllowedLoginTypes[] = $sLoginMode;
-			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			Config::$oConfig->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 	}
 
 	protected function tearDown(): void
 	{
 		parent::tearDown();
+
+		Config::$oConfig = null;
 
 		if (is_file(ServiceProviderMock::GetFileConfPath())) {
 			@unlink(ServiceProviderMock::GetFileConfPath());
@@ -128,7 +133,7 @@ class AbstractTestHybridauth extends ItopDataTestCase
 		$aProviders = \Combodo\iTop\HybridAuth\Config::Get('providers');
 		$aProviders[str_replace("hybridauth-", "", $sLoginMode)] = $aProviderConf;
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aProviders);
 	}
 
 	protected function InitializeGroupsToProfile(string $sLoginMode, $value)
