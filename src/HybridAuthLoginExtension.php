@@ -11,8 +11,6 @@ namespace Combodo\iTop\HybridAuth;
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
-use DBObjectSearch;
-use DBObjectSet;
 use Dict;
 use Exception;
 use HybridAuthProvisioning;
@@ -412,6 +410,9 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			if (!in_array("hybridauth-$sProvider", $aAllowedModes)) {
 				continue;
 			}
+			if (isset($aProviderData['display_login_button']) && false === $aProviderData['display_login_button']) {
+				continue;
+			}
 			$sFaImage = null;
 			$sIconUrl = null;
 			if (isset($aProviderData['icon_url'])) {
@@ -460,9 +461,10 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 			];
 		}
 
-		$oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
-
-		$oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
+		if (count($aData) > 0) {
+			$oBlockExtension = new LoginBlockExtension('hybridauth_sso_button.html.twig', $aData);
+			$oLoginContext->AddBlockExtension('login_sso_buttons', $oBlockExtension);
+		}
 
 		return $oLoginContext;
 	}
