@@ -5,32 +5,26 @@ namespace Combodo\iTop\HybridAuth\Test;
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\Test\UnitTest\ItopDataTestCase;
 use Exception;
-use MetaModel;
 use utils;
 
 class ConfigTest extends ItopDataTestCase
 {
-	/** @var string[] */
-	private array $aAllowedLoginTypes;
-
 	protected function setUp(): void
 	{
 		parent::setUp();
 		$this->BackupConfiguration();
-		$this->aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		Config::$oConfig = new \Config();
 	}
 
 	protected function tearDown(): void
 	{
 		parent::tearDown();
-		MetaModel::GetConfig()->SetAllowedLoginTypes($this->aAllowedLoginTypes);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', null);
+		Config::$oConfig = null;
 	}
 
 	public function testGetHybridConfig()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['ga' => 'bu']);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', ['ga' => 'bu']);
 
 		$aExpected = [
 			'callback' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
@@ -83,7 +77,7 @@ class ConfigTest extends ItopDataTestCase
 	 */
 	public function testListProvidersShouldReturnConfiguredProviders(array $aExpected, array $aProviderConf)
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
 		$this->assertEquals($aExpected, Config::ListProviders());
 	}
@@ -94,13 +88,13 @@ class ConfigTest extends ItopDataTestCase
 			'provider' => ['enabled' => true],
 		];
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
-		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedLoginTypes = Config::$oConfig->GetAllowedLoginTypes();
 		$sLoginMode = 'hybridauth-provider';
 		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
 			$aAllowedLoginTypes[] = $sLoginMode;
-			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			Config::$oConfig->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 
 		$this->assertEquals(true, Config::IsLoginModeSupported($sLoginMode));
@@ -112,7 +106,7 @@ class ConfigTest extends ItopDataTestCase
 			'provider' => ['enabled' => true],
 		];
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
 		$this->assertEquals(false, Config::IsLoginModeSupported('hybridauth-provider'));
 	}
@@ -123,13 +117,13 @@ class ConfigTest extends ItopDataTestCase
 			'provider' => ['enabled' => false],
 		];
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
-		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedLoginTypes = Config::$oConfig->GetAllowedLoginTypes();
 		$sLoginMode = 'hybridauth-provider';
 		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
 			$aAllowedLoginTypes[] = $sLoginMode;
-			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			Config::$oConfig->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 
 		$this->expectException(Exception::class);
@@ -143,13 +137,13 @@ class ConfigTest extends ItopDataTestCase
 			'provider' => ['enabled' => true],
 		];
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
-		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedLoginTypes = Config::$oConfig->GetAllowedLoginTypes();
 		$sLoginMode = 'provider';
 		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
 			$aAllowedLoginTypes[] = $sLoginMode;
-			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			Config::$oConfig->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 
 		$this->assertEquals(false, Config::IsLoginModeSupported($sLoginMode));
@@ -157,13 +151,13 @@ class ConfigTest extends ItopDataTestCase
 
 	public function testIsLoginModeSupportedShouldThrowExceptionWhenProviderIsNotConfigured()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', []);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', []);
 
-		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedLoginTypes = Config::$oConfig->GetAllowedLoginTypes();
 		$sLoginMode = 'hybridauth-provider';
 		if (!in_array($sLoginMode, $aAllowedLoginTypes)) {
 			$aAllowedLoginTypes[] = $sLoginMode;
-			MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+			Config::$oConfig->SetAllowedLoginTypes($aAllowedLoginTypes);
 		}
 
 		$this->expectException(Exception::class);
@@ -173,7 +167,7 @@ class ConfigTest extends ItopDataTestCase
 
 	public function testGetProviderConfShouldReturnTheCorrespondingValue()
 	{
-		MetaModel::GetConfig()->SetModuleSetting(
+		Config::$oConfig->SetModuleSetting(
 			'combodo-hybridauth',
 			'providers',
 			[
@@ -221,7 +215,7 @@ class ConfigTest extends ItopDataTestCase
 	 */
 	public function testIsOptionEnabled_CheckThatUserSynchroShouldMatchConfiguration($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
 	{
-		MetaModel::GetConfig()->SetModuleSetting(
+		Config::$oConfig->SetModuleSetting(
 			'combodo-hybridauth',
 			'providers',
 			[
@@ -229,14 +223,14 @@ class ConfigTest extends ItopDataTestCase
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'synchronize_user', $bOverallOption);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', $bOverallOption);
 
 		$this->assertEquals($bExpectedRes, Config::IsOptionEnabled('hybridauth-Google', 'synchronize_user'), $sMessage);
 	}
 
 	public function PrepareSynchroProfileConfiguration($aProviderProfiles, $sProviderProfile, $aGlobalProfiles, $sGlobalProviderProfile)
 	{
-		MetaModel::GetConfig()->SetModuleSetting(
+		Config::$oConfig->SetModuleSetting(
 			'combodo-hybridauth',
 			'providers',
 			[
@@ -244,8 +238,8 @@ class ConfigTest extends ItopDataTestCase
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profiles', $aGlobalProfiles);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_profile', $sGlobalProviderProfile);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', $aGlobalProfiles);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', $sGlobalProviderProfile);
 	}
 
 	public function testGetSynchroProfileProvider_FurtherProfilesFromProviderLevel()
@@ -334,7 +328,7 @@ class ConfigTest extends ItopDataTestCase
 	 */
 	public function testGetDebugShouldMatchTheConfigurationForTheProvider($bExpectedRes, $aProviderConf, $bOverallOption, $sMessage)
 	{
-		MetaModel::GetConfig()->SetModuleSetting(
+		Config::$oConfig->SetModuleSetting(
 			'combodo-hybridauth',
 			'providers',
 			[
@@ -342,14 +336,14 @@ class ConfigTest extends ItopDataTestCase
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'debug', $bOverallOption);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'debug', $bOverallOption);
 
 		$this->assertEquals($bExpectedRes, Config::GetDebug('Google'), $sMessage);
 	}
 
 	public function testGetDefaultOrgShouldMatchPerProviderConfiguration()
 	{
-		MetaModel::GetConfig()->SetModuleSetting(
+		Config::$oConfig->SetModuleSetting(
 			'combodo-hybridauth',
 			'providers',
 			[
@@ -358,7 +352,7 @@ class ConfigTest extends ItopDataTestCase
 			]
 		);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'default_organization', 'overall-org');
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', 'overall-org');
 
 		$this->assertEquals('provider-org', Config::GetDefaultOrg('hybridauth-Google'), 'The default organization should be the one configured for the provider');
 		$this->assertEquals('overall-org', Config::GetDefaultOrg('hybridauth-NoDefaultOrg'), 'The default organization should be the global default when no organization is configured for the provider');
@@ -396,8 +390,8 @@ class ConfigTest extends ItopDataTestCase
 	 */
 	public function testSetHybridConfig(bool $bEnabled, array $aAllowedLoginTypes, array $aExpectedAllowedLoginTypes)
 	{
-		MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => []]);
+		Config::$oConfig->SetAllowedLoginTypes($aAllowedLoginTypes);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => []]);
 
 		$sSelectedSP = 'MicrosoftGraph';
 		$aProvidersConfig = [
@@ -408,21 +402,21 @@ class ConfigTest extends ItopDataTestCase
 
 		$this->assertEquals(
 			$aProvidersConfig,
-			MetaModel::GetConfig()->GetModuleSetting('combodo-hybridauth', 'providers', [])
+			Config::$oConfig->GetModuleSetting('combodo-hybridauth', 'providers', [])
 		);
 
-		$this->assertEquals($aExpectedAllowedLoginTypes, MetaModel::GetConfig()->GetAllowedLoginTypes());
+		$this->assertEquals($aExpectedAllowedLoginTypes, Config::$oConfig->GetAllowedLoginTypes());
 	}
 
-	public function testGetConfFromUIHiddenSettings()
+	public function testGetConfFromHiddenSettings()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'glob1', 'val1');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'glob3', 'val3');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+		$this->GivenConfValue('glob1', 'val1');
+		$this->GivenConfValue('glob3', 'val3');
+		$this->GivenConfValue('providers', ['Google' => ["a" => "b"]]);
 
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'glob2', 'val2');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'glob3', 'val4');
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+		$this->GivenHiddenConfValue('glob2', 'val2');
+		$this->GivenHiddenConfValue('glob3', 'val4');
+		$this->GivenHiddenConfValue('providers', ['Keycloak' => ["c" => "d"]]);
 
 		$aExpected = [
 			//merge providers
@@ -435,10 +429,60 @@ class ConfigTest extends ItopDataTestCase
 		$this->assertEquals("val4", Config::Get('glob3', null));
 	}
 
+	public function testGetConfFromSettings()
+	{
+		$this->GivenConfValue('glob1', 'val1');
+		$this->GivenConfValue('glob3', 'val3');
+		$this->GivenConfValue('providers', ['Itop' => ['a' => 'b']]);
+
+		$aExpected = [
+			//merge providers
+			'Itop' => ['a' => 'b'],
+		];
+		$this->assertEquals($aExpected, Config::Get('providers', []));
+		$this->assertEquals('val1', Config::Get('glob1', null));
+		$this->assertEquals(null, Config::Get('glob2', null));
+		$this->assertEquals('val3', Config::Get('glob3', null));
+	}
+
+	public function testGetConfFromOnlyHiddenSettings()
+	{
+		$this->GivenHiddenConfValue('glob2', 'val2');
+		$this->GivenHiddenConfValue('glob3', 'val4');
+		$this->GivenHiddenConfValue('providers', ['Itop' => ['c' => 'd']]);
+
+		$aExpected = [
+			//merge providers
+			'Itop' => ['c' => 'd'],
+		];
+		$this->assertEquals($aExpected, Config::Get('providers', []));
+		$this->assertEquals(null, Config::Get('glob1', null));
+		$this->assertEquals('val2', Config::Get('glob2', null));
+		$this->assertEquals('val4', Config::Get('glob3', null));
+	}
+
+	public function testGetConfMerged()
+	{
+		$this->GivenConfValue('providers', true);
+
+		$this->GivenHiddenConfValue('glob2', 'val2');
+		$this->GivenHiddenConfValue('glob3', 'val4');
+		$this->GivenHiddenConfValue('providers', ['Itop' => ['c' => 'd']]);
+
+		$aExpected = [
+			//merge providers
+			'Itop' => ['c' => 'd'],
+		];
+		$this->assertEquals($aExpected, Config::Get('providers', []));
+		$this->assertEquals(null, Config::Get('glob1', null));
+		$this->assertEquals('val2', Config::Get('glob2', null));
+		$this->assertEquals('val4', Config::Get('glob3', null));
+	}
+
 	public function testGetConfFiltered()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
 
 		$aExpected = [
 			'Google' => ["a" => "b"],
@@ -448,8 +492,8 @@ class ConfigTest extends ItopDataTestCase
 
 	public function testGetHybridConfigMerged()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
 
 		$aExpected = [
 			'callback' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
@@ -463,8 +507,8 @@ class ConfigTest extends ItopDataTestCase
 
 	public function testGetHybridConfigFiltered()
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', ['Google' => ["a" => "b"]]);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth-hidden', 'providers', ['Keycloak' => ["c" => "d"]]);
 
 		$aExpected = [
 			'callback' => utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php',
@@ -605,10 +649,20 @@ class ConfigTest extends ItopDataTestCase
 	 */
 	public function testDisableConsentModeConfiguration_FixConsentMode($aProviderConf, $aExpected)
 	{
-		MetaModel::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'providers', $aProviderConf);
 
 		$aResult = Config::GetAuthenticatedHybridConfig();
 		$this->assertEquals(utils::GetAbsoluteUrlModulesRoot().'combodo-hybridauth/landing.php', $aResult['callback'] ?? null);
 		$this->assertEquals($aExpected, $aResult['providers'] ?? null);
+	}
+
+	private function GivenConfValue(string $sProperty, mixed $value): void
+	{
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', $sProperty, $value);
+	}
+
+	private function GivenHiddenConfValue(string $sProperty, mixed $value): void
+	{
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth-hidden', $sProperty, $value);
 	}
 }

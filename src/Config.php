@@ -10,6 +10,8 @@ use utils;
 
 class Config
 {
+	public static ?\Config $oConfig = null;
+
 	public static function GetHybridConfig(bool $bFilterHidden = false)
 	{
 		$aConfig = [];
@@ -83,10 +85,10 @@ class Config
 			]
 		);
 
-		utils::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProvidersConfig);
+		self::GetConfig()->SetModuleSetting('combodo-hybridauth', 'providers', $aProvidersConfig);
 
 		$sLoginMode = "hybridauth-$sSelectedSP";
-		$aAllowedLoginTypes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedLoginTypes = self::GetConfig()->GetAllowedLoginTypes();
 		if (in_array($sLoginMode, $aAllowedLoginTypes)) {
 			if (!$bEnabled) {
 				//remove login mode
@@ -96,13 +98,13 @@ class Config
 						break;
 					}
 				}
-				MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+				self::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
 			}
 		} else {
 			if ($bEnabled) {
 				//add login mode
 				$aAllowedLoginTypes[] = $sLoginMode;
-				MetaModel::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
+				self::GetConfig()->SetAllowedLoginTypes($aAllowedLoginTypes);
 			}
 		}
 	}
@@ -110,22 +112,29 @@ class Config
 	public static function Get($sName, $default = [], bool $bFilterHidden = false)
 	{
 		if ($bFilterHidden) {
-			return MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
+			return self::GetConfig()->GetModuleSetting('combodo-hybridauth', $sName, $default);
 		}
 
-		$aRes = MetaModel::GetModuleSetting('combodo-hybridauth-hidden', $sName);
-		$aRes2 = MetaModel::GetModuleSetting('combodo-hybridauth', $sName, $default);
+		$aHiddenValues = self::GetConfig()->GetModuleSetting('combodo-hybridauth-hidden', $sName);
+		$aVisibleValues = self::GetConfig()->GetModuleSetting('combodo-hybridauth', $sName, $default);
 
-		if (is_null($aRes)) {
-			return $aRes2;
+		if (is_null($aHiddenValues)) {
+			return $aVisibleValues;
 		}
 
-		if (! is_array($aRes) && ! is_array($aRes2)) {
-			return $aRes;
+		if (! is_array($aHiddenValues) && ! is_array($aVisibleValues)) {
+			return $aHiddenValues;
 		}
 
-		return $aRes + $aRes2;
-		//return array_merge_recursive($aRes, $aRes2);
+		if (! is_array($aHiddenValues)) {
+			return $aVisibleValues;
+		}
+
+		if (! is_array($aVisibleValues)) {
+			return $aHiddenValues;
+		}
+
+		return $aVisibleValues + $aHiddenValues;
 	}
 
 	public static function ListProviders()
@@ -150,7 +159,7 @@ class Config
 			return false;
 		}
 
-		$aAllowedModes = MetaModel::GetConfig()->GetAllowedLoginTypes();
+		$aAllowedModes = self::GetConfig()->GetAllowedLoginTypes();
 		if (!in_array($sLoginMode, $aAllowedModes)) {
 			IssueLog::Warning("Login mode not allowed in ".ITOP_APPLICATION_SHORT." configuration", HybridAuthLoginExtension::LOG_CHANNEL, ['sLoginMode' => $sLoginMode]);
 
@@ -316,5 +325,14 @@ class Config
 		}
 
 		return $sDefaultValue;
+	}
+
+	private static function GetConfig(): \Config
+	{
+		if (is_null(self::$oConfig)) {
+			self::$oConfig = MetaModel::GetConfig();
+		}
+
+		return self::$oConfig;
 	}
 }
