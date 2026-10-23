@@ -356,6 +356,7 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 	{
 		if (utils::StartsWith(Session::Get('login_mode'), 'hybridauth-')) {
 			$oAuthAdapter = self::ConnectHybridAuth();
+			LoginWebPage::ResetSession();
 			// Does not redirect...
 			// and actually just clears the session variable,
 			// almost useless we can log again without any further user interaction
