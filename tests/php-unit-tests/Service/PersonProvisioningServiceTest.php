@@ -38,7 +38,9 @@ class PersonProvisioningServiceTest extends AbstractTestHybridauth
 
 		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
 
-		$oFoundPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, new Profile());
+		$oUserProfile = new Profile();
+		$oUserProfile->email = $sEmail;
+		$oFoundPerson = ProvisioningService::GetInstance()->DoPersonProvisioning($this->sLoginMode, $sEmail, $oUserProfile);
 		$this->assertEquals($oPerson->GetKey(), $oFoundPerson->GetKey(), "Person already created; should return existing one in DB");
 	}
 

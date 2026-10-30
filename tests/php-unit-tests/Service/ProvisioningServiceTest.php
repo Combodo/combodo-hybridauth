@@ -143,6 +143,35 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), 'User should have been created if "synchronize_user" is true');
 	}
 
+	public function testDoProvisioningCreateUserWithoutPersonButSynchronizeContactIsTrue()
+	{
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_user', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_contact', true);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'refresh_existing_user', true);
+		Config::$oConfig->SetDefaultLanguage('EN US');
+
+		$sDefaultOrgName = $this->sUniqId;
+		$oOrg = $this->CreateOrganization($sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_organization', $sDefaultOrgName);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profiles', null);
+		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'default_profile', null);
+
+		$sLogin = 'LOGIN-'.$this->sUniqId;
+		$oProfileWithMostFields = new Profile();
+		$oProfileWithMostFields->email = '';
+		$oProfileWithMostFields->firstName = '';
+		$oProfileWithMostFields->lastName = '';
+		$oProfileWithMostFields->phone = null;
+		[$oReturnedCreatedPerson, $oReturnedCreatedUser] = ProvisioningService::GetInstance()->DoProvisioning($this->sLoginMode, $sLogin, $oProfileWithMostFields);
+
+		self::assertNull($oReturnedCreatedPerson, 'No Person should have been created if no contact provided');
+
+		$oFoundUser = LoginWebPage::FindUser($sLogin);
+		self::assertNotNull($oFoundUser);
+		$this->assertEquals($oFoundUser->GetKey(), $oReturnedCreatedUser->GetKey(), 'User should have been created if "synchronize_user" is true');
+	}
+
 	public function testDoProvisioningCreationOK_SynchronizingOrgProfilesAndAllowedORgsViaIdpMatching()
 	{
 		Config::$oConfig->SetModuleSetting('combodo-hybridauth', 'synchronize_contact', true);

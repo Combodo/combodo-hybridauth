@@ -3,22 +3,21 @@
 namespace Combodo\iTop\HybridAuth\Service;
 
 use CMDBObject;
+use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Config;
 use Combodo\iTop\HybridAuth\HybridAuthLoginExtension;
 use Combodo\iTop\HybridAuth\HybridProvisioningAuthException;
 use DBObjectSearch;
 use DBObjectSet;
-use Exception;
-use HybridAuthProvisioning;
 use Dict;
+use Exception;
 use Hybridauth\User\Profile;
+use HybridAuthProvisioning;
 use IssueLog;
-use LoginWebPage;
 use MetaModel;
 use Person;
-use Combodo\iTop\Application\Helper\Session;
-use URP_UserProfile;
 use UserExternal;
+use utils;
 
 class ProvisioningService
 {
@@ -68,6 +67,11 @@ class ProvisioningService
 	 */
 	public function DoPersonProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): ?\Person
 	{
+		if (utils::IsNullOrEmptyString($oUserProfile->firstName) &&
+			utils::IsNullOrEmptyString($oUserProfile->lastName) &&
+			utils::IsNullOrEmptyString($oUserProfile->email)) {
+			return null;
+		}
 		$bSynchronizeContact = Config::IsOptionEnabled($sLoginMode, 'synchronize_contact');
 		$bRefreshContact = Config::IsOptionEnabled($sLoginMode, 'refresh_existing_contact');
 		if (!$bRefreshContact && !$bSynchronizeContact) {
