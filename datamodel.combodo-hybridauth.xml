@@ -116,6 +116,40 @@
 	  //Custom Code...
 	}]]></code>
         </method>
+        <method id="GetLogin">
+          <comment>	/**
+            * Get login from IdP GetUser response (used for user reconciliation/provisioning/authentication)
+            * @param string $sLoginMode
+            * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
+            *
+            * @return string
+            */
+          </comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function GetLogin(string $sLoginMode, Hybridauth\User\Profile $oUserProfile) : string
+          {
+		return Combodo\iTop\HybridAuth\Service\ProvisioningService::GetInstance()->GetLogin($sLoginMode, $oUserProfile);
+	}]]></code>
+        </method>
+        <method id="GetEmail">
+          <comment>	/**
+            * Get email from IdP GetUser response (used for user reconciliation/provisioning/authentication)
+            $ @param string $sLoginMode
+            * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
+            *
+            * @return string
+            */
+          </comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function GetEmail(string $sLoginMode, Hybridauth\User\Profile $oUserProfile) : string
+          {
+		return Combodo\iTop\HybridAuth\Service\ProvisioningService::GetInstance()->GetEmail($sLoginMode, $oUserProfile);
+	}]]></code>
+        </method>
       </methods>
       <presentation/>
     </class>
