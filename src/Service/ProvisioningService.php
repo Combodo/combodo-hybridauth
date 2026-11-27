@@ -67,9 +67,11 @@ class ProvisioningService
 	 */
 	public function DoPersonProvisioning(string $sLoginMode, string $sAuthUser, Profile $oUserProfile): ?\Person
 	{
+		$oHybridAuthProvisioning = new HybridAuthProvisioning();
+		$sEmail = $oHybridAuthProvisioning->GetEmail($sLoginMode, $oUserProfile);
 		if (utils::IsNullOrEmptyString($oUserProfile->firstName) &&
 			utils::IsNullOrEmptyString($oUserProfile->lastName) &&
-			utils::IsNullOrEmptyString($oUserProfile->email)) {
+			utils::IsNullOrEmptyString($sEmail)) {
 			return null;
 		}
 		$bSynchronizeContact = Config::IsOptionEnabled($sLoginMode, 'synchronize_contact');
@@ -122,7 +124,7 @@ class ProvisioningService
 		$aPersonParams = [
 			'first_name' => $sFirstName,
 			'name' => $sLastName,
-			'email' => $oUserProfile->email,
+			'email' => $sEmail,
 			'phone' => $oUserProfile->phone,
 		];
 
@@ -426,5 +428,21 @@ class ProvisioningService
 		}
 
 		$oUser->Set('allowed_org_list', $oAllowedOrgSet);
+	}
+
+	public function GetLogin(string $sLoginMode, Profile $oUserProfile): string
+	{
+		$oHybridAuthProvisioning = new HybridAuthProvisioning();
+		$sLoginIdpKey = Config::GetIdpSearchKey($sLoginMode, 'login_idp_key', 'login');
+		return $oUserProfile->data[$sLoginIdpKey] ?? $oHybridAuthProvisioning->GetEmail($sLoginMode, $oUserProfile);
+	}
+
+	public function GetEmail(string $sLoginMode, Profile $oUserProfile): string
+	{
+		$sEmailIdpKey = Config::GetIdpSearchKey($sLoginMode, 'email_idp_key', 'email');
+		if ($sEmailIdpKey !== 'email') {
+			return $oUserProfile->data[$sEmailIdpKey] ?? '';
+		}
+		return $oUserProfile->email ?? '';
 	}
 }

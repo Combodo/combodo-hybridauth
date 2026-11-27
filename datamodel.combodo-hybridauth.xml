@@ -27,7 +27,7 @@
 	 * @param string $sAuthUser: login of user being currently provisioned
 	 * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
 	 *
-	 * @return array: array includes the 2 provisioned objects [Person, UserExternal]
+	 * @return array that includes the 2 provisioned objects [Person, UserExternal]
 	 * @throws \Combodo\iTop\HybridAuth\HybridProvisioningAuthException
 	 */
           </comment>
@@ -114,6 +114,40 @@
           <code><![CDATA[	public function CompleteUserProvisioningBeforeDbWrite(string $sLoginMode, string $sAuthUser, ?\Person $oPerson, \UserExternal $oUser, \Hybridauth\User\Profile $oUserProfile, string $sInfo) : void
 	{
 	  //Custom Code...
+	}]]></code>
+        </method>
+        <method id="GetLogin">
+          <comment>	/**
+            * Get login from IdP GetUser response (used for user reconciliation/provisioning/authentication)
+            * @param string $sLoginMode
+            * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
+            *
+            * @return string
+            */
+          </comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function GetLogin(string $sLoginMode, Hybridauth\User\Profile $oUserProfile) : string
+          {
+		return Combodo\iTop\HybridAuth\Service\ProvisioningService::GetInstance()->GetLogin($sLoginMode, $oUserProfile);
+	}]]></code>
+        </method>
+        <method id="GetEmail">
+          <comment>	/**
+            * Get email from IdP GetUser response (used for user reconciliation/provisioning/authentication)
+            $ @param string $sLoginMode
+            * @param \Hybridauth\User\Profile $oUserProfile : hybridauth GetUserInfo object response (coming from Oauth2 IdP provider)
+            *
+            * @return string
+            */
+          </comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function GetEmail(string $sLoginMode, Hybridauth\User\Profile $oUserProfile) : string
+          {
+		return Combodo\iTop\HybridAuth\Service\ProvisioningService::GetInstance()->GetEmail($sLoginMode, $oUserProfile);
 	}]]></code>
         </method>
       </methods>

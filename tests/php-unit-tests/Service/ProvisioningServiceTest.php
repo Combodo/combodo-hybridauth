@@ -390,4 +390,70 @@ class ProvisioningServiceTest extends AbstractTestHybridauth
 			$this->assertUserProfiles($oFoundUser, ['Change Approver', 'Configuration Manager'], "When no profile found SSO should raise an exception and user end up with default profiles afterwhile");
 		}
 	}
+
+	public static function GetEmailProvider()
+	{
+		return [
+			'nominal case' => ['expected' => "sha@dok.fr"],
+			'fetch email via another field' => ['expected' => "zo@meu.fr", 'sEmailIdPKey' => 'emailfield'],
+			'fetch email via another field with null value' => ['expected' => "", 'sEmailIdPKey' => 'emailfield2'],
+			'fetch email via a missing field' => ['expected' => "", 'sEmailIdPKey' => 'missing_field'],
+		];
+	}
+
+	/**
+	 * @dataProvider GetEmailProvider
+	 */
+	public function testGetEmail($sExpected, $sEmailIdPKey = null)
+	{
+		$this->Configure($this->sLoginMode, 'email_idp_key', $sEmailIdPKey);
+
+		$oProfile = new Profile();
+		$oProfile->email = "sha@dok.fr";
+		$oProfile->data = [
+			'emailfield' => "zo@meu.fr",
+			'emailfield2' => null,
+		];
+		self::assertEquals($sExpected, ProvisioningService::GetInstance()->GetEmail($this->sLoginMode, $oProfile));
+	}
+
+	public function testGetEmail_NoEmailFound()
+	{
+		$oProfile = new Profile();
+		self::assertEquals('', ProvisioningService::GetInstance()->GetEmail($this->sLoginMode, $oProfile));
+	}
+
+	public static function GetLoginProvider()
+	{
+		return [
+			'use login field' => ['expected' => "gabu"],
+			'fetch login via another field with null value/ email fallback' => ['expected' => "sha@dok.fr", 'sLoginIdPKey' => 'login2'],
+			'fetch login / email fallback with email field' => ['expected' => "zo@meu.fr", 'sLoginIdPKey' => 'login2', '$sEmailField' => 'emailfield'],
+			'fetch login via a missing field / email fallback' => ['expected' => "sha@dok.fr", 'sLoginIdPKey' => 'missing_field'],
+		];
+	}
+
+	/**
+	 * @dataProvider GetLoginProvider
+	 */
+	public function testGetLogin($sExpected, $sLoginIdPKey = null, $sEmailIdPKey = null)
+	{
+		$this->Configure($this->sLoginMode, 'login_idp_key', $sLoginIdPKey);
+		$this->Configure($this->sLoginMode, 'email_idp_key', $sEmailIdPKey);
+		$oProfile = new Profile();
+		$oProfile->email = "sha@dok.fr";
+		$oProfile->data = [
+			'login' => 'gabu',
+			'login2' => null,
+			'emailfield' => "zo@meu.fr",
+		];
+		self::assertEquals($sExpected, ProvisioningService::GetInstance()->GetLogin($this->sLoginMode, $oProfile));
+	}
+
+	public function testGetLoginLegacyCase_UseEmail()
+	{
+		$oProfile = new Profile();
+		$oProfile->email = "sha@dok.fr";
+		self::assertEquals("sha@dok.fr", ProvisioningService::GetInstance()->GetLogin($this->sLoginMode, $oProfile));
+	}
 }

@@ -305,7 +305,7 @@ class HybridAuthLoginExtensionTest extends ItopDataTestCase
 		file_put_contents(ServiceProviderMock::GetFileConfPath(), json_encode($aData));
 		$sOutput = $this->CallItopUri("env-".$this->GetTestEnvironment()."/combodo-hybridauth/landing.php");
 		$this->assertTrue(false !== strpos($sOutput, "login-body"), "user logged in => login page:".$sOutput);
-		$this->assertTrue(false !== strpos($sOutput, "No login_mode specified by service provider"), "An error occurred should appear in output: ".$this->sEmail." . should appear in the welcome page :".$sOutput);
+		$this->assertTrue(false !== strpos($sOutput, Dict::S('HybridAuth:Error:UserNotAllowed')), "An error occurred should appear in output: ".$this->sEmail." . should appear in the welcome page :".$sOutput);
 	}
 
 	public function testLandingPageFailureInvalidSSOLoginMode()

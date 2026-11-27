@@ -11,6 +11,7 @@ namespace Combodo\iTop\HybridAuth;
 use AbstractLoginFSMExtension;
 use Combodo\iTop\Application\Helper\Session;
 use Combodo\iTop\HybridAuth\Service\HybridauthService;
+use Combodo\iTop\HybridAuth\Service\ProvisioningService;
 use Dict;
 use Exception;
 use HybridAuthProvisioning;
@@ -221,12 +222,15 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				Session::Set('login_mode', $sLoginMode);
 				Session::WriteClose();
 			}
+		} else {
+			$sLoginMode = Session::Get('login_mode');
 		}
 
 		// Get the info from provider
 		$oAuthAdapter = HybridAuthLoginExtension::ConnectHybridAuth();
 		$oUserProfile = $oAuthAdapter->getUserProfile();
-		$sAuthUser = $oUserProfile->data['login'] ?? $oUserProfile->email;
+		$oHybridAuthProvisioning = new HybridAuthProvisioning();
+		$sAuthUser = $oHybridAuthProvisioning->GetLogin($sLoginMode, $oUserProfile);
 		IssueLog::Info(
 			"OpenID UserProfile returned by service provider",
 			HybridAuthLoginExtension::LOG_CHANNEL,
