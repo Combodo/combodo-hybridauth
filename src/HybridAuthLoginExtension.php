@@ -222,6 +222,8 @@ class HybridAuthLoginExtension extends AbstractLoginFSMExtension implements iLog
 				Session::Set('login_mode', $sLoginMode);
 				Session::WriteClose();
 			}
+		} else {
+			$sLoginMode = Session::Get('login_mode');
 		}
 
 		// Get the info from provider

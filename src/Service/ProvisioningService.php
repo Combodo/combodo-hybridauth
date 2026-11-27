@@ -440,7 +440,6 @@ class ProvisioningService
 	public function GetEmail(string $sLoginMode, Profile $oUserProfile): string
 	{
 		$sEmailIdpKey = Config::GetIdpSearchKey($sLoginMode, 'email_idp_key', 'email');
-		var_dump($sEmailIdpKey);
 		if ($sEmailIdpKey !== 'email') {
 			return $oUserProfile->data[$sEmailIdpKey] ?? '';
 		}
