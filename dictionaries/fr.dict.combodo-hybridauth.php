@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('FR FR', 'French', 'Français', [
-	'HybridAuth:Error:UserNotAllowed' => 'Utilisateur non autorisé',
+	'HybridAuth:Error:UserNotAllowed' => 'Erreur lors de la connexion, merci de contacter votre administrateur.',
 	'HybridAuth:Login:SignIn' => 'S\'identifier avec %1$s',
 	'HybridAuth:Login:SignInTooltip' => 'Cliquer ici pour s\'identifier avec %1$s',
 ]);

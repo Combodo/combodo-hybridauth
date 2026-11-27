@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('HU HU', 'Hungarian', 'Magyar', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed~~',
+	'HybridAuth:Error:UserNotAllowed' => 'Hiba történt a bejelentkezés során, kérjük, lépjen kapcsolatba a rendszergazdával.',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s~~',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s~~',
 ]);

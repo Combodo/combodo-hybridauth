@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('ZH CN', 'Chinese', '简体中文', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed~~',
+	'HybridAuth:Error:UserNotAllowed' => '登录时发生错误，请联系管理员。',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s~~',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s~~',
 ]);

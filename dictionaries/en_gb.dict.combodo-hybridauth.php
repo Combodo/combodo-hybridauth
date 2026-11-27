@@ -8,7 +8,7 @@
  */
 
 Dict::Add('EN GB', 'British English', 'British English', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed',
+	'HybridAuth:Error:UserNotAllowed' => 'An error occurred while signing in. Please contact your administrator.',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s',
 ]);

@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('JA JP', 'Japanese', '日本語', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed~~',
+	'HybridAuth:Error:UserNotAllowed' => 'ログイン中にエラーが発生しました。管理者にお問い合わせください。',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s~~',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s~~',
 ]);
