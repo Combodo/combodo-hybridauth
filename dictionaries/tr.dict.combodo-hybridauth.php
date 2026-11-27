@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('TR TR', 'Turkish', 'Türkçe', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed~~',
+	'HybridAuth:Error:UserNotAllowed' => 'Giriş sırasında bir hata oluştu, lütfen yöneticinizle iletişime geçin.',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s~~',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s~~',
 ]);

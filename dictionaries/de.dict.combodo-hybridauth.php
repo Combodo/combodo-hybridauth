@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('DE DE', 'German', 'Deutsch', [
-	'HybridAuth:Error:UserNotAllowed' => 'Benutzer nicht zugelassen',
+	'HybridAuth:Error:UserNotAllowed' => 'Bei der Anmeldung ist ein Fehler aufgetreten, bitte kontaktieren Sie Ihren Administrator.',
 	'HybridAuth:Login:SignIn' => 'Anmelden mit %1$s',
 	'HybridAuth:Login:SignInTooltip' => 'Klicken Sie hier, um sich zu authentifizieren mit %1$s',
 ]);

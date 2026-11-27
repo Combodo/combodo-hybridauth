@@ -8,6 +8,7 @@
 
 namespace Combodo\iTop\HybridAuth;
 
+use Dict;
 use LoginWebPage;
 
 /**
@@ -26,5 +27,8 @@ try {
 } catch (\Exception $e) {
 	//already logged
 	$oLoginWebPage = new LoginWebPage();
-	$oLoginWebPage->DisplayLogoutPage(false, $e->getMessage());
+	$sMsg = Dict::S('HybridAuth:Error:UserNotAllowed');
+	$oLoginWebPage->DisplayLogoutPage(false, $sMsg);
+	\IssueLog::Error($sMsg, aContext: [$e->getMessage()]);
+	\IssueLog::Debug($sMsg, aContext: [$e->getTraceAsString()]);
 }

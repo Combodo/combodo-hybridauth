@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('CS CZ', 'Czech', 'Čeština', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed~~',
+	'HybridAuth:Error:UserNotAllowed' => 'Při přihlašování došlo k chybě, kontaktujte prosím svého správce.',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s~~',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s~~',
 ]);

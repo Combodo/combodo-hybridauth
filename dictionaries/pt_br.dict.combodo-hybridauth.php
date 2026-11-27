@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('PT BR', 'Brazilian', 'Brazilian', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed~~',
+	'HybridAuth:Error:UserNotAllowed' => 'Ocorreu um erro durante o login. Entre em contato com o administrador.',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s~~',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s~~',
 ]);

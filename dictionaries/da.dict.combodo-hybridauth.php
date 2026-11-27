@@ -11,7 +11,7 @@
  *
  */
 Dict::Add('DA DA', 'Danish', 'Dansk', [
-	'HybridAuth:Error:UserNotAllowed' => 'User not allowed~~',
+	'HybridAuth:Error:UserNotAllowed' => 'Der opstod en fejl under login, kontakt venligst din administrator.',
 	'HybridAuth:Login:SignIn' => 'Sign in with %1$s~~',
 	'HybridAuth:Login:SignInTooltip' => 'Click here to authenticate yourself with %1$s~~',
 ]);
